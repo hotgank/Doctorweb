@@ -1,9 +1,9 @@
 <template>
   <div class="register">
-    <h1 class="mb-4">医生注册</h1>
+    <h1>医生注册</h1>
     <el-form :model="form" :rules="rules" ref="registerForm" label-width="120px">
-      <el-form-item label="用户名" prop="username">
-        <el-input v-model="form.username"></el-input>
+      <el-form-item label="邮箱" prop="email">
+        <el-input v-model="form.email"></el-input>
       </el-form-item>
       <el-form-item label="密码" prop="password">
         <el-input type="password" v-model="form.password"></el-input>
@@ -14,9 +14,6 @@
       <el-form-item label="姓名" prop="name">
         <el-input v-model="form.name"></el-input>
       </el-form-item>
-      <el-form-item label="手机号码" prop="phone">
-        <el-input v-model="form.phone"></el-input>
-      </el-form-item>
       <el-form-item label="验证码" prop="verificationCode">
         <el-input v-model="form.verificationCode" class="w-3/5"></el-input>
         <el-button type="primary" class="ml-2" @click="sendVerificationCode" :disabled="isCodeSent">
@@ -24,14 +21,17 @@
         </el-button>
       </el-form-item>
       <el-form-item label="医院" prop="hospital">
-        <el-select v-model="form.hospital" placeholder="请选择医院">
+        <el-select v-model="form.hospital" placeholder="请选择医院" @change="handleHospitalChange">
           <el-option
-            v-for="option in hospitalOptions"
-            :key="option.value"
-            :label="option.label"
-            :value="option.value"
+            v-for="hospital in hospitals"
+            :key="hospital.hospitalName"
+            :label="hospital.hospitalName"
+            :value="hospital.hospitalName"
           ></el-option>
         </el-select>
+        <div v-if="selectedHospitalAddress" class="text-sm text-gray-500 mt-1">
+          {{ selectedHospitalAddress }}
+        </div>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="submitForm">注册</el-button>
@@ -42,30 +42,52 @@
 </template>
 
 <script setup>
-import { reactive, ref, computed } from 'vue'
+import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import axios from 'axios'
 
 const router = useRouter()
 
 const form = reactive({
-  username: '',
+  email: '',
   password: '',
   confirmPassword: '',
   name: '',
-  phone: '',
   verificationCode: '',
   hospital: '',
 })
 
+const validatePassword = (rule, value, callback) => {
+  if (value === '') {
+    callback(new Error('请输入密码'))
+  } else if (value.length < 10 || value.length > 16) {
+    callback(new Error('密码长度应为10-16位'))
+  } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{10,16}$/.test(value)) {
+    callback(new Error('密码必须包含大小写字母和数字，不能包含特殊字符'))
+  } else {
+    callback()
+  }
+}
+
+const validateName = (rule, value, callback) => {
+  if (value === '') {
+    callback(new Error('请输入姓名'))
+  } else if (new Blob([value]).size > 20) {
+    callback(new Error('姓名不能超过20字节'))
+  } else {
+    callback()
+  }
+}
+
 const rules = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
+  email: [
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码长度至少为 6 个字符', trigger: 'blur' }
+    { validator: validatePassword, trigger: 'blur' }
   ],
   confirmPassword: [
     { required: true, message: '请确认密码', trigger: 'blur' },
@@ -78,31 +100,22 @@ const rules = {
     }, trigger: 'blur' }
   ],
   name: [
-    { required: true, message: '请输入姓名', trigger: 'blur' }
-  ],
-  phone: [
-    { required: true, message: '请输入手机号码', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入有效的手机号码', trigger: 'blur' }
+    { required: true, message: '请输入姓名', trigger: 'blur' },
+    { validator: validateName, trigger: 'blur' }
   ],
   verificationCode: [
     { required: true, message: '请输入验证码', trigger: 'blur' },
-    { len: 6, message: '验证码长度应为 6 位', trigger: 'blur' }
   ],
   hospital: [
-    { required: true, message: '请选择医院', trigger: 'blur' }
+    { required: true, message: '请选择医院', trigger: 'change' }
   ]
 }
 
-const hospitalOptions = [
-  { label: '儿童医院', value: '儿童医院' },
-  { label: '第一人民医院', value: '第一人民医院' },
-  { label: '第二人民医院', value: '第二人民医院' },
-  { label: '第三人民医院', value: '第三人民医院' },
-]
-
 const registerForm = ref(null)
 const isCodeSent = ref(false)
-const countdown = ref(60)
+const countdown = ref(30)
+const hospitals = ref([])
+const selectedHospitalAddress = ref('')
 
 const codeBtnText = computed(() => {
   if (isCodeSent.value) {
@@ -111,37 +124,77 @@ const codeBtnText = computed(() => {
   return '发送验证码'
 })
 
-const sendVerificationCode = () => {
-  if (!form.phone) {
-    ElMessage.error('请先输入手机号码')
+const sendVerificationCode = async () => {
+  if (!form.email) {
+    ElMessage.error('请先输入邮箱')
     return
   }
 
-  // 这里应该是一个 API 调用来发送验证码
-  console.log('发送验证码到:', form.phone)
-  ElMessage.success('验证码已发送，请注意查收')
+  if (isCodeSent.value) return
 
-  isCodeSent.value = true
-  const timer = setInterval(() => {
-    countdown.value--
-    if (countdown.value === 0) {
-      clearInterval(timer)
-      isCodeSent.value = false
-      countdown.value = 60
-    }
-  }, 1000)
+  try {
+    const response = await axios.post('http://localhost:8080/api/DoctorRegister/sendRegisterCode', {
+      email: form.email
+    })
+    ElMessage.success('验证码已发送，请注意查收')
+    isCodeSent.value = true
+    countdown.value = 30
+    const timer = setInterval(() => {
+      countdown.value--
+      if (countdown.value === 0) {
+        clearInterval(timer)
+        isCodeSent.value = false
+      }
+    }, 1000)
+  } catch (error) {
+    console.error('发送验证码失败:', error)
+    ElMessage.error('发送验证码失败，请稍后重试')
+  }
 }
 
-const submitForm = () => {
-  registerForm.value.validate((valid) => {
+const fetchHospitals = async () => {
+  try {
+    const response = await axios.get('http://localhost:8080/api/DoctorRegister/selectAllHospitals')
+    hospitals.value = response.data
+    console.log('获取到的医院列表:', hospitals.value)
+  } catch (error) {
+    console.error('获取医院列表失败:', error)
+    ElMessage.error('获取医院列表失败，请稍后重试')
+  }
+}
+
+const handleHospitalChange = (value) => {
+  const selectedHospital = hospitals.value.find(h => h.hospitalName === value)
+  if (selectedHospital) {
+    selectedHospitalAddress.value = selectedHospital.address
+  }
+}
+
+const submitForm = async () => {
+  await registerForm.value.validate(async (valid) => {
     if (valid) {
-      // 这里应该是一个 API 调用来注册用户
-      console.log('注册表单提交:', form)
-      ElMessage({
-        message: '注册成功！',
-        type: 'success',
-      })
-      router.push('/login')
+      try {
+        const response = await axios.post('http://localhost:8080/api/DoctorRegister/register', {
+          email: form.email,
+          registerCode: form.verificationCode,
+          name: form.name,
+          password: form.password,
+          workplace: form.hospital
+        })
+        if (response.status === 200) {
+          ElMessage.success('注册成功！')
+          router.push('/login')
+        } else {
+          ElMessage.error(response.data)
+        }
+      } catch (error) {
+        console.error('注册失败:', error)
+        if (error.response) {
+          ElMessage.error(error.response.data)
+        } else {
+          ElMessage.error('注册失败，请稍后重试')
+        }
+      }
     } else {
       console.log('表单验证失败')
       return false
@@ -152,11 +205,32 @@ const submitForm = () => {
 const resetForm = () => {
   registerForm.value.resetFields()
 }
+
+onMounted(() => {
+  fetchHospitals()
+})
 </script>
 
 <style scoped>
 .register {
   max-width: 500px;
-  margin: 0 auto;
+  margin: 40px auto;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+  text-align: center;
+  color: #409EFF;
+  margin-bottom: 30px;
+}
+
+.el-form-item {
+  margin-bottom: 25px;
+}
+
+.el-button {
+  width: 100%;
 }
 </style>
