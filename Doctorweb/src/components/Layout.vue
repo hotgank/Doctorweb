@@ -37,7 +37,6 @@
             <el-icon><Service /></el-icon>
             <span>社区交流</span>
           </el-menu-item>
-
           <el-menu-item index="/user-announcement">
             <el-icon><Document /></el-icon>
             <span>系统公告</span>
@@ -87,8 +86,6 @@
             <span>账户管理</span>
           </el-menu-item>
         </template>
-        
-      
       </el-menu>
     </el-aside>
 
@@ -122,6 +119,7 @@
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useStore } from 'vuex'
+
 import {
   HomeFilled,
   User,
@@ -145,7 +143,7 @@ const store = useStore()
 const route = useRoute()
 
 const username = computed(() => store.state.user ? store.state.user.username : '未登录')
-const userRole = computed(() => store.state.user ? store.state.user.role : null)
+const userRole = computed(() => localStorage.getItem('role')) // 改为从 localStorage 获取角色
 const isAuthenticated = computed(() => store.getters.isLoggedIn)
 const isSuperAdmin = computed(() => store.state.user && store.state.user.isSuperAdmin)
 
@@ -162,7 +160,7 @@ const goBack = () => {
 }
 
 const goHome = () => {
-  const role = store.getters.userRole
+  const role = userRole.value
   if (role === 'doctor') {
     router.push('/doctor-dashboard')
   } else if (role === 'admin') {
@@ -177,14 +175,14 @@ const handleCommand = (command) => {
     store.dispatch('logout')
     router.push('/login')
   } else if (command === 'account') {
-    const role = store.getters.userRole
+    const role = userRole.value
     if (role === 'doctor') {
-    router.push('/doctor-account')
-  } else if (role === 'admin') {
-    router.push('/admin-account')
-  } else {
-    ElMessage.error('未知的用户角色')
-  }
+      router.push('/doctor-account')
+    } else if (role === 'admin') {
+      router.push('/admin-account')
+    } else {
+      ElMessage.error('未知的用户角色')
+    }
   }
 }
 </script>
