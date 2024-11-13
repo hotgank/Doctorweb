@@ -1,119 +1,137 @@
-import { createStore } from 'vuex'
+import { createStore } from 'vuex';
+import axios from 'axios';
 
 export default createStore({
   state: {
-    user: JSON.parse(localStorage.getItem('user')) || null, // 从 localStorage 初始化用户状态
-    doctors: [
-      { 
-        id: 1, 
-        name: '医生 A', 
-        email: 'doctorA@example.com', 
-        qualified: false,
-        unit: '内科', 
-        position: '主治医师', 
-        certNumber: 'D123456789',
-        certImage: 'https://via.placeholder.com/150', // 示例图片 URL
-      },
-      { 
-        id: 2, 
-        name: '医生 B', 
-        email: 'doctorB@example.com', 
-        qualified: true,
-        unit: '外科', 
-        position: '副主任医师', 
-        certNumber: 'D987654321',
-        certImage: 'https://via.placeholder.com/150', // 示例图片 URL
-      },
-      { 
-        id: 3, 
-        name: '医生 C', 
-        email: 'doctorC@example.com', 
-        qualified: false,
-        unit: '儿科', 
-        position: '住院医师', 
-        certNumber: 'D112233445',
-        certImage: 'https://via.placeholder.com/150', // 示例图片 URL
-      },
-    ],
-    admins: [
-      // 模拟管理员数据
-      { id: 1, name: 'superadmin', email: 'adminX@example.com', isSuperAdmin: true },
-      { id: 2, name: '管理员 Y', email: 'adminY@example.com', isSuperAdmin: false },
-    ],
+    user: JSON.parse(localStorage.getItem('user')) || null,
+    doctor: JSON.parse(localStorage.getItem('doctor')) || null,
+    token: localStorage.getItem('token') || '',
+    role: localStorage.getItem('role') || '',
+    doctors: [],
+    admins: [],
   },
+
   mutations: {
+    setDoctor(state, doctor) {
+      state.doctor = doctor;
+      localStorage.setItem('doctor', JSON.stringify(doctor));
+    },
     setUser(state, user) {
-      state.user = user
-      localStorage.setItem('user', JSON.stringify(user)) // 持久化到 localStorage
+      state.user = user;
+      localStorage.setItem('user', JSON.stringify(user));
+    },
+    setToken(state, token) {
+      state.token = token;
+      localStorage.setItem('token', token);
+    },
+    setRole(state, role) {
+      state.role = role;
+      localStorage.setItem('role', role);
     },
     clearUser(state) {
-      state.user = null
-      localStorage.removeItem('user')
+      state.user = null;
+      state.doctor = null;
+      state.token = '';
+      state.role = '';
+      localStorage.removeItem('user');
+      localStorage.removeItem('doctor');
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
     },
-    updateUserInfo(state, info) {
-      state.user = { ...state.user, ...info }
-      localStorage.setItem('user', JSON.stringify(state.user)) // 更新 localStorage
+    setDoctors(state, doctors) {
+      state.doctors = doctors;
     },
-    addAdmin(state, admin) {
-      state.admins.push(admin)
+    setAdmins(state, admins) {
+      state.admins = admins;
     },
-    // 其他 mutations...
   },
+
   actions: {
-    login({ commit, state }, { username, password, role }) {
-      return new Promise((resolve) => {
-        // 模拟 API 调用
-        setTimeout(() => {
-          // 检查是否是超级管理员
-          const admin = state.admins.find(a => a.name === username && a.isSuperAdmin)
-          const isSuperAdmin = admin ? true : false
-          
-          // 创建用户对象，包含 isSuperAdmin 属性
-          const user = { username, role, isSuperAdmin }
-          commit('setUser', user)
-          resolve(user)
-        }, 500)
-      })
+    async doctorlogin({ commit, dispatch }, { email, password }) {
+      try {
+        const response = await axios.post('/api/api/DoctorLogin/login', { email, password });
+
+        if (response && response.data) {
+          const { token, doctor } = response.data;
+
+          commit('setToken', token);
+          commit('setDoctor', doctor);
+          commit('setRole', 'doctor');
+
+          localStorage.setItem('token', token);
+          localStorage.setItem('doctor', JSON.stringify(doctor));
+          localStorage.setItem('role', 'doctor');
+
+          // await dispatch('fetchDoctors');
+          // await dispatch('fetchAdmins');
+          return true;
+        } else {
+          throw new Error('响应数据不包含 token 或 doctor 对象');
+        }
+      } catch (error) {
+        console.error('Login failed:', error);
+        return false;
+      }
     },
+
+    async adminlogin({ commit, dispatch }, { email, password }) {
+      try {
+        const response = await axios.post('/api/api/AdminLogin/login', { email, password });
+
+        if (response && response.data) {
+          const { token, admin } = response.data;
+
+          commit('setToken', token);
+          commit('setUser', admin);
+          commit('setRole', 'admin');
+
+          localStorage.setItem('token', token);
+          localStorage.setItem('user', JSON.stringify(admin));
+          localStorage.setItem('role', 'admin');
+
+          // await dispatch('fetchDoctors');
+          // await dispatch('fetchAdmins');
+          return true;
+        } else {
+          throw new Error('响应数据不包含 token 或 admin 对象');
+        }
+      } catch (error) {
+        console.error('Login failed:', error);
+        return false;
+      }
+    },
+
     logout({ commit }) {
-      // 模拟 API 调用（如果需要）
-      commit('clearUser')
+      commit('clearUser');
     },
-    updateAccountInfo({ commit }, info) {
-      // 模拟 API 调用来更新用户信息
-      commit('updateUserInfo', info)
+
+    async fetchDoctors({ commit }) {
+      try {
+        const response = await axios.get('/api/doctors');
+        const doctors = response.data;
+        commit('setDoctors', doctors);
+      } catch (error) {
+        console.error('Failed to fetch doctors:', error);
+      }
     },
-    changePassword({ commit }, passwords) {
-      // 模拟 API 调用来更改密码
-      console.log('更改密码:', passwords)
+
+    async fetchAdmins({ commit }) {
+      try {
+        const response = await axios.get('/api/admins');
+        const admins = response.data;
+        commit('setAdmins', admins);
+      } catch (error) {
+        console.error('Failed to fetch admins:', error);
+      }
     },
-    submitVerification({ commit }, verificationData) {
-      // 模拟 API 调用来提交认证信息
-      console.log('提交认证信息:', verificationData)
-    },
-    deactivateAccount({ commit }, password) {
-      // 模拟 API 调用来注销账户
-      console.log('使用密码注销账户:', password)
-      commit('clearUser')
-    },
-    approveDoctor({ commit }, doctorId) {
-      commit('approveDoctor', doctorId)
-    },
-    rejectDoctor({ commit }, doctorId) {
-      commit('rejectDoctor', doctorId)
-    },
-    addAdmin({ commit }, admin) {
-      commit('addAdmin', admin)
-    },
-    // 其他 actions...
   },
+
   getters: {
-    isLoggedIn: state => !!state.user,
-    currentUser: state => state.user,
-    userRole: state => state.user ? state.user.role : null,
-    isSuperAdmin: state => state.user ? state.user.isSuperAdmin : false,
-    pendingDoctors: state => Array.isArray(state.doctors) ? state.doctors.filter(doctor => !doctor.qualified) : [],
-    allDoctors: state => state.doctors,
-    allAdmins: state => state.admins,
+    isLoggedIn: state => !!state.user || !!state.doctor,
+    currentUser: state => state.user || state.doctor,
+    token: state => state.token,
+    role: state => state.role,
+    doctors: state => state.doctors,
+    admins: state => state.admins,
   },
-})
+});

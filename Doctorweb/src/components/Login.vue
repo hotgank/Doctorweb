@@ -2,19 +2,29 @@
   <div class="login-container">
     <el-card class="login-card">
       <h2 class="login-title">登录</h2>
-      <el-form :model="loginForm" @submit.native.prevent="handleLogin" label-position="top">
-        <el-form-item label="用户名">
-          <el-input v-model="loginForm.username" placeholder="请输入用户名"></el-input>
+      <el-form :model="loginForm" @submit.prevent="handleLogin" label-position="top">
+        <el-form-item label="邮箱账号">
+          <el-input v-model="loginForm.email" placeholder="请输入邮箱账号"></el-input>
         </el-form-item>
         <el-form-item label="密码">
           <el-input
             v-model="loginForm.password"
-            type="password"
+            :type="showPassword ? 'text' : 'password'"
             placeholder="请输入密码"
-          ></el-input>
+          >
+            <template #suffix>
+              <el-icon class="el-input__icon" @click="showPassword = !showPassword">
+                <eye v-if="showPassword" />
+                <eye-off v-else />
+              </el-icon>
+            </template>
+          </el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-checkbox v-model="showPassword">显示密码</el-checkbox>
         </el-form-item>
         <el-form-item label="登录类型">
-          <el-radio-group v-model="loginForm.role">
+          <el-radio-group v-model="loginForm.role" @change="handleRoleChange">
             <el-radio label="doctor">医生登录</el-radio>
             <el-radio label="admin">管理员登录</el-radio>
           </el-radio-group>
@@ -33,46 +43,81 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useStore } from 'vuex'
-import { ElMessage } from 'element-plus'
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useStore } from 'vuex';
+import { ElMessage } from 'element-plus';
 
-// 登录表单数据
 const loginForm = ref({
-  username: '',
+  email: '',
   password: '',
-  role: 'doctor', // 默认选中医生登录
-})
+  role: localStorage.getItem('role') || 'doctor', // 从本地存储获取角色，默认为 doctor
+});
 
-// 引用 Vue Router 和 Vuex Store
-const router = useRouter()
-const store = useStore()
+const showPassword = ref(false);
+
+const router = useRouter();
+const store = useStore();
+
+// 邮箱格式验证函数
+const validateEmail = (email) => {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+}
+
+// 密码格式验证函数
+const validatePassword = (password) => {
+  const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{10,16}$/;
+  return re.test(password);
+}
 
 // 登录处理函数
 const handleLogin = async () => {
-  const { username, password, role } = loginForm.value
+  const { email, password, role } = loginForm.value;
 
-  // 简单的表单验证
-  if (!username || !password) {
-    ElMessage.error('请填写用户名和密码')
-    return
+  if (!email || !password) {
+    ElMessage.error('请填写邮箱账号和密码');
+    return;
+  }
+
+  if (!validateEmail(email)) {
+    ElMessage.error('请输入有效的邮箱地址');
+    return;
+  }
+
+  if (!validatePassword(password)) {
+    ElMessage.error('密码必须为10~16位，包含大小写字母和数字，不包含特殊字符');
+    return;
   }
 
   try {
-    // 调用 Vuex 的 login action 进行登录
-    await store.dispatch('login', { username, password, role })
+    let success = false;
 
-    // 根据角色导航到不同的页面
     if (role === 'doctor') {
-      router.push('/doctor-dashboard')
+      success = await store.dispatch('doctorlogin', { email, password });
     } else if (role === 'admin') {
-      router.push('/admin-dashboard')
+      success = await store.dispatch('adminlogin', { email, password });
+    }
+    if (success) {
+      localStorage.setItem('role', role);  // 设置本地存储角色
+      if (role === 'doctor') {
+        router.push({ name: 'DoctorDashboard' });  // 根据角色跳转
+      } else if (role === 'admin') {
+        router.push({ name: 'AdminDashboard' });
+      }
+      ElMessage.success('登录成功');
+    } else {
+      ElMessage.error('登录失败，请检查您的凭据并重试。');
     }
   } catch (error) {
-    ElMessage.error(error.message || '登录失败')
+    ElMessage.error(error.response?.data || '登录失败');
   }
-}
+};
+
+// 处理角色切换并更新本地存储
+const handleRoleChange = () => {
+  localStorage.setItem('role', loginForm.value.role);
+};
 </script>
 
 <style scoped>
@@ -120,7 +165,7 @@ const handleLogin = async () => {
 }
 
 .register-link {
-  color: #6b7280; /* 默认灰色 */
+  color: #6b7280;
   text-decoration: underline;
   cursor: pointer;
   transition: color 0.3s;
@@ -128,6 +173,6 @@ const handleLogin = async () => {
 }
 
 .register-link:hover {
-  color: #3b82f6; /* 鼠标悬停时变为蓝色 */
+  color: #3b82f6;
 }
 </style>

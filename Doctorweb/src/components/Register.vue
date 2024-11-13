@@ -133,7 +133,7 @@ const sendVerificationCode = async () => {
   if (isCodeSent.value) return
 
   try {
-    const response = await axios.post('http://localhost:8080/api/DoctorRegister/sendRegisterCode', {
+    const response = await axios.post('/api/api/DoctorRegister/sendRegisterCode', {
       email: form.email
     })
     ElMessage.success('验证码已发送，请注意查收')
@@ -154,7 +154,7 @@ const sendVerificationCode = async () => {
 
 const fetchHospitals = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/api/DoctorRegister/selectAllHospitals')
+    const response = await axios.get('/api/api/DoctorRegister/selectAllHospitals')
     hospitals.value = response.data
     console.log('获取到的医院列表:', hospitals.value)
   } catch (error) {
@@ -174,7 +174,7 @@ const submitForm = async () => {
   await registerForm.value.validate(async (valid) => {
     if (valid) {
       try {
-        const response = await axios.post('http://localhost:8080/api/DoctorRegister/register', {
+        const response = await axios.post('/api/api/DoctorRegister/register', {
           email: form.email,
           registerCode: form.verificationCode,
           name: form.name,

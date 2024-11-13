@@ -33,13 +33,16 @@ const routes = [
     path: '/',
     component: Layout,
     meta: { requiresAuth: true },
+    redirect: () => {
+      const role = localStorage.getItem('role');
+      return role === 'doctor' ? { name: 'DoctorDashboard' } : { name: 'AdminDashboard' };
+    },
     children: [
       { path: 'doctor-dashboard', name: 'DoctorDashboard', component: DoctorDashboard, meta: { requiresAuth: true, role: 'doctor' } },
       { path: '/profile', name: 'DoctorProfile', component: DoctorProfile, meta: { requiresAuth: true, role: 'doctor' } },
       { path: '/consultation', name: 'OnlineConsultation', component: OnlineConsultation, meta: { requiresAuth: true, role: 'doctor' } },
       { path: '/publish-article', name: 'ArticlePublish', component: ArticlePublish, meta: { requiresAuth: true, role: 'doctor' } },
       { path: '/community', name: 'CommunityForum', component: CommunityForum, meta: { requiresAuth: true, role: 'doctor' } },
-      
       { path: '/patient-index', name: 'PatientIndex', component: PatientIndex, meta: { requiresAuth: true, role: 'doctor' } },
       { path: '/articles', name: 'ArticleList', component: ArticleList, meta: { requiresAuth: true, role: 'doctor' } },
       { path: '/article/:id', name: 'ArticleDetail', component: ArticleDetail, meta: { requiresAuth: true, role: 'doctor' } },
@@ -70,25 +73,21 @@ const router = createRouter({
 
 // 全局导航守卫
 router.beforeEach((to, from, next) => {
-  const requiresAuth = to.meta.requiresAuth
-  const role = to.meta.role
-  const user = JSON.parse(localStorage.getItem('user')) // 假设用户信息存储在localStorage
+  const requiresAuth = to.meta.requiresAuth;
+  const role = to.meta.role;
+  const token = localStorage.getItem('token');
+  const storedRole = localStorage.getItem('role'); // 获取存储的角色
 
-  if (requiresAuth) {
-    if (!user) {
-      // 未登录，重定向到登录页面
-      next({ name: 'Login' })
-    } else if (role && user.role !== role) {
-      // 登录用户角色不匹配，重定向到登录页面或其他页面
-      next({ name: 'Login' })
-    } else {
-      // 已登录且角色匹配
-      next()
-    }
+  if (requiresAuth && !token) {
+    // 需要认证但未登录
+    next({ name: 'Login' });
+  } else if (requiresAuth && role && storedRole !== role) {
+    // 用户登录但角色不匹配
+    next({ name: storedRole === 'doctor' ? 'DoctorDashboard' : 'AdminDashboard' });
   } else {
-    // 不需要认证，允许访问
-    next()
+    // 已登录且角色匹配，或不需要认证
+    next();
   }
-})
+});
 
-export default router
+export default router;
