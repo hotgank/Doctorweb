@@ -11,6 +11,9 @@
       <el-form-item label="确认密码" prop="confirmPassword">
         <el-input type="password" v-model="form.confirmPassword"></el-input>
       </el-form-item>
+      <el-form-item label="用户名" prop="username">
+        <el-input v-model="form.username"></el-input>
+      </el-form-item>
       <el-form-item label="姓名" prop="name">
         <el-input v-model="form.name"></el-input>
       </el-form-item>
@@ -80,6 +83,16 @@ const validateName = (rule, value, callback) => {
   }
 }
 
+const validateUsername = (rule, value, callback) => {
+  if (value === '') {
+    callback(new Error('请输入用户名'))
+  } else if (new Blob([value]).size > 20) {
+    callback(new Error('用户名不能超过20字节'))
+  } else {
+    callback()
+  }
+}
+
 const rules = {
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
@@ -102,6 +115,10 @@ const rules = {
   name: [
     { required: true, message: '请输入姓名', trigger: 'blur' },
     { validator: validateName, trigger: 'blur' }
+  ],
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { validator: validateUsername, trigger: 'blur' }
   ],
   verificationCode: [
     { required: true, message: '请输入验证码', trigger: 'blur' },
@@ -147,8 +164,21 @@ const sendVerificationCode = async () => {
       }
     }, 1000)
   } catch (error) {
-    console.error('发送验证码失败:', error)
-    ElMessage.error('发送验证码失败，请稍后重试')
+    if (error.response) {
+      switch (error.response.status) {
+        case 400:
+          ElMessage.error(error.response.data)
+          break
+        case 501:
+          ElMessage.error('发送邮件失败')
+          break
+        default:
+          ElMessage.error('发送验证码失败，请稍后重试')
+      }
+    } else {
+      console.error('发送验证码失败:', error)
+      ElMessage.error('发送验证码失败，请稍后重试')
+    }
   }
 }
 
@@ -178,6 +208,7 @@ const submitForm = async () => {
           email: form.email,
           registerCode: form.verificationCode,
           name: form.name,
+          username: form.username,
           password: form.password,
           workplace: form.hospital
         })
@@ -188,10 +219,19 @@ const submitForm = async () => {
           ElMessage.error(response.data)
         }
       } catch (error) {
-        console.error('注册失败:', error)
         if (error.response) {
-          ElMessage.error(error.response.data)
+          switch (error.response.status) {
+            case 400:
+              ElMessage.error(error.response.data)
+              break
+            case 500:
+              ElMessage.error('注册失败，请稍后重试')
+              break
+            default:
+              ElMessage.error('注册失败，请稍后重试')
+          }
         } else {
+          console.error('注册失败:', error)
           ElMessage.error('注册失败，请稍后重试')
         }
       }

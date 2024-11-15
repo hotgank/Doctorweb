@@ -49,7 +49,7 @@ export default createStore({
   actions: {
     async doctorlogin({ commit, dispatch }, { email, password }) {
       try {
-        const response = await axios.post('/api/api/DoctorLogin/login', { email, password });
+        const response = await axios.post('/api/api/DoctorLogin/loginByEmail', { email, password });
 
         if (response && response.data) {
           const { token, doctor } = response.data;
