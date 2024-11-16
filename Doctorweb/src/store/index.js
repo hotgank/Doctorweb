@@ -155,7 +155,7 @@ export default createStore({
         commit('setDoctor', doctorInfo);
         return doctorInfo;
       } catch (error) {
-        console.error('Failed to fetch doctor information:', error);
+        // console.error('Failed to fetch doctor information:', error);
         throw error;
       }
     },

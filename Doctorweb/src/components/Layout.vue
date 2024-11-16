@@ -1,13 +1,12 @@
 <template>
   <el-container class="layout-container">
-    <el-aside width="200px" v-if="isAuthenticated">
+    <el-aside v-if="isAuthenticated" width="200px">
       <el-menu
         :default-active="activeMenu"
         class="el-menu-vertical-demo"
         @select="handleSelect"
-        :router="true"
+        router
       >
-        <!-- 医生菜单项 -->
         <template v-if="userRole === 'doctor'">
           <el-menu-item index="/doctor-dashboard">
             <el-icon><HomeFilled /></el-icon>
@@ -46,8 +45,6 @@
             <span>账户管理</span>
           </el-menu-item>
         </template>
-
-        <!-- 管理员菜单项 -->
         <template v-if="userRole === 'admin'">
           <el-menu-item index="/admin-dashboard">
             <el-icon><HomeFilled /></el-icon>
@@ -88,68 +85,191 @@
         </template>
       </el-menu>
     </el-aside>
-
     <el-container>
       <el-header v-if="isAuthenticated">
         <div class="header-content">
-          <el-button @click="goBack" :icon="ArrowLeft">返回</el-button>
-          <el-button @click="goHome" :icon="HomeFilled">主页</el-button>
-          <el-dropdown @command="handleCommand">
-            <el-button>
-              {{ username }}
-              <el-icon class="el-icon--right"><ArrowDown /></el-icon>
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="account">账户管理</el-dropdown-item>
-                <el-dropdown-item command="logout">登出</el-dropdown-item>
-              </el-dropdown-menu>
+          <el-button @click="goBack" icon="ArrowLeft">返回</el-button>
+          <el-button @click="goHome" icon="HomeFilled">主页</el-button>
+          <el-popover
+            placement="bottom-end"
+            width="200"
+            trigger="hover"
+            v-if="doctorInfo"
+          >
+            <template #reference>
+              <div class="user-info">
+                <el-avatar size="40" :src="avatarUrl" @error="handleAvatarError">
+                  {{ doctorInfo?.name ? doctorInfo.name.charAt(0).toUpperCase() : 'U' }}
+                </el-avatar>
+                <span class="username">{{ doctorInfo?.name || '未登录' }}</span>
+              </div>
             </template>
-          </el-dropdown>
+            <div class="user-details">
+              <p><strong>姓名:</strong> {{ doctorInfo?.name }}</p>
+              <p><strong>用户名:</strong> {{ doctorInfo?.username }}</p>
+              <el-button @click="showAvatarDialog" size="small">更改头像</el-button>
+              <el-button @click="handleCommand('logout')" size="small" type="danger">登出</el-button>
+            </div>
+          </el-popover>
         </div>
       </el-header>
       <el-main>
         <router-view></router-view>
       </el-main>
     </el-container>
+    <el-dialog
+      v-model="avatarDialogVisible"
+      title="更改头像"
+      width="30%"
+    >
+      <el-upload
+        class="avatar-uploader"
+        action="#"
+        :show-file-list="false"
+        @change="handleAvatarChange"
+        :before-upload="beforeAvatarUpload"
+        :auto-upload="false"
+      >
+        <img v-if="avatarUrl" :src="avatarUrl" class="avatar" />
+        <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+      </el-upload>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="avatarDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="uploadAvatar">确认上传</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </el-container>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useStore } from 'vuex'
-
-import {
-  HomeFilled,
-  User,
-  ChatDotRound,
-  EditPen,
-  Service,
-  ArrowLeft,
-  List,
-  ArrowDown,
-  Reading,
-  Setting,
-  TrendCharts,
-  Loading,
-  Document,
-  Coordinate,
-  Avatar,
-} from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const store = useStore()
 const route = useRoute()
 
-const username = computed(() => store.state.user ? store.state.user.username : '未登录')
-const userRole = computed(() => localStorage.getItem('role')) // 改为从 localStorage 获取角色
+const doctorInfo = ref(null)
+const avatarUrl = ref('')
+const avatarDialogVisible = ref(false)
+const newAvatarFile = ref(null)
+
 const isAuthenticated = computed(() => store.getters.isLoggedIn)
+const userRole = computed(() => localStorage.getItem('role'))
 const isSuperAdmin = computed(() => store.state.user && store.state.user.isSuperAdmin)
 
 const activeMenu = computed(() => {
   return route.path === '/' ? '/' : route.path.split('/')[1] ? `/${route.path.split('/')[1]}` : '/'
 })
+
+onMounted(async () => {
+  if (isAuthenticated.value) {
+    await fetchDoctorInfo()
+    await fetchAvatar()
+  }
+})
+
+watch(() => route.path, async () => {
+  if (isAuthenticated.value) {
+    await fetchAvatar()
+  }
+})
+
+const fetchDoctorInfo = async () => {
+  try {
+    const info = await store.dispatch('fetchDoctorInfo')
+    doctorInfo.value = info
+  } catch (error) {
+    console.error('Failed to fetch doctor info:', error)
+    ElMessage.error('获取医生信息失败')
+  }
+}
+
+const fetchAvatar = async () => {
+  try {
+    const response = await fetch('/api/api/doctor/get_avatar_base64', {
+      headers: {
+        Authorization: `Bearer ${store.state.token}`
+      }
+    })
+    const data = await response.json()
+    avatarUrl.value = data.base64Image
+  } catch (error) {
+    console.error('Failed to fetch avatar:', error)
+  }
+}
+
+const handleAvatarError = () => {
+  avatarUrl.value = ''
+}
+
+const showAvatarDialog = () => {
+  avatarDialogVisible.value = true
+}
+
+const handleAvatarChange = (file) => {
+  newAvatarFile.value = file.raw
+}
+
+const beforeAvatarUpload = (file) => {
+  const isJPG = file.type === 'image/jpeg'
+  const isPNG = file.type === 'image/png'
+  const isLt500K = file.size / 1024 < 500
+
+  if (!isJPG && !isPNG) {
+    ElMessage.error('头像只能是 JPG 或 PNG 格式!')
+    return false
+  }
+  if (!isLt500K) {
+    ElMessage.error('头像大小不能超过 500KB!')
+    return false
+  }
+  return true
+}
+
+const uploadAvatar = async () => {
+  if (!newAvatarFile.value) {
+    ElMessage.warning('请先选择一个新的头像文件')
+    return
+  }
+
+  try {
+    const base64 = await convertToBase64(newAvatarFile.value)
+    const response = await fetch('/api/api/doctor/upload_avatar_base64', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${store.state.token}`
+      },
+      body: JSON.stringify({ base64Image: base64 })
+    })
+
+    if (response.ok) {
+      ElMessage.success('头像上传成功')
+      avatarUrl.value = base64
+      avatarDialogVisible.value = false
+      await fetchAvatar() // Fetch the updated avatar
+    } else {
+      throw new Error('Upload failed')
+    }
+  } catch (error) {
+    console.error('Failed to upload avatar:', error)
+    ElMessage.error('头像上传失败')
+  }
+}
+
+const convertToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = error => reject(error)
+  })
+}
 
 const handleSelect = (key) => {
   router.push(key)
@@ -191,15 +311,46 @@ const handleCommand = (command) => {
 .layout-container {
   height: 100vh;
 }
-.el-header {
-  background-color: #f0f2f5;
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.user-info {
   display: flex;
   align-items: center;
 }
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
+
+.username {
+  margin-left: 8px;
+}
+
+.avatar-uploader .el-upload {
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.avatar-uploader .el-upload:hover {
+  border-color: #409eff;
+}
+
+.avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 178px;
+  height: 178px;
+  line-height: 178px;
+  text-align: center;
+}
+
+.avatar {
+  width: 178px;
+  height: 178px;
+  display: block;
 }
 </style>
