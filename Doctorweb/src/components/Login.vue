@@ -3,8 +3,14 @@
     <el-card class="login-card">
       <h2 class="login-title">登录</h2>
       <el-form :model="loginForm" @submit.prevent="handleLogin" label-position="top">
-        <el-form-item label="邮箱账号">
-          <el-input v-model="loginForm.email" placeholder="请输入邮箱账号"></el-input>
+        <el-form-item label="登录方式">
+          <el-radio-group v-model="loginForm.loginType">
+            <el-radio label="email">邮箱登录</el-radio>
+            <el-radio label="username">用户名登录</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item :label="loginForm.loginType === 'email' ? '邮箱' : '用户名'">
+          <el-input v-model="loginForm.identifier" :placeholder="loginForm.loginType === 'email' ? '请输入邮箱' : '请输入用户名'"></el-input>
         </el-form-item>
         <el-form-item label="密码">
           <el-input
@@ -48,10 +54,12 @@ import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { ElMessage } from 'element-plus';
 
+
 const loginForm = ref({
-  email: '',
+  identifier: '',
   password: '',
-  role: localStorage.getItem('role') || 'doctor', // 从本地存储获取角色，默认为 doctor
+  role: localStorage.getItem('role') || 'doctor',
+  loginType: 'email',
 });
 
 const showPassword = ref(false);
@@ -59,28 +67,25 @@ const showPassword = ref(false);
 const router = useRouter();
 const store = useStore();
 
-// 邮箱格式验证函数
 const validateEmail = (email) => {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return re.test(email);
 }
 
-// 密码格式验证函数
 const validatePassword = (password) => {
   const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{10,16}$/;
   return re.test(password);
 }
 
-// 登录处理函数
 const handleLogin = async () => {
-  const { email, password, role } = loginForm.value;
+  const { identifier, password, role, loginType } = loginForm.value;
 
-  if (!email || !password) {
-    ElMessage.error('请填写邮箱账号和密码');
+  if (!identifier || !password) {
+    ElMessage.error(`请填写${loginType === 'email' ? '邮箱' : '用户名'}和密码`);
     return;
   }
 
-  if (!validateEmail(email)) {
+  if (loginType === 'email' && !validateEmail(identifier)) {
     ElMessage.error('请输入有效的邮箱地址');
     return;
   }
@@ -94,14 +99,15 @@ const handleLogin = async () => {
     let success = false;
 
     if (role === 'doctor') {
-      success = await store.dispatch('doctorlogin', { email, password });
+      success = await store.dispatch('doctorLogin', { identifier, password, loginType });
     } else if (role === 'admin') {
-      success = await store.dispatch('adminlogin', { email, password });
+      success = await store.dispatch('adminLogin', { identifier, password });
     }
+
     if (success) {
-      localStorage.setItem('role', role);  // 设置本地存储角色
+      localStorage.setItem('role', role);
       if (role === 'doctor') {
-        router.push({ name: 'DoctorDashboard' });  // 根据角色跳转
+        router.push({ name: 'DoctorDashboard' });
       } else if (role === 'admin') {
         router.push({ name: 'AdminDashboard' });
       }
@@ -110,15 +116,16 @@ const handleLogin = async () => {
       ElMessage.error('登录失败，请检查您的凭据并重试。');
     }
   } catch (error) {
-    ElMessage.error(error.response?.data || '登录失败');
+    console.error('Login error:', error);
+    ElMessage.error('登录失败，请稍后重试');
   }
 };
 
-// 处理角色切换并更新本地存储
 const handleRoleChange = () => {
   localStorage.setItem('role', loginForm.value.role);
 };
 </script>
+
 
 <style scoped>
 .login-container {

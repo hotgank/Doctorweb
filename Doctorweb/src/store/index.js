@@ -16,6 +16,10 @@ export default createStore({
       state.doctor = doctor;
       localStorage.setItem('doctor', JSON.stringify(doctor));
     },
+    updateDoctor(state, updatedInfo) {
+      state.doctor = { ...state.doctor, ...updatedInfo };
+      localStorage.setItem('doctor', JSON.stringify(state.doctor));
+    },
     setUser(state, user) {
       state.user = user;
       localStorage.setItem('user', JSON.stringify(user));
@@ -47,9 +51,12 @@ export default createStore({
   },
 
   actions: {
-    async doctorlogin({ commit, dispatch }, { email, password }) {
+    async doctorLogin({ commit }, { identifier, password, loginType }) {
       try {
-        const response = await axios.post('/api/api/DoctorLogin/loginByEmail', { email, password });
+        const endpoint = loginType === 'email' ? '/api/api/DoctorLogin/loginByEmail' : '/api/api/DoctorLogin/loginByUsername';
+        const payload = loginType === 'email' ? { email: identifier, password } : { username: identifier, password };
+        
+        const response = await axios.post(endpoint, payload);
 
         if (response && response.data) {
           const { token, doctor } = response.data;
@@ -58,12 +65,9 @@ export default createStore({
           commit('setDoctor', doctor);
           commit('setRole', 'doctor');
 
-          localStorage.setItem('token', token);
-          localStorage.setItem('doctor', JSON.stringify(doctor));
-          localStorage.setItem('role', 'doctor');
+          // Set up periodic data fetching
+          this.dispatch('startPeriodicDataFetch');
 
-          // await dispatch('fetchDoctors');
-          // await dispatch('fetchAdmins');
           return true;
         } else {
           throw new Error('响应数据不包含 token 或 doctor 对象');
@@ -74,9 +78,9 @@ export default createStore({
       }
     },
 
-    async adminlogin({ commit, dispatch }, { email, password }) {
+    async adminLogin({ commit }, { identifier, password }) {
       try {
-        const response = await axios.post('/api/api/AdminLogin/login', { email, password });
+        const response = await axios.post('/api/api/AdminLogin/login', { email: identifier, password });
 
         if (response && response.data) {
           const { token, admin } = response.data;
@@ -85,12 +89,9 @@ export default createStore({
           commit('setUser', admin);
           commit('setRole', 'admin');
 
-          localStorage.setItem('token', token);
-          localStorage.setItem('user', JSON.stringify(admin));
-          localStorage.setItem('role', 'admin');
+          // Set up periodic data fetching
+          this.dispatch('startPeriodicDataFetch');
 
-          // await dispatch('fetchDoctors');
-          // await dispatch('fetchAdmins');
           return true;
         } else {
           throw new Error('响应数据不包含 token 或 admin 对象');
@@ -103,25 +104,78 @@ export default createStore({
 
     logout({ commit }) {
       commit('clearUser');
+      this.dispatch('stopPeriodicDataFetch');
     },
 
-    async fetchDoctors({ commit }) {
-      try {
-        const response = await axios.get('/api/doctors');
-        const doctors = response.data;
-        commit('setDoctors', doctors);
-      } catch (error) {
-        console.error('Failed to fetch doctors:', error);
+    startPeriodicDataFetch({ dispatch }) {
+      const fetchInterval = setInterval(() => {
+        dispatch('fetchDoctors');
+        dispatch('fetchAdmins');
+      }, 60000); // Fetch every 60 seconds
+
+      // Store the interval ID
+      this.state.fetchIntervalId = fetchInterval;
+    },
+
+    stopPeriodicDataFetch({ state }) {
+      if (state.fetchIntervalId) {
+        clearInterval(state.fetchIntervalId);
+        state.fetchIntervalId = null;
       }
     },
 
+    async fetchDoctors({ commit }) {
+      // try {
+      //   const response = await axios.get('/api/doctors');
+      //   const doctors = response.data;
+      //   commit('setDoctors', doctors);
+      // } catch (error) {
+      //   console.error('Failed to fetch doctors:', error);
+      // }
+    },
+
     async fetchAdmins({ commit }) {
+      // try {
+      //   const response = await axios.get('/api/admins');
+      //   const admins = response.data;
+      //   commit('setAdmins', admins);
+      // } catch (error) {
+      //   console.error('Failed to fetch admins:', error);
+      // }
+    },
+
+    async fetchDoctorInfo({ commit, state }) {
       try {
-        const response = await axios.get('/api/admins');
-        const admins = response.data;
-        commit('setAdmins', admins);
+        const response = await axios.get('/api/api/doctor/information', {
+          headers: {
+            Authorization: `Bearer ${state.token}`
+          }
+        });
+        const doctorInfo = response.data;
+        commit('setDoctor', doctorInfo);
+        return doctorInfo;
       } catch (error) {
-        console.error('Failed to fetch admins:', error);
+        console.error('Failed to fetch doctor information:', error);
+        throw error;
+      }
+    },
+
+    async updateDoctorInfo({ commit, state }, updatedInfo) {
+      try {
+        const response = await axios.post('/api/api/doctor/updateData', updatedInfo, {
+          headers: {
+            Authorization: `Bearer ${state.token}`
+          }
+        });
+        if (response.data === 'Data updated successfully') {
+          commit('updateDoctor', updatedInfo);
+          return true;
+        } else {
+          throw new Error('Failed to update doctor information');
+        }
+      } catch (error) {
+        console.error('Failed to update doctor information:', error);
+        throw error;
       }
     },
   },
