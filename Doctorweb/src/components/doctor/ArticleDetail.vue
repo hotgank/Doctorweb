@@ -2,45 +2,23 @@
   <div class="article-detail" v-if="article">
     <h1 class="mb-4">{{ article.title }}</h1>
     <div class="article-meta mb-4">
-      <span>作者：{{ article.author }}</span>
+      <el-avatar :size="50" :src="doctorInfo.avatar"></el-avatar>
+      <span class="ml-2">作者：{{ doctorInfo.name }}</span>
       <span class="mx-4">发布日期：{{ article.publishDate }}</span>
-      <span>
-        评分：
-        <el-rate
-          v-model="article.rating"
-          disabled
-          show-score
-          text-color="#ff9900"
-        ></el-rate>
-      </span>
+      <span>类型：{{ article.type }}</span>
     </div>
     <div class="article-content mb-4">
       {{ article.content }}
     </div>
-    <div class="article-rating">
-      <h3 class="mb-2">评价文章</h3>
-      <el-rate
-        v-model="userRating"
-        show-score
-        @change="submitRating"
-      ></el-rate>
-    </div>
-    <div class="article-comments mt-4">
-      <h3 class="mb-2">评论</h3>
-      <el-input
-        v-model="newComment"
-        type="textarea"
-        :rows="3"
-        placeholder="请输入您的评论"
-      ></el-input>
-      <el-button type="primary" @click="submitComment" class="mt-2">提交评论</el-button>
-      <div class="comments-list mt-4">
-        <div v-for="comment in article.comments" :key="comment.id" class="comment mb-2">
-          <strong>{{ comment.author }}：</strong>
-          <span>{{ comment.content }}</span>
-          <div class="text-gray-500 text-sm">{{ comment.date }}</div>
-        </div>
-      </div>
+    <div class="doctor-info mt-4">
+      <h3>作者信息</h3>
+      <p><strong>姓名：</strong>{{ doctorInfo.name }}</p>
+      <p><strong>用户名：</strong>{{ doctorInfo.username }}</p>
+      <p><strong>性别：</strong>{{ doctorInfo.gender }}</p>
+      <p><strong>职位：</strong>{{ doctorInfo.position || 'N/A' }}</p>
+      <p><strong>工作单位：</strong>{{ doctorInfo.workplace }}</p>
+      <p><strong>资格：</strong>{{ doctorInfo.qualification || 'N/A' }}</p>
+      <p><strong>经验：</strong>{{ doctorInfo.experience }}</p>
     </div>
   </div>
 </template>
@@ -48,56 +26,56 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { useStore } from 'vuex'
+import axios from 'axios'
 
 const route = useRoute()
+const store = useStore()
 const article = ref(null)
-const userRating = ref(0)
-const newComment = ref('')
+const doctorInfo = ref({})
 
-onMounted(() => {
-  // 模拟从API获取文章数据
-  setTimeout(() => {
+const fetchArticle = async () => {
+  try {
+    const response = await axios.post('/api/api/healthArticle/details', 
+      { articleId: route.params.id },
+      {
+        headers: {
+          Authorization: `Bearer ${store.state.token}`
+        }
+      }
+    )
     article.value = {
-      id: route.params.id,
-      title: '儿童常见疾病预防指南',
-      author: '张医生',
-      publishDate: '2023-05-01',
-      rating: 4.5,
-      content: '这里是文章的详细内容。包括儿童常见疾病的预防措施、注意事项等。',
-      comments: [
-        { id: 1, author: '李医生', content: '非常实用的文章，谢谢分享！', date: '2023-05-02' },
-        { id: 2, author: '王医生', content: '建议可以多加一些具体案例。', date: '2023-05-03' },
-      ]
+      ...response.data,
+      publishDate: new Date(response.data.publishDate).toLocaleString()
     }
-  }, 1000)
-})
-
-const submitRating = (value) => {
-  // 这里应该是一个API调用来提交评分
-  console.log('提交评分:', value)
-  ElMessage({
-    message: '评分提交成功！',
-    type: 'success',
-  })
-}
-
-const submitComment = () => {
-  if (newComment.value.trim()) {
-    // 这里应该是一个API调用来提交评论
-    article.value.comments.push({
-      id: article.value.comments.length + 1,
-      author: '当前用户',
-      content: newComment.value,
-      date: new Date().toLocaleDateString()
-    })
-    newComment.value = ''
-    ElMessage({
-      message: '评论提交成功！',
-      type: 'success',
-    })
+    fetchDoctorInfo()
+  } catch (error) {
+    console.error('Failed to fetch article:', error)
   }
 }
+
+const fetchDoctorInfo = async () => {
+  try {
+    const response = await axios.post('/api/api/healthArticle/getDoctorByArticleId', 
+      { articleId: route.params.id },
+      {
+        headers: {
+          Authorization: `Bearer ${store.state.token}`
+        }
+      }
+    )
+    doctorInfo.value = {
+      ...response.data,
+      birthdate: new Date(response.data.birthdate).toLocaleDateString()
+    }
+  } catch (error) {
+    console.error('Failed to fetch doctor info:', error)
+  }
+}
+
+onMounted(() => {
+  fetchArticle()
+})
 </script>
 
 <style scoped>
@@ -107,5 +85,10 @@ const submitComment = () => {
 }
 .article-content {
   line-height: 1.6;
+}
+.doctor-info {
+  background-color: #f5f7fa;
+  padding: 20px;
+  border-radius: 4px;
 }
 </style>
