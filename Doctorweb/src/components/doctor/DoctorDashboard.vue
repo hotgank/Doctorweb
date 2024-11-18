@@ -23,27 +23,83 @@
     </el-row>
 
     <el-tabs v-model="activeTab" class="mt-6">
-      <el-tab-pane label="即将进行的咨询" name="upcoming">
-        <el-table :data="upcomingConsultations" style="width: 100%">
-          <el-table-column prop="patientName" label="患者姓名" width="180" />
-          <el-table-column prop="time" label="时间" width="180" />
+      <el-tab-pane label="待处理咨询" name="pending">
+        <el-table :data="pendingPatients" style="width: 100%">
+          <el-table-column prop="username" label="用户名" width="180" />
+          <el-table-column prop="status" label="状态" width="180" />
+          <el-table-column label="头像" width="180">
+            <template #default="scope">
+              <el-avatar :size="40" :src="scope.row.avatarUrl" />
+            </template>
+          </el-table-column>
           <el-table-column fixed="right" label="操作" width="180">
             <template #default="scope">
-              <el-button link type="primary" size="small" @click="viewReport(scope.row.id)">查看报告</el-button>
+              <el-button link type="primary" size="small" @click="approvePatient(scope.row)">批准</el-button>
+              <el-button link type="danger" size="small" @click="rejectPatient(scope.row)">拒绝</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-tab-pane>
+      <el-tab-pane label="我的患者" name="myPatients">
+        <el-table :data="myPatients" style="width: 100%">
+          <el-table-column prop="username" label="用户名" width="180" />
+          <el-table-column prop="status" label="状态" width="180" />
+          <el-table-column label="头像" width="180">
+            <template #default="scope">
+              <el-avatar :size="40" :src="scope.row.avatarUrl" />
+            </template>
+          </el-table-column>
+          <el-table-column fixed="right" label="操作" width="180">
+            <template #default="scope">
+              <el-button link type="primary" size="small" @click="viewPatientReports(scope.row)">查看报告</el-button>
             </template>
           </el-table-column>
         </el-table>
       </el-tab-pane>
     </el-tabs>
 
-    <!-- 查看报告对话框 -->
-    <el-dialog v-model="showReport" title="检测报告" width="70%" :before-close="handleCloseReport">
-      <el-form :model="reportForm" label-width="120px">
-        <!-- ...其他表单内容... -->
+    <el-dialog v-model="showReports" title="患者报告" width="70%">
+      <el-table :data="patientReports" style="width: 100%">
+        <el-table-column prop="createdAt" label="日期" width="180">
+          <template #default="scope">
+            {{ formatDate(scope.row.createdAt) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="reportType" label="类型" width="120" />
+        <el-table-column prop="state" label="状态" width="120" />
+        <el-table-column prop="result" label="结果" width="120" />
+        <el-table-column label="操作" width="120">
+          <template #default="scope">
+            <el-button @click="viewReportDetails(scope.row)" type="text" size="small">查看详情</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-dialog>
+
+    <el-dialog v-model="showReportDetails" title="报告详情" width="70%">
+      <el-form :model="currentReport" label-width="120px">
+        <el-form-item label="报告类型">
+          <span>{{ currentReport.reportType }}</span>
+        </el-form-item>
+        <el-form-item label="状态">
+          <span>{{ currentReport.state }}</span>
+        </el-form-item>
+        <el-form-item label="结果">
+          <span>{{ currentReport.result }}</span>
+        </el-form-item>
+        <el-form-item label="分析">
+          <el-input type="textarea" v-model="currentReport.analyse" :rows="4" readonly></el-input>
+        </el-form-item>
+        <el-form-item label="医生评论">
+          <el-input type="textarea" v-model="currentReport.comment" :rows="4"></el-input>
+        </el-form-item>
+        <el-form-item label="报告图片">
+          <el-image :src="currentReport.url" :preview-src-list="[currentReport.url]"></el-image>
+        </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button type="primary" @click="saveReport">确定</el-button>
+          <el-button type="primary" @click="saveReportComment">保存评论</el-button>
         </span>
       </template>
     </el-dialog>
@@ -53,48 +109,128 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import axiosInstance from '../../axios/index'
+import axios from 'axios'
+import { useStore } from 'vuex'
+import { User, ChatDotRound, Document, Star } from '@element-plus/icons-vue'
+
+const store = useStore()
 
 const stats = ref([
-  { title: '总患者数', value: '0', description: '较上月增长20%' },
-  { title: '今日咨询', value: '0', description: '比昨天多3个' },
-  { title: '已发布文章', value: '0', description: '本周新增2篇' },
-  { title: '评分', value: '0', description: '较上月提高0.1' }
+  { title: '总患者数', value: '0', description: '较上月增长20%', icon: User, route: '/patient-index' },
+  { title: '今日咨询', value: '0', description: '比昨天多3个', icon: ChatDotRound, route: '/consultation' },
+  { title: '已发布文章', value: '0', description: '本周新增2篇', icon: Document, route: '/articles' },
+  { title: '评分', value: '0', description: '较上月提高0.1', icon: Star }
 ])
 
-const activeTab = ref('upcoming')
-const showReport = ref(false)
-const reportForm = ref({})
-const upcomingConsultations = ref([])
+const activeTab = ref('pending')
+const pendingPatients = ref([])
+const myPatients = ref([])
+const patientReports = ref([])
+const showReports = ref(false)
+const showReportDetails = ref(false)
+const currentReport = ref({})
 
-const fetchDoctorInfo = async () => {
+const fetchPendingPatients = async () => {
   try {
-    const response = await axiosInstance.get('/api/doctor/information')
-    // const data = response.data
-    // stats.value = data.stats
-    // upcomingConsultations.value = data.upcomingConsultations
+    const response = await axios.get('/api/api/doctor/relation/selectPendingPatients', {
+      headers: {
+        Authorization: `Bearer ${store.state.token}`
+      }
+    })
+    pendingPatients.value = response.data
   } catch (error) {
-    ElMessage.error('获取医生信息失败')
+    console.error('Failed to fetch pending patients:', error)
+    ElMessage.error('获取待处理咨询失败')
   }
 }
 
-const viewReport = async (id) => {
-  // try {
-  //   const response = await axiosInstance.get(`/api/report/${id}`)
-  //   reportForm.value = response.data
-  //   showReport.value = true
-  // } catch (error) {
-  //   ElMessage.error('获取报告失败')
-  // }
+const fetchMyPatients = async () => {
+  try {
+    const response = await axios.get('/api/api/doctor/relation/selectMyPatients', {
+      headers: {
+        Authorization: `Bearer ${store.state.token}`
+      }
+    })
+    myPatients.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch my patients:', error)
+    ElMessage.error('获取我的患者列表失败')
+  }
 }
 
-const handleCloseReport = () => {
-  showReport.value = false
+const approvePatient = async (patient) => {
+  try {
+    await axios.post('/api/api/doctor/relation/approve', { userId: patient.userId }, {
+      headers: {
+        Authorization: `Bearer ${store.state.token}`
+      }
+    })
+    ElMessage.success('已批准患者咨询')
+    await fetchPendingPatients()
+    await fetchMyPatients()
+  } catch (error) {
+    console.error('Failed to approve patient:', error)
+    ElMessage.error('批准患者咨询失败')
+  }
+}
+
+const rejectPatient = async (patient) => {
+  try {
+    await axios.post('/api/api/doctor/relation/reject', { userId: patient.userId }, {
+      headers: {
+        Authorization: `Bearer ${store.state.token}`
+      }
+    })
+    ElMessage.success('已拒绝患者咨询')
+    await fetchPendingPatients()
+  } catch (error) {
+    console.error('Failed to reject patient:', error)
+    ElMessage.error('拒绝患者咨询失败')
+  }
+}
+
+const viewPatientReports = async (patient) => {
+  try {
+    const response = await axios.post('/api/api/doctor/relation/selectReports', { userId: patient.userId }, {
+      headers: {
+        Authorization: `Bearer ${store.state.token}`
+      }
+    })
+    patientReports.value = response.data
+    showReports.value = true
+  } catch (error) {
+    console.error('Failed to fetch patient reports:', error)
+    ElMessage.error('获取患者报告失败')
+  }
+}
+
+const viewReportDetails = (report) => {
+  currentReport.value = report
+  showReportDetails.value = true
+}
+
+const saveReportComment = async () => {
+  // 这里应该实现保存医生评论的逻辑
+  // 由于API文档中没有提供相应的接口，这里只是模拟了保存操作
+  ElMessage.success('评论已保存')
+  showReportDetails.value = false
+}
+
+const formatDate = (dateArray) => {
+  const [year, month, day, hour, minute, second] = dateArray
+  return new Date(year, month - 1, day, hour, minute, second).toLocaleString()
+}
+
+const handleCardClick = (item) => {
+  if (item.route) {
+    // 这里应该实现路由跳转逻辑
+    console.log('Navigate to:', item.route)
+  }
 }
 
 onMounted(() => {
-  fetchDoctorInfo()
-  setInterval(fetchDoctorInfo, 30000) // 每30秒获取数据
+  fetchPendingPatients()
+  fetchMyPatients()
 })
 </script>
 
@@ -122,40 +258,6 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.bordered-section {
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  padding: 10px;
-}
-
-.photo-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 15px;
-}
-
-.photo-item {
-  width: 48%;
-}
-
-.photo-frame {
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  overflow: hidden;
-  aspect-ratio: 1;
-}
-
-.photo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.photo-label {
-  text-align: center;
-  margin-top: 5px;
 }
 
 .rating-card {

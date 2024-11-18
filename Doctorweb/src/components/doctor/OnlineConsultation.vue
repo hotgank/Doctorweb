@@ -9,11 +9,11 @@
             </div>
           </template>
           <div class="patient-list">
-            <div v-for="patient in patients" :key="patient.id" class="patient-item" @click="selectPatient(patient)">
-              <el-avatar :size="30" :icon="Avatar" />
+            <div v-for="patient in patients" :key="patient.userId" class="patient-item" @click="selectPatient(patient)">
+              <el-avatar :size="30" :src="patient.avatarUrl" />
               <div class="patient-info">
-                <span class="patient-name">{{ patient.name }}</span>
-                <span class="patient-age-gender">{{ patient.age }}岁 {{ patient.gender }}</span>
+                <span class="patient-name">{{ patient.username }}</span>
+                <span class="patient-status">{{ patient.status }}</span>
               </div>
             </div>
           </div>
@@ -28,24 +28,21 @@
           </template>
           <div v-if="selectedPatient" class="patient-details">
             <div class="basic-info">
-              <p><strong>姓名：</strong>{{ selectedPatient.name }}</p>
-              <p><strong>年龄：</strong>{{ selectedPatient.age }}</p>
-              <p><strong>性别：</strong>{{ selectedPatient.gender }}</p>
+              <p><strong>用户名：</strong>{{ selectedPatient.username }}</p>
+              <p><strong>状态：</strong>{{ selectedPatient.status }}</p>
             </div>
             <el-divider />
-            <div class="latest-report">
-              <h4>最新体态检测报告</h4>
-              <p><strong>日期：</strong>{{ selectedPatient.latestReport.date }}</p>
-              <p><strong>摘要：</strong>{{ selectedPatient.latestReport.summary }}</p>
-              <el-button type="primary" size="small" @click="viewReport(selectedPatient.latestReport)">查看报告</el-button>
-            </div>
-            <el-divider />
-            <div class="historical-reports">
-              <h4>历史体态报告</h4>
-              <el-table :data="selectedPatient.historicalReports" style="width: 100%" :max-height="200">
-                <el-table-column prop="date" label="日期" width="100"></el-table-column>
-                <el-table-column prop="summary" label="摘要" show-overflow-tooltip></el-table-column>
-                <el-table-column label="操作" width="80">
+            <div class="reports">
+              <h4>检测报告</h4>
+              <el-table :data="patientReports" style="width: 100%" :max-height="400">
+                <el-table-column prop="createdAt" label="日期" width="180">
+                  <template #default="scope">
+                    {{ formatDate(scope.row.createdAt) }}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="reportType" label="类型" width="120"></el-table-column>
+                <el-table-column prop="state" label="状态" width="120"></el-table-column>
+                <el-table-column label="操作" width="120">
                   <template #default="scope">
                     <el-button @click="viewReport(scope.row)" type="text" size="small">查看</el-button>
                   </template>
@@ -65,19 +62,9 @@
           <div class="chat-container">
             <div class="chat-messages" ref="chatMessagesRef">
               <div v-for="(msg, index) in messages" :key="index" :class="['message', msg.sender === 'doctor' ? 'message-right' : 'message-left']">
-                <el-avatar :size="30" :icon="msg.sender === 'doctor' ? User : Avatar" />
+                <el-avatar :size="30" :src="msg.sender === 'doctor' ? doctorAvatar : selectedPatient.avatarUrl" />
                 <div class="message-content">
-                  <template v-if="msg.type === 'text'">
-                    {{ msg.content }}
-                  </template>
-                  <template v-else-if="msg.type === 'image'">
-                    <el-image 
-                      :src="msg.content" 
-                      :preview-src-list="[msg.content]"
-                      fit="cover"
-                      class="message-image"
-                    />
-                  </template>
+                  {{ msg.content }}
                 </div>
               </div>
             </div>
@@ -87,19 +74,6 @@
                 placeholder="输入消息..."
                 @keyup.enter="handleSendMessage"
               >
-                <template #prepend>
-                  <el-upload
-                    class="upload-demo"
-                    action="#"
-                    :auto-upload="false"
-                    :on-change="handleFileChange"
-                    :show-file-list="false"
-                  >
-                    <el-button type="primary">
-                      <el-icon><Picture /></el-icon>
-                    </el-button>
-                  </el-upload>
-                </template>
                 <template #append>
                   <el-button @click="handleSendMessage">发送</el-button>
                 </template>
@@ -111,229 +85,120 @@
     </el-row>
 
     <el-dialog v-model="showReport" title="检测报告" width="70%" :before-close="handleCloseReport">
-      <el-form :model="reportForm" label-width="120px">
-        <el-row :gutter="20" class="mb-4">
-          <el-col :span="12">
-            <el-form-item label="姓名:">
-              <span>{{ reportForm.name }}</span>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="年龄:">
-              <span>{{ reportForm.age }}</span>
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-form-item label="基础信息">
-          <el-row :gutter="20" class="bordered-section">
-            <el-col :span="12">
-              <el-form-item label="身高:">
-                <span>{{ reportForm.height }}</span>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="腰围:">
-                <span>{{ reportForm.waist }}</span>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="体重:">
-                <span>{{ reportForm.weight }}</span>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="臀围:">
-                <span>{{ reportForm.hip }}</span>
-              </el-form-item>
-            </el-col>
-          </el-row>
+      <el-form :model="currentReport" label-width="120px">
+        <el-form-item label="报告类型">
+          <span>{{ currentReport.reportType }}</span>
         </el-form-item>
-
-        <!-- 评测结果和方案分析 -->
-        <el-form-item label="评测结果">
-          <el-input
-            type="textarea"
-            v-model="reportForm.assessmentResults"
-            :readonly="!isEditing"
-            rows="4"
-          ></el-input>
+        <el-form-item label="检测结果">
+          <span>{{ currentReport.result }}</span>
         </el-form-item>
-        <el-form-item label="方案分析">
-          <el-input
-            type="textarea"
-            v-model="reportForm.planAnalysis"
-            :readonly="!isEditing"
-            rows="4"
-          ></el-input>
+        <el-form-item label="分析">
+          <el-input type="textarea" v-model="currentReport.analyse" :rows="4" readonly></el-input>
         </el-form-item>
-        <el-form-item label="医生留言">
-          <el-input
-            type="textarea"
-            v-model="reportForm.doctorMessage"
-            :readonly="!isEditing"
-            rows="4"
-          ></el-input>
+        <el-form-item label="医生评论">
+          <el-input type="textarea" v-model="currentReport.comment" :rows="4" :readonly="!isEditing"></el-input>
         </el-form-item>
-
-        <!-- 照片部分 -->
-        <el-form-item label="照片">
-          <div class="photo-row">
-            <div class="photo-item">
-              <div class="photo-frame">
-                <img :src="reportForm.frontPhoto" alt="正面照" class="photo" />
-              </div>
-              <p class="photo-label">正面照</p>
-            </div>
-            <div class="photo-item">
-              <div class="photo-frame">
-                <img :src="reportForm.leftPhoto" alt="左侧照" class="photo" />
-              </div>
-              <p class="photo-label">左侧照</p>
-            </div>
-          </div>
-          <div class="photo-row" style="margin-left: 15px">
-            <div class="photo-item">
-              <div class="photo-frame">
-                <img :src="reportForm.backPhoto" alt="背面照" class="photo" />
-              </div>
-              <p class="photo-label">背面照</p>
-            </div>
-            <div class="photo-item">
-              <div class="photo-frame">
-                <img :src="reportForm.rightPhoto" alt="右侧照" class="photo" />
-              </div>
-              <p class="photo-label">右侧照</p>
-            </div>
-          </div>
+        <el-form-item label="报告图片">
+          <el-image :src="currentReport.url" :preview-src-list="[currentReport.url]"></el-image>
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button v-if="!isEditing" @click="startEdit">开始编辑</el-button>
-          <el-button v-else @click="cancelEdit">取消编辑</el-button>
-          <el-button type="primary" @click="saveReport" :disabled="!isEditing">确定</el-button>
+          <el-button v-if="!isEditing" @click="startEdit">编辑评论</el-button>
+          <el-button v-else @click="cancelEdit">取消</el-button>
+          <el-button type="primary" @click="saveReport" :disabled="!isEditing">保存</el-button>
         </span>
       </template>
     </el-dialog>
-
-
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
-import { User, Avatar, Picture } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus';
+import { ElMessage } from 'element-plus'
+import { useStore } from 'vuex'
+import axios from 'axios'
 
+const store = useStore()
+
+const patients = ref([])
+const selectedPatient = ref(null)
+const patientReports = ref([])
 const messages = ref([])
 const newMessage = ref('')
-const selectedPatient = ref(null)
 const chatMessagesRef = ref(null)
-const selectedImage = ref(null)
 const showReport = ref(false)
 const isEditing = ref(false)
-const originalReport = ref({})
+const currentReport = ref({})
+const doctorAvatar = ref('')  // 这里应该设置医生的头像URL
 
-const reportForm = ref({
-  name: '',
-  age: '',
-  height: '',
-  weight: '',
-  waist: '',
-  hip: '',
-  assessmentResults: '',
-  planAnalysis: '',
-  doctorMessage: '',
-  frontPhoto: '',
-  leftPhoto: '',
-  backPhoto: '',
-  rightPhoto: '',
-})
-
-const patients = ref([
-  { 
-    id: 1, 
-    name: '小明', 
-    age: 8, 
-    gender: '男', 
-    avatar: '/placeholder.svg?height=40&width=40',
-    latestReport: {
-      id: 'report1',
-      date: '2023-05-01',
-      summary: '体态良好，建议继续保持正确的坐姿和运动习惯。',
-    },
-    historicalReports: [
-      {
-        id: 'report2',
-        date: '2023-04-01',
-        summary: '轻微驼背，建议增加背部肌肉锻炼。',
-      },
-      {
-        id: 'report3',
-        date: '2023-03-01',
-        summary: '体态正常，继续保持。',
+const fetchPatients = async () => {
+  try {
+    const response = await axios.get('/api/api/doctor/relation/selectMyPatients', {
+      headers: {
+        Authorization: `Bearer ${store.state.token}`
       }
-    ],
-    consultationHistory: [
-      { sender: 'patient', content: '医生，小红最近检查出轻度脊柱侧弯，我们该怎么办？', type: 'text' },
-      { sender: 'doctor', content: '您好，不用太过担心。轻度脊柱侧弯在小红这个年龄段是可以通过适当的运动来改善的。我们可以从以下几个方面着手：', type: 'text' },
-      { sender: 'doctor', content: '1. 保持良好的坐姿和站姿\n2. 进行针对性的矫正运动，如猫狗伸展、骨盆倾斜等\n3. 游泳是很好的全身运动，特别有利于改善脊柱问题\n4. 定期复查，监测侧弯的变化', type: 'text' },
-      { sender: 'patient', content: '谢谢医生，我们会严格按照您的建议执行。请问多久做一次复查比较好？', type: 'text' },
-      { sender: 'doctor', content: '建议每3-6个月复查一次。如果在这期间发现明显变化或有不适，随时可以来院检查。坚持治疗和运动，相信小红的情况会逐渐改善的。', type: 'text' },
-    ]
-  },
-  { 
-    id: 3, 
-    name: '小张', 
-    age: 9, 
-    gender: '男', 
-    avatar: '/placeholder.svg?height=40&width=40',
-    latestReport: {
-      date: '2023-05-03',
-      summary: '颈椎前倾，建议调整电子设备使用姿势，增加颈部肌肉锻炼。',
-    },
-    consultationHistory: [
-      { sender: 'patient', content: '医生，小张最近总是说脖子酸痛，检查报告说是颈椎前倾，这是怎么回事？', type: 'text' },
-      { sender: 'doctor', content: '您好，颈椎前倾通常是由于长期低头看电子设备或不良坐姿导致的。对于9岁的孩子来说，这个问题越来越常见了。', type: 'text' },
-      { sender: 'doctor', content: '我的建议是：\n1. 限制使用电子设备的时间，每30分钟要休息5分钟\n2. 调整设备使用姿势，将屏幕抬高到眼睛水平\n3. 进行颈部肌肉锻炼，如颈部伸展、转动等\n4. 保持正确的坐姿，背部挺直，肩膀放松', type: 'text' },
-      { sender: 'patient', content: '明白了，请问有什么简单的颈部锻炼动作可以教给小张吗？', type: 'text' },
-      { sender: 'doctor', content: '当然，这里有几个简单的动作：\n1. 缓慢地将头向后仰，感受颈部前侧的拉伸，保持5秒后回正\n2. 轻轻地将头向左右两侧倾斜，每侧保持5秒\n3. 慢慢地转动头部，画一个想象中的圆\n每个动作重复5-10次，每天做2-3次。记住，动作要缓慢轻柔，如果感到疼痛要立即停止。', type: 'text' },
-    ]
-  },
-])
-
-
-
-const selectPatient = (patient) => {
-  selectedPatient.value = patient
-  messages.value = patient.consultationHistory
-  nextTick(() => {
-    if (chatMessagesRef.value) {
-      chatMessagesRef.value.scrollTop = chatMessagesRef.value.scrollHeight
-    }
-  })
+    })
+    patients.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch patients:', error)
+    ElMessage.error('获取患者列表失败')
+  }
 }
 
-onMounted(() => {
-  // 默认选择第一个患者
-  if (patients.value.length > 0) {
-    selectPatient(patients.value[0])
+const selectPatient = async (patient) => {
+  selectedPatient.value = patient
+  try {
+    const response = await axios.post('/api/api/doctor/relation/selectReports', { userId: patient.userId }, {
+      headers: {
+        Authorization: `Bearer ${store.state.token}`
+      }
+    })
+    patientReports.value = response.data
+    // 这里应该加载与该患者的聊天记录
+    // 由于API中没有提供获取聊天记录的接口，这里暂时清空消息列表
+    messages.value = []
+  } catch (error) {
+    console.error('Failed to fetch patient reports:', error)
+    ElMessage.error('获取患者报告失败')
   }
-})
+}
+
+const viewReport = (report) => {
+  currentReport.value = report
+  showReport.value = true
+}
+
+const handleCloseReport = () => {
+  if (isEditing.value) {
+    cancelEdit()
+  }
+  showReport.value = false
+}
+
+const startEdit = () => {
+  isEditing.value = true
+}
+
+const cancelEdit = () => {
+  isEditing.value = false
+  currentReport.value = { ...currentReport.value }
+}
+
+const saveReport = async () => {
+  // 这里应该实现保存报告评论的逻辑
+  // 由于API中没有提供相应的接口，这里只是模拟了保存操作
+  ElMessage.success('报告评论已保存')
+  isEditing.value = false
+  showReport.value = false
+}
 
 const handleSendMessage = () => {
-  if (newMessage.value.trim() || selectedImage.value) {
-    if (selectedImage.value) {
-      messages.value.push({ sender: 'doctor', content: selectedImage.value, type: 'image' })
-      selectedPatient.value.consultationHistory.push({ sender: 'doctor', content: selectedImage.value, type: 'image' })
-      selectedImage.value = null
-    }
-    if (newMessage.value.trim()) {
-      messages.value.push({ sender: 'doctor', content: newMessage.value, type: 'text' })
-      selectedPatient.value.consultationHistory.push({ sender: 'doctor', content: newMessage.value, type: 'text' })
-      newMessage.value = ''
-    }
+  if (newMessage.value.trim()) {
+    messages.value.push({ sender: 'doctor', content: newMessage.value })
+    // 这里应该调用API来发送消息
+    // 由于API中没有提供相应的接口，这里只是模拟了发送操作
+    newMessage.value = ''
     nextTick(() => {
       if (chatMessagesRef.value) {
         chatMessagesRef.value.scrollTop = chatMessagesRef.value.scrollHeight
@@ -342,89 +207,27 @@ const handleSendMessage = () => {
   }
 }
 
-const handleFileChange = (file) => {
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    selectedImage.value = e.target.result
-    handleSendMessage()
-  }
-  reader.readAsDataURL(file.raw)
+const formatDate = (dateArray) => {
+  const [year, month, day, hour, minute, second] = dateArray
+  return new Date(year, month - 1, day, hour, minute, second).toLocaleString()
 }
 
-/**
- * 关闭报告对话框
- */
- const handleCloseReport = () => {
-  if (isEditing.value) {
-    // 如果正在编辑，取消编辑并关闭对话框
-    cancelEdit()
-  } else {
-    showReport.value = false
-  }
-}
-
-const viewReport = (report) => {
-  // 使用传递的报告数据填充 reportForm
-  reportForm.value = {
-    name: selectedPatient.value.name,
-    age: selectedPatient.value.age,
-    height: report.height || '170cm',
-    weight: report.weight || '65kg',
-    waist: report.waist || '80cm',
-    hip: report.hip || '90cm',
-    assessmentResults: report.assessmentResults || '评测结果将在这里显示。',
-    planAnalysis: report.planAnalysis || '方案分析将在这里显示。',
-    doctorMessage: report.doctorMessage || '医生留言将在这里显示。',
-    frontPhoto: report.frontPhoto || 'https://via.placeholder.com/150',
-    leftPhoto: report.leftPhoto || 'https://via.placeholder.com/150',
-    backPhoto: report.backPhoto || 'https://via.placeholder.com/150',
-    rightPhoto: report.rightPhoto || 'https://via.placeholder.com/150',
-  }
-  // 保存原始数据以便取消编辑时恢复
-  originalReport.value = { ...reportForm.value }
-  isEditing.value = false
-  showReport.value = true
-}
-
-
-/**
- * 开始编辑报告
- */
- const startEdit = () => {
-  isEditing.value = true
-}
-
-/**
- * 取消编辑报告
- */
-const cancelEdit = () => {
-  // 恢复原始数据
-  reportForm.value = { ...originalReport.value }
-  isEditing.value = false
-}
-
-/**
- * 保存报告编辑
- */
- const saveReport = () => {
-  // 这里应将 reportForm 的内容保存到后端或状态管理中
-  // 目前仅显示成功消息
-  ElMessage.success('检测报告已保存')
-  isEditing.value = false
-  showReport.value = false
-}
-
-
+onMounted(() => {
+  fetchPatients()
+})
 </script>
 
 <style scoped>
 .consultation {
   height: calc(100vh - 60px);
 }
+.full-height {
+  height: 100%;
+}
 .chat-container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 180px);
+  height: calc(100% - 40px);
 }
 .chat-messages {
   flex-grow: 1;
@@ -475,29 +278,12 @@ const cancelEdit = () => {
   display: flex;
   flex-direction: column;
   margin-left: 10px;
-  flex-grow: 1;
-  min-width: 0;
-  width: 75%;
 }
 .patient-name {
   font-weight: bold;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
-.patient-age-gender {
+.patient-status {
   font-size: 0.8em;
   color: #909399;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.message-image {
-  max-width: 200px;
-  max-height: 200px;
-  border-radius: 5px;
-}
-.full-report {
-  margin-top: 10px;
 }
 </style>
