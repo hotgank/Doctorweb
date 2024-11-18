@@ -5,6 +5,7 @@ export default createStore({
   state: {
     user: JSON.parse(localStorage.getItem('user')) || null,
     doctor: JSON.parse(localStorage.getItem('doctor')) || null,
+    admin: JSON.parse(localStorage.getItem('admin')) || null,
     token: localStorage.getItem('token') || '',
     role: localStorage.getItem('role') || '',
     doctors: [],
@@ -24,6 +25,10 @@ export default createStore({
       state.user = user;
       localStorage.setItem('user', JSON.stringify(user));
     },
+    setAdmin(state, admin) {
+      state.admin = admin;
+      localStorage.setItem('admin', JSON.stringify(admin));
+    },
     setToken(state, token) {
       state.token = token;
       localStorage.setItem('token', token);
@@ -35,10 +40,12 @@ export default createStore({
     clearUser(state) {
       state.user = null;
       state.doctor = null;
+      state.admin = null;
       state.token = '';
       state.role = '';
       localStorage.removeItem('user');
       localStorage.removeItem('doctor');
+      localStorage.removeItem('admin');
       localStorage.removeItem('token');
       localStorage.removeItem('role');
     },
