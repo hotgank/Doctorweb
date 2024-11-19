@@ -1,11 +1,11 @@
 <template>
   <div class="patient-details">
     <el-descriptions title="患者信息" :column="2" border>
-      <el-descriptions-item label="用户ID">{{ patient.userId }}</el-descriptions-item>
-      <el-descriptions-item label="用户名">{{ patient.username }}</el-descriptions-item>
-      <el-descriptions-item label="状态">{{ patient.status }}</el-descriptions-item>
+      <el-descriptions-item label="用户ID">{{ patient.user.userId }}</el-descriptions-item>
+      <el-descriptions-item label="用户名">{{ patient.user.username }}</el-descriptions-item>
+      <el-descriptions-item label="状态">{{ patient.user.status }}</el-descriptions-item>
       <el-descriptions-item label="头像">
-        <el-avatar :size="50" :src="patient.avatarUrl" />
+        <el-avatar :size="50" :src="patient.user.avatarUrl" />
       </el-descriptions-item>
     </el-descriptions>
 
@@ -83,7 +83,7 @@ const isEditing = ref(false)
 const fetchPatientReports = async () => {
   try {
     const response = await axios.post('/api/api/doctor/relation/selectReports', 
-      { userId: props.patient.userId },
+      { userId: props.patient.user.userId },
       {
         headers: {
           Authorization: `Bearer ${store.state.token}`

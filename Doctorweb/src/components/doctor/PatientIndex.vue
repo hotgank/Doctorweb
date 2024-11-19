@@ -7,12 +7,12 @@
       class="mb-4"
     ></el-input>
     <el-table :data="filteredPatients" style="width: 100%">
-      <el-table-column prop="userId" label="用户ID" width="280"></el-table-column>
-      <el-table-column prop="username" label="用户名" width="120"></el-table-column>
-      <el-table-column prop="status" label="状态" width="100"></el-table-column>
+      <el-table-column prop="user.userId" label="用户ID" width="280"></el-table-column>
+      <el-table-column prop="user.username" label="用户名" width="120"></el-table-column>
+      <el-table-column prop="user.status" label="状态" width="100"></el-table-column>
       <el-table-column label="头像" width="100">
         <template #default="scope">
-          <el-avatar :size="40" :src="scope.row.avatarUrl" />
+          <el-avatar :size="40" :src="scope.row.user.avatarUrl" />
         </template>
       </el-table-column>
       <el-table-column label="操作">
@@ -47,7 +47,7 @@ const selectedPatient = ref(null)
 
 const fetchPatients = async () => {
   try {
-    const response = await axios.get('/api/api/doctor/relation/selectMyPatients', {
+    const response = await axios.get('/api/api/doctor/relation/selectMyPatientsAndRelationId', {
       headers: {
         Authorization: `Bearer ${store.state.token}`
       }
@@ -61,8 +61,8 @@ const fetchPatients = async () => {
 
 const filteredPatients = computed(() => {
   return patients.value.filter(patient => 
-    patient.username.toLowerCase().includes(search.value.toLowerCase()) ||
-    patient.userId.includes(search.value)
+    patient.user.username.toLowerCase().includes(search.value.toLowerCase()) ||
+    patient.user.userId.includes(search.value)
   )
 })
 
@@ -72,7 +72,7 @@ const viewPatientDetails = (patient) => {
 }
 
 const startConsultation = (patient) => {
-  router.push({ path: '/consultation', query: { patientId: patient.userId } })
+  router.push({ path: '/consultation', query: { relationId: patient.relationId } })
 }
 
 onMounted(() => {

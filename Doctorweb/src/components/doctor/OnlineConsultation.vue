@@ -1,7 +1,7 @@
 <template>
   <div class="consultation">
     <el-row :gutter="10" class="full-height">
-      <el-col :span="4" class="full-height">
+      <el-col :span="6" class="full-height">
         <el-card class="box-card full-height">
           <template #header>
             <div class="card-header">
@@ -9,78 +9,87 @@
             </div>
           </template>
           <div class="patient-list">
-            <div v-for="patient in patients" :key="patient.userId" class="patient-item" @click="selectPatient(patient)">
-              <el-avatar :size="30" :src="patient.avatarUrl" />
+            <div v-for="relation in doctorRelations" :key="relation.relationId" class="patient-item" @click="selectRelation(relation)">
+              <el-avatar :size="30" :src="relation.user.avatarUrl || '/default-avatar.png'" />
               <div class="patient-info">
-                <span class="patient-name">{{ patient.username }}</span>
-                <span class="patient-status">{{ patient.status }}</span>
+                <span class="patient-name">{{ relation.user.username }}</span>
+                <span class="patient-status">{{ relation.user.status }}</span>
               </div>
             </div>
           </div>
         </el-card>
       </el-col>
-      <el-col :span="8" class="full-height">
-        <el-card class="box-card full-height">
-          <template #header>
-            <div class="card-header">
-              <span>患者详细信息</span>
-            </div>
-          </template>
-          <div v-if="selectedPatient" class="patient-details">
-            <div class="basic-info">
-              <p><strong>用户名：</strong>{{ selectedPatient.username }}</p>
-              <p><strong>状态：</strong>{{ selectedPatient.status }}</p>
-            </div>
-            <el-divider />
-            <div class="reports">
-              <h4>检测报告</h4>
-              <el-table :data="patientReports" style="width: 100%" :max-height="400">
-                <el-table-column prop="createdAt" label="日期" width="180">
-                  <template #default="scope">
-                    {{ formatDate(scope.row.createdAt) }}
-                  </template>
-                </el-table-column>
-                <el-table-column prop="reportType" label="类型" width="120"></el-table-column>
-                <el-table-column prop="state" label="状态" width="120"></el-table-column>
-                <el-table-column label="操作" width="120">
-                  <template #default="scope">
-                    <el-button @click="viewReport(scope.row)" type="text" size="small">查看</el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="12" class="full-height">
-        <el-card class="box-card full-height">
-          <template #header>
-            <div class="card-header">
-              <span>在线咨询</span>
-            </div>
-          </template>
-          <div class="chat-container">
-            <div class="chat-messages" ref="chatMessagesRef">
-              <div v-for="(msg, index) in messages" :key="index" :class="['message', msg.sender === 'doctor' ? 'message-right' : 'message-left']">
-                <el-avatar :size="30" :src="msg.sender === 'doctor' ? doctorAvatar : selectedPatient.avatarUrl" />
-                <div class="message-content">
-                  {{ msg.content }}
+      <el-col :span="18" class="full-height">
+        <el-tabs v-model="activeTab" class="full-height">
+          <el-tab-pane label="在线咨询" name="chat">
+            <el-card v-if="selectedRelation" class="box-card full-height">
+              <template #header>
+                <div class="card-header">
+                  <span>与 {{ selectedRelation.user.username }} 的对话</span>
+                </div>
+              </template>
+              <div class="chat-container">
+                <div class="chat-messages" ref="chatMessagesRef" @scroll="handleScroll">
+                  <div v-for="msg in messages" :key="msg.messageSeq" :class="['message', msg.senderType === 'doctor' ? 'message-right' : 'message-left']">
+                    <el-avatar :size="30" :src="msg.senderType === 'doctor' ? doctorAvatar : (selectedRelation.user.avatarUrl || '/default-avatar.png')" />
+                    <div class="message-content">
+                      {{ msg.messageText }}
+                    </div>
+                    <span class="message-time">{{ formatTime(msg.timestamp) }}</span>
+                  </div>
+                </div>
+                <div class="chat-input">
+                  <el-input
+                    v-model="newMessage"
+                    placeholder="输入消息..."
+                    @keyup.enter="handleSendMessage"
+                  >
+                    <template #append>
+                      <el-button @click="handleSendMessage">发送</el-button>
+                    </template>
+                  </el-input>
                 </div>
               </div>
-            </div>
-            <div class="chat-input">
-              <el-input
-                v-model="newMessage"
-                placeholder="输入消息..."
-                @keyup.enter="handleSendMessage"
-              >
-                <template #append>
-                  <el-button @click="handleSendMessage">发送</el-button>
-                </template>
-              </el-input>
-            </div>
-          </div>
-        </el-card>
+            </el-card>
+            <el-empty v-else description="请选择一个患者开始对话"></el-empty>
+          </el-tab-pane>
+          <el-tab-pane label="患者详情" name="details">
+            <el-card v-if="selectedRelation" class="box-card full-height">
+              <template #header>
+                <div class="card-header">
+                  <span>患者详细信息</span>
+                </div>
+              </template>
+              <div class="patient-details">
+                <div class="basic-info">
+                  <el-avatar :size="64" :src="selectedRelation.user.avatarUrl || '/default-avatar.png'" />
+                  <h2>{{ selectedRelation.user.username }}</h2>
+                  <p><strong>状态：</strong>{{ selectedRelation.user.status }}</p>
+                  <p><strong>用户ID：</strong>{{ selectedRelation.user.userId }}</p>
+                </div>
+                <el-divider />
+                <div class="reports">
+                  <h4>检测报告</h4>
+                  <el-table :data="patientReports" style="width: 100%" :max-height="400">
+                    <el-table-column prop="createdAt" label="日期" width="180">
+                      <template #default="scope">
+                        {{ formatDate(scope.row.createdAt) }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="reportType" label="类型" width="120"></el-table-column>
+                    <el-table-column prop="state" label="状态" width="120"></el-table-column>
+                    <el-table-column label="操作" width="120">
+                      <template #default="scope">
+                        <el-button @click="viewReport(scope.row)" type="text" size="small">查看</el-button>
+                      </template>
+                    </el-table-column>
+                  </el-table>
+                </div>
+              </div>
+            </el-card>
+            <el-empty v-else description="请选择一个患者查看详情"></el-empty>
+          </el-tab-pane>
+        </el-tabs>
       </el-col>
     </el-row>
 
@@ -114,15 +123,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useStore } from 'vuex'
 import axios from 'axios'
+import { useRoute } from 'vue-router'
 
 const store = useStore()
+const route = useRoute()
 
-const patients = ref([])
-const selectedPatient = ref(null)
+const activeTab = ref('chat')
+const doctorRelations = ref([])
+const selectedRelation = ref(null)
 const patientReports = ref([])
 const messages = ref([])
 const newMessage = ref('')
@@ -130,38 +142,149 @@ const chatMessagesRef = ref(null)
 const showReport = ref(false)
 const isEditing = ref(false)
 const currentReport = ref({})
-const doctorAvatar = ref('')  // 这里应该设置医生的头像URL
+const doctorAvatar = ref('/doctor-avatar.png')  // 假设医生头像的URL
 
-const fetchPatients = async () => {
+let messagePollingInterval = null
+
+const fetchDoctorRelations = async () => {
   try {
-    const response = await axios.get('/api/api/doctor/relation/selectMyPatients', {
+    const response = await axios.get('/api/api/doctor/relation/selectMyPatientsAndRelationId', {
       headers: {
         Authorization: `Bearer ${store.state.token}`
       }
     })
-    patients.value = response.data
+    doctorRelations.value = response.data
+    if (route.query.relationId) {
+      const relation = doctorRelations.value.find(r => r.relationId === parseInt(route.query.relationId))
+      if (relation) {
+        selectRelation(relation)
+      }
+    }
   } catch (error) {
-    console.error('Failed to fetch patients:', error)
-    ElMessage.error('获取患者列表失败')
+    console.error('Failed to fetch doctor relations:', error)
+    ElMessage.error('获取医生关系列表失败')
   }
 }
 
-const selectPatient = async (patient) => {
-  selectedPatient.value = patient
+const selectRelation = async (relation) => {
+  selectedRelation.value = relation
+  messages.value = []
+  await loadInitialMessages(relation.relationId)
+  await fetchPatientReports(relation.user.userId)
+  startMessagePolling(relation.relationId)
+}
+
+const fetchPatientReports = async (userId) => {
   try {
-    const response = await axios.post('/api/api/doctor/relation/selectReports', { userId: patient.userId }, {
+    const response = await axios.post('/api/api/doctor/relation/selectReports', { userId }, {
       headers: {
         Authorization: `Bearer ${store.state.token}`
       }
     })
     patientReports.value = response.data
-    // 这里应该加载与该患者的聊天记录
-    // 由于API中没有提供获取聊天记录的接口，这里暂时清空消息列表
-    messages.value = []
   } catch (error) {
     console.error('Failed to fetch patient reports:', error)
     ElMessage.error('获取患者报告失败')
   }
+}
+
+const loadInitialMessages = async (relationId) => {
+  try {
+    const response = await axios.get(`/api/api/messages/last30/${relationId}`, {
+      headers: {
+        Authorization: `Bearer ${store.state.token}`
+      }
+    })
+    messages.value = response.data
+    scrollToBottom()
+  } catch (error) {
+    console.error('Failed to load initial messages:', error)
+    ElMessage.error('加载消息失败')
+  }
+}
+
+const loadMoreMessages = async () => {
+  if (messages.value.length === 0) return
+
+  const oldestMessageSeq = messages.value[0].messageSeq
+  try {
+    const response = await axios.get(`/api/api/messages/before/${selectedRelation.value.relationId}/${oldestMessageSeq}`, {
+      headers: {
+        Authorization: `Bearer ${store.state.token}`
+      }
+    })
+    messages.value = [...response.data, ...messages.value]
+  } catch (error) {
+    console.error('Failed to load more messages:', error)
+    ElMessage.error('加载更多消息失败')
+  }
+}
+
+const startMessagePolling = (relationId) => {
+  stopMessagePolling()
+  messagePollingInterval = setInterval(async () => {
+    if (messages.value.length === 0) return
+
+    const latestMessageSeq = messages.value[messages.value.length - 1].messageSeq
+    try {
+      const response = await axios.get(`/api/api/messages/after/${relationId}/${latestMessageSeq}`, {
+        headers: {
+          Authorization: `Bearer ${store.state.token}`
+        }
+      })
+      messages.value = [...messages.value, ...response.data]
+      if (response.data.length > 0) {
+        scrollToBottom()
+      }
+    } catch (error) {
+      console.error('Failed to poll new messages:', error)
+    }
+  }, 3000)
+}
+
+const stopMessagePolling = () => {
+  if (messagePollingInterval) {
+    clearInterval(messagePollingInterval)
+    messagePollingInterval = null
+  }
+}
+
+const handleSendMessage = async () => {
+  if (newMessage.value.trim() && selectedRelation.value) {
+    try {
+      const response = await axios.post('/api/api/messages/send', {
+        relationId: selectedRelation.value.relationId,
+        senderType: 'doctor',
+        messageText: newMessage.value.trim(),
+        messageType: 'text',
+        url: null
+      }, {
+        headers: {
+          Authorization: `Bearer ${store.state.token}`
+        }
+      })
+      messages.value.push(response.data)
+      newMessage.value = ''
+      scrollToBottom()
+    } catch (error) {
+      console.error('Failed to send message:', error)
+      ElMessage.error('发送消息失败')
+    }
+  }
+}
+
+const handleScroll = (event) => {
+  if (event.target.scrollTop === 0) {
+    loadMoreMessages()
+  }
+}
+
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (chatMessagesRef.value) {
+      chatMessagesRef.value.scrollTop = chatMessagesRef.value.scrollHeight
+    }
+  })
 }
 
 const viewReport = (report) => {
@@ -193,18 +316,8 @@ const saveReport = async () => {
   showReport.value = false
 }
 
-const handleSendMessage = () => {
-  if (newMessage.value.trim()) {
-    messages.value.push({ sender: 'doctor', content: newMessage.value })
-    // 这里应该调用API来发送消息
-    // 由于API中没有提供相应的接口，这里只是模拟了发送操作
-    newMessage.value = ''
-    nextTick(() => {
-      if (chatMessagesRef.value) {
-        chatMessagesRef.value.scrollTop = chatMessagesRef.value.scrollHeight
-      }
-    })
-  }
+const formatTime = (timestamp) => {
+  return new Date(timestamp).toLocaleString()
 }
 
 const formatDate = (dateArray) => {
@@ -213,7 +326,19 @@ const formatDate = (dateArray) => {
 }
 
 onMounted(() => {
-  fetchPatients()
+  fetchDoctorRelations()
+})
+
+onUnmounted(() => {
+  stopMessagePolling()
+})
+
+watch(selectedRelation, (newRelation) => {
+  if (newRelation) {
+    startMessagePolling(newRelation.relationId)
+  } else {
+    stopMessagePolling()
+  }
 })
 </script>
 
@@ -237,6 +362,7 @@ onMounted(() => {
 .message {
   display: flex;
   margin-bottom: 10px;
+  align-items: flex-start;
 }
 .message-left {
   justify-content: flex-start;
@@ -254,6 +380,11 @@ onMounted(() => {
 }
 .message-right .message-content {
   background-color: #95ec69;
+}
+.message-time {
+  font-size: 0.7em;
+  color: #909399;
+  margin-top: 5px;
 }
 .chat-input {
   padding: 20px;
@@ -285,5 +416,14 @@ onMounted(() => {
 .patient-status {
   font-size: 0.8em;
   color: #909399;
+}
+.basic-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.basic-info h2 {
+  margin: 10px 0;
 }
 </style>
