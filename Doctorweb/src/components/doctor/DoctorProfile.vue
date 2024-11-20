@@ -114,8 +114,14 @@ const handleSubmit = async () => {
       ElMessage.error('更新失败')
     }
   } catch (error) {
-    console.error('Failed to update doctor information:', error)
+    if (error.response.status === 400 && error.response.data === "Username already exists") {
+        console.error('Update failed:', error.response.data)
+        ElMessage.error('用户名已存在')
+    }else{
+      console.error('Failed to update doctor information:', error)
     ElMessage.error('更新个人资料失败')
+    }
+    
   }
 }
 </script>
