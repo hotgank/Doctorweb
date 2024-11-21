@@ -5,11 +5,13 @@ import vueJsx from '@vitejs/plugin-vue-jsx'
 export default defineConfig({
   plugins: [vue(), vueJsx()],
   server: {
+    host: '0.0.0.0', // 绑定到所有网络接口
+    port: 3000, // 你可以指定一个端口，默认是 3000
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
+        target: 'http://localhost:8080', // 你的后端服务地址
+        changeOrigin: true, // 修改请求头中的 Origin 字段
+        rewrite: (path) => path.replace(/^\/api/, '') // 去掉 /api 前缀
       }
     }
   }
