@@ -6,7 +6,8 @@ export default defineConfig({
   plugins: [vue(), vueJsx()],
   server: {
     host: '0.0.0.0', // 绑定到所有网络接口
-    port: 3000, // 你可以指定一个端口，默认是 3000
+    port: 5173,
+
     proxy: {
       '/api': {
         target: 'http://localhost:8080', // 你的后端服务地址
