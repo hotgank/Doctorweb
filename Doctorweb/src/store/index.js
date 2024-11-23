@@ -169,6 +169,22 @@ export default createStore({
       }
     },
 
+    async fetchAdminInfo({ commit, state }) {
+      try {
+        const response = await axios.get('/api/api/admin/information', {
+          headers: {
+            Authorization: `Bearer ${state.token}`
+          }
+        });
+        const adminInfo = response.data;
+        commit('setAdmin', adminInfo);
+        return adminInfo;
+      } catch (error) {
+        // console.error('Failed to fetch admin information:', error);
+        throw error;
+      }
+    },
+
     async updateDoctorInfo({ commit, state }, updatedInfo) {
       try {
         const response = await axios.post('/api/api/doctor/updateData', updatedInfo, {
