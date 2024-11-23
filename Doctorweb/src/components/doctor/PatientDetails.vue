@@ -44,7 +44,7 @@
           <el-input type="textarea" v-model="currentReport.comment" :rows="4" :readonly="!isEditing"></el-input>
         </el-form-item>
         <el-form-item label="报告图片">
-          <el-image :src="currentReport.url" :preview-src-list="[currentReport.url]"></el-image>
+          <el-image :src="imageSrc" :preview-src-list="[imageSrc]"></el-image>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -79,6 +79,7 @@ const patientReports = ref([])
 const showReport = ref(false)
 const currentReport = ref({})
 const isEditing = ref(false)
+const imageSrc = ref('') // 用于存储报告图片的 URL
 
 const fetchPatientReports = async () => {
   try {
@@ -100,6 +101,30 @@ const fetchPatientReports = async () => {
 const viewReport = (report) => {
   currentReport.value = { ...report }
   showReport.value = true
+  fetchReportImage(report.url) // 获取报告图片
+}
+
+const fetchReportImage = async (url) => {
+  try {
+    // 使用 POST 请求获取图片
+    const response = await axios.post('api/api/url/getReportImage', { url: url }, {
+      responseType: 'blob',  // 获取二进制数据
+      headers: {
+        Authorization: `Bearer ${store.state.token}`  // 携带 token
+      }
+    })
+    // 将 Blob 数据转换为可展示的 URL
+    const blob = response.data
+    const imageUrl = URL.createObjectURL(blob)
+
+    // 将生成的 URL 赋值给 imageSrc 用于显示图片
+    imageSrc.value = imageUrl
+    console.log('Image URL:', imageUrl)
+    ElMessage.success('获取报告图片成功')
+  } catch (error) {
+    console.error('Failed to fetch report image:', error)
+    ElMessage.error('获取报告图片失败')
+  }
 }
 
 const startEdit = () => {
