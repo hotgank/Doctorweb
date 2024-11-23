@@ -85,10 +85,12 @@ export default createStore({
       }
     },
 
-    async adminLogin({ commit }, { identifier, password }) {
+    async adminLogin({ commit }, { identifier, password, loginType}) {
       try {
-        const response = await axios.post('/api/api/AdminLogin/login', { email: identifier, password });
+        const endpoint = loginType === 'email' ? '/api/api/AdminLogin/loginByEmail' : '/api/api/AdminLogin/loginByUsername';
+        const payload = loginType === 'email' ? { email: identifier, password } : { username: identifier, password };
 
+        const response = await axios.post(endpoint, payload);
         if (response && response.data) {
           const { token, admin } = response.data;
 

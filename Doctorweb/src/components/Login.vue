@@ -101,7 +101,7 @@ const handleLogin = async () => {
     if (role === 'doctor') {
       success = await store.dispatch('doctorLogin', { identifier, password, loginType });
     } else if (role === 'admin') {
-      success = await store.dispatch('adminLogin', { identifier, password });
+      success = await store.dispatch('adminLogin', { identifier, password, loginType });
     }
 
     if (success) {
