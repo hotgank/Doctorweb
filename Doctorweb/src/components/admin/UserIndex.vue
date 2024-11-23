@@ -3,6 +3,9 @@
     <el-header class="bg-white shadow-md">
       <div class="header-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <h3 class="text-2xl font-bold text-gray-900">用户管理</h3>
+        <el-button type="primary" @click="showImportDialog" class="mt-4">
+          导入用户数据
+        </el-button>
         <!-- 搜索栏 -->
         <div class="search-bar">
           <el-input
@@ -81,18 +84,59 @@
       </template>
     </el-dialog>
   </el-container>
+  <!-- 导入用户数据对话框 -->
+  <el-dialog
+      v-model="importDialogVisible"
+      title="导入用户数据"
+      width="30%"
+  >
+    <el-alert
+        title="请上传符合要求的CSV文件"
+        type="info"
+        description="文件应包含以下列：ID, Name, Email, Phone, Registration Date"
+        :closable="false"
+        show-icon
+        class="mb-4"
+    />
+    <el-upload
+        class="upload-demo"
+        drag
+        action="#"
+        :auto-upload="false"
+        :on-change="handleFileChange"
+    >
+      <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+      <div class="el-upload__text">
+        将文件拖到此处，或<em>点击上传</em>
+      </div>
+      <template #tip>
+        <div class="el-upload__tip">
+          只能上传 csv 文件
+        </div>
+      </template>
+    </el-upload>
+    <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="importDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="importUserData">
+            导入
+          </el-button>
+        </span>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Search } from '@element-plus/icons-vue'
+import {Search, UploadFilled} from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import axiosInstance from "../../axios/index";
 import dayjs from 'dayjs';
 
 const allUsers = ref([])
 const loading = ref(false)
-
+const importDialogVisible = ref(false)
+const uploadedFile = ref(null)
 
 // 获取所有用户数据并处理 lastLogin 格式
 const fetchUsers = async () => {
@@ -205,6 +249,29 @@ const toggleUserStatus = async (user) => {
     ElMessage.error('用户状态切换失败，请稍后重试');
   }
 };
+
+const showImportDialog = () => {
+  importDialogVisible.value = true
+}
+
+const handleFileChange = (file) => {
+  uploadedFile.value = file
+}
+
+const importUserData = () => {
+  if (!uploadedFile.value) {
+    ElMessage.error('请先选择要上传的文件')
+    return
+  }
+
+  // 这里应该是一个 API 调用来处理文件上传和数据导入
+  // 为了演示，我们只是模拟这个过程
+  setTimeout(() => {
+    ElMessage.success('用户数据导入成功')
+    importDialogVisible.value = false
+    uploadedFile.value = null
+  }, 2000)
+}
 
 </script>
 

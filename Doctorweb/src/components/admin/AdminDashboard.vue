@@ -3,9 +3,9 @@
     <h1 class="mb-4">管理员仪表板</h1>
     <el-row :gutter="20">
       <el-col :span="6" v-for="(item, index) in stats" :key="index">
-        <el-card 
-          class="box-card clickable-card" 
-          @click="handleCardClick(item)"
+        <el-card
+            class="box-card clickable-card"
+            @click="handleCardClick(item)"
         >
           <template #header>
             <div class="card-header">
@@ -20,10 +20,6 @@
         </el-card>
       </el-col>
     </el-row>
-
-    <el-button type="primary" @click="showImportDialog" class="mt-4">
-      导入用户数据
-    </el-button>
 
     <el-tabs v-model="activeTab" class="mt-4">
       <el-tab-pane label="待审核医生" name="pendingDoctors">
@@ -56,10 +52,10 @@
 
     <!-- 医生详情对话框 -->
     <el-dialog
-      v-model="doctorDetailsVisible"
-      title="医生详情"
-      width="50%"
-      :before-close="handleCloseDoctorDetails"
+        v-model="doctorDetailsVisible"
+        title="医生详情"
+        width="50%"
+        :before-close="handleCloseDoctorDetails"
     >
       <div v-if="selectedDoctor">
         <el-descriptions :column="1" border>
@@ -75,10 +71,10 @@
         <div class="cert-image mt-4" v-if="selectedDoctor.certImage">
           <h4 class="text-lg font-medium mb-2">医师资格证图片：</h4>
           <el-image
-            :src="selectedDoctor.certImage"
-            :preview-src-list="[selectedDoctor.certImage]"
-            fit="cover"
-            class="w-48 h-48 object-cover rounded"
+              :src="selectedDoctor.certImage"
+              :preview-src-list="[selectedDoctor.certImage]"
+              fit="cover"
+              class="w-48 h-48 object-cover rounded"
           />
         </div>
       </div>
@@ -86,9 +82,9 @@
 
     <!-- 活动详情对话框 -->
     <el-dialog
-      v-model="activityDetailsVisible"
-      title="活动详情"
-      width="30%"
+        v-model="activityDetailsVisible"
+        title="活动详情"
+        width="30%"
     >
       <div v-if="selectedActivity">
         <p><strong>活动：</strong> {{ selectedActivity.action }}</p>
@@ -96,89 +92,45 @@
         <p><strong>日期：</strong> {{ selectedActivity.date }}</p>
       </div>
     </el-dialog>
-
-    <!-- 导入用户数据对话框 -->
-    <el-dialog
-      v-model="importDialogVisible"
-      title="导入用户数据"
-      width="30%"
-    >
-      <el-alert
-        title="请上传符合要求的CSV文件"
-        type="info"
-        description="文件应包含以下列：ID, Name, Email, Phone, Registration Date"
-        :closable="false"
-        show-icon
-        class="mb-4"
-      />
-      <el-upload
-        class="upload-demo"
-        drag
-        action="#"
-        :auto-upload="false"
-        :on-change="handleFileChange"
-      >
-        <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-        <div class="el-upload__text">
-          将文件拖到此处，或<em>点击上传</em>
-        </div>
-        <template #tip>
-          <div class="el-upload__tip">
-            只能上传 csv 文件
-          </div>
-        </template>
-      </el-upload>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="importDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="importUserData">
-            导入
-          </el-button>
-        </span>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { User, Document, Loading, UploadFilled } from '@element-plus/icons-vue'
+import { User, Document, Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import axiosInstance from '../../axios/index'
 
 const router = useRouter()
 
-const stats = [
-  { 
-    title: '总用户数', 
-    value: '10,234', 
-    description: '较上月增长5%', 
+const stats = ref([
+  {
+    title: '总用户数',
+    value: '0',
+    description: '较上月增长5%',
     icon: User,
     route: '/user-index'
   },
-  { 
-    title: '待审核医生', 
-    value: '15', 
-    description: '较昨天增加3位', 
+  {
+    title: '待审核医生',
+    value: '0',
+    description: '较昨天增加3位',
     icon: Loading,
     route: '/verify'
   },
-  { 
-    title: '系统公告', 
-    value: '8', 
-    description: '本周新增2条', 
+  {
+    title: '系统公告',
+    value: '0',
+    description: '本周新增2条',
     icon: Document,
     route: '/admin-announcement'
   },
-]
+]);
 
 const activeTab = ref('pendingDoctors')
 
-const pendingDoctors = ref([
-  { id: 1, name: '张医生', department: '内科', position:'主治医师', unit:'宛平南路600号', certNumber:'D123456789',  applicationDate: '2024-05-08', email: 'zhang@example.com', certImage: 'https://via.placeholder.com/150' },
-  { id: 2, name: '李医生', department: '外科', position:'副主任医师', unit:'宛平南路600号', certNumber:'D987654321',  applicationDate: '2024-05-09', email: 'li@example.com', certImage: 'https://via.placeholder.com/150' },
-  { id: 3, name: '王医生', department: '儿科', position:'住院医师', unit:'宛平南路600号', certNumber:'D112233445', applicationDate: '2024-05-10', email: 'wang@example.com', certImage: 'https://via.placeholder.com/150' },
-])
+const pendingDoctors = ref([])
 
 const recentActivities = [
   { action: '新用户注册', user: '用户A', date: '2024-05-10 14:30' },
@@ -188,10 +140,50 @@ const recentActivities = [
 
 const doctorDetailsVisible = ref(false)
 const activityDetailsVisible = ref(false)
-const importDialogVisible = ref(false)
 const selectedDoctor = ref(null)
 const selectedActivity = ref(null)
-const uploadedFile = ref(null)
+
+const fetchStats = async () => {
+  try {
+    const userCountResponse = await axiosInstance.get('/api/user/selectUserCount');
+    stats.value[0].value = userCountResponse.data.userCount || '0';
+  } catch (error) {
+    console.error('获取总用户数失败:', error);
+    stats.value[0].value = '0';
+  }
+
+  try {
+    const doctorCountResponse = await axiosInstance.get('/api/doctor/selectUnqualifiedDoctorCount');
+    stats.value[1].value = doctorCountResponse.data.unqualifiedDoctorCount || '0';
+  } catch (error) {
+    console.error('获取待审核医生数失败:', error);
+    stats.value[1].value = '0';
+  }
+
+  try {
+    const systemInfoResponse = await axiosInstance.get('/api/getSystemInfo');
+    stats.value[2].value = systemInfoResponse.data.systemInfoCount || '0';
+  } catch (error) {
+    console.error('获取系统公告数失败:', error);
+    stats.value[2].value = '0';
+  }
+};
+
+
+const fetchPendingDoctors = async () => {
+  try {
+    const response = await axiosInstance.get('/api/getPendingDoctors')
+    pendingDoctors.value = response.data
+  } catch (error) {
+    console.error('获取待审核医生数据失败:', error)
+    pendingDoctors.value = []
+  }
+}
+
+onMounted(() => {
+  fetchStats()
+  fetchPendingDoctors()
+})
 
 const handleCardClick = (item) => {
   if (item.route) {
@@ -228,29 +220,6 @@ const reviewDoctor = (doctor, action) => {
 const viewActivityDetails = (activity) => {
   selectedActivity.value = activity
   activityDetailsVisible.value = true
-}
-
-const showImportDialog = () => {
-  importDialogVisible.value = true
-}
-
-const handleFileChange = (file) => {
-  uploadedFile.value = file
-}
-
-const importUserData = () => {
-  if (!uploadedFile.value) {
-    ElMessage.error('请先选择要上传的文件')
-    return
-  }
-
-  // 这里应该是一个 API 调用来处理文件上传和数据导入
-  // 为了演示，我们只是模拟这个过程
-  setTimeout(() => {
-    ElMessage.success('用户数据导入成功')
-    importDialogVisible.value = false
-    uploadedFile.value = null
-  }, 2000)
 }
 </script>
 
