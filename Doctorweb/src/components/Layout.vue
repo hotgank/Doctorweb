@@ -94,19 +94,40 @@
             placement="bottom-end"
             width="200"
             trigger="hover"
-            v-if="doctorInfo"
+            v-if="userRole === 'doctor'"
           >
             <template #reference>
               <div class="user-info">
                 <el-avatar size="40" :src="avatarUrl" @error="handleAvatarError">
                   {{ doctorInfo?.name ? doctorInfo.name.charAt(0).toUpperCase() : 'U' }}
                 </el-avatar>
-                <span class="username">{{ doctorInfo?.name || '未登录' }}</span>
+                <span class="username">{{ doctorInfo?.name || '请重新登录' }}</span>
               </div>
             </template>
             <div class="user-details">
               <p><strong>姓名:</strong> {{ doctorInfo?.name }}</p>
               <p><strong>用户名:</strong> {{ doctorInfo?.username }}</p>
+              <el-button @click="showAvatarDialog" size="small">更改头像</el-button>
+              <el-button @click="handleCommand('logout')" size="small" type="danger">登出</el-button>
+            </div>
+          </el-popover>
+
+          <el-popover
+            placement="bottom-end"
+            width="200"
+            trigger="hover"
+            v-if="userRole === 'admin'"
+          >
+            <template #reference>
+              <div class="user-info">
+                <el-avatar size="40" :src="avatarUrl" @error="handleAvatarError">
+                  {{ adminInfo?.name ? adminInfo.name.charAt(0).toUpperCase() : 'U' }}
+                </el-avatar>
+                <span class="username">{{ adminInfo?.username || '请重新登录' }}</span>
+              </div>
+            </template>
+            <div class="user-details">
+              <p><strong>用户名:</strong> {{ adminInfo?.username }}</p>
               <el-button @click="showAvatarDialog" size="small">更改头像</el-button>
               <el-button @click="handleCommand('logout')" size="small" type="danger">登出</el-button>
             </div>
@@ -154,6 +175,7 @@ const store = useStore()
 const route = useRoute()
 
 const doctorInfo = ref(null)
+const adminInfo = ref(null)
 const avatarUrl = ref('')
 const avatarDialogVisible = ref(false)
 const newAvatarFile = ref(null)
@@ -168,14 +190,23 @@ const activeMenu = computed(() => {
 
 onMounted(async () => {
   if (isAuthenticated.value) {
-    await fetchDoctorInfo()
-    await fetchAvatar()
+    if(userRole.value === 'doctor'){
+      await fetchDoctorInfo()
+      await fetchDoctorAvatar()
+    }else{
+      await fetchAdminInfo()
+      await fetchAdminAvatar()
+    }
   }
 })
 
 watch(() => route.path, async () => {
   if (isAuthenticated.value) {
-    await fetchAvatar()
+    if(userRole.value === 'doctor'){
+      await fetchDoctorAvatar()
+    }else{
+      await fetchAdminAvatar()
+    }
   }
 })
 
@@ -189,9 +220,33 @@ const fetchDoctorInfo = async () => {
   }
 }
 
-const fetchAvatar = async () => {
+const fetchAdminInfo = async () => {
+  try {
+    const info = await store.dispatch('fetchAdminInfo')
+    adminInfo.value = info
+  } catch (error) {
+    console.error('Failed to fetch admin info:', error)
+    ElMessage.error('获取管理员信息失败')
+  }
+}
+
+const fetchDoctorAvatar = async () => {
   try {
     const response = await fetch('/api/api/doctor/get_avatar_base64', {
+      headers: {
+        Authorization: `Bearer ${store.state.token}`
+      }
+    })
+    const data = await response.json()
+    avatarUrl.value = data.base64Image
+  } catch (error) {
+    console.error('Failed to fetch avatar:', error)
+  }
+}
+
+const fetchAdminAvatar = async () => {
+  try {
+    const response = await fetch('/api/api/admin/get_avatar_base64', {
       headers: {
         Authorization: `Bearer ${store.state.token}`
       }
@@ -239,7 +294,7 @@ const uploadAvatar = async () => {
 
   try {
     const base64 = await convertToBase64(newAvatarFile.value)
-    const response = await fetch('/api/api/doctor/upload_avatar_base64', {
+      const response = await fetch('/api/api/${userRole.value}/upload_avatar_base64', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -252,7 +307,11 @@ const uploadAvatar = async () => {
       ElMessage.success('头像上传成功')
       avatarUrl.value = base64
       avatarDialogVisible.value = false
-      await fetchAvatar() // Fetch the updated avatar
+      if(userRole.value === 'doctor'){
+        await fetchDoctorAvatar() // Fetch the updated avatar
+      }else{
+        await fetchAdminAvatar() // Fetch the updated avatar
+      }
     } else {
       throw new Error('Upload failed')
     }
