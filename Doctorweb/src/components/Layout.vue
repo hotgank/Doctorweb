@@ -182,7 +182,7 @@ const newAvatarFile = ref(null)
 
 const isAuthenticated = computed(() => store.getters.isLoggedIn)
 const userRole = computed(() => localStorage.getItem('role'))
-const isSuperAdmin = computed(() => store.state.user && store.state.user.isSuperAdmin)
+const isSuperAdmin = computed(() => store.state.user && store.state.user.adminType === 'super')
 
 const activeMenu = computed(() => {
   return route.path === '/' ? '/' : route.path.split('/')[1] ? `/${route.path.split('/')[1]}` : '/'

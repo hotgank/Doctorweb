@@ -35,10 +35,10 @@
       >
         <el-table-column prop="displayId" label="ID" width="80" align="center"></el-table-column>
         <el-table-column prop="username" label="姓名" width="120"></el-table-column>
-        <el-table-column prop="email" label="邮箱" min-width="170"></el-table-column>
-        <el-table-column prop="phone" label="电话" min-width="150"></el-table-column>
+        <el-table-column prop="email" label="邮箱" width="170"></el-table-column>
+        <el-table-column prop="phone" label="电话" width="150"></el-table-column>
         <el-table-column prop="adminType" label="角色" width="120"></el-table-column>
-        <el-table-column prop="status" label="状态" width="100" align="center">
+        <el-table-column prop="status" label="状态" min-width="100" align="center">
           <template #default="scope">
             <el-tag :type="scope.row.status === 'active' ? 'success' : 'danger'" effect="dark">
               {{ scope.row.status === 'active' ? '活跃' : '停用' }}

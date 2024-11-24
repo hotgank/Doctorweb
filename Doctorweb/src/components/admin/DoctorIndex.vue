@@ -20,6 +20,9 @@
           <el-button @click="onSearch" type="primary" class="ml-2">
             搜索
           </el-button>
+          <el-button @click="showImportDialog" type="primary" class="ml-2">
+            导入
+          </el-button>
         </div>
       </div>
     </el-header>
@@ -51,7 +54,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" align="center">
+        <el-table-column label="操作" min-width="200" align="center">
           <template #default="scope">
             <el-button
                 type="primary"
@@ -81,8 +84,6 @@
         title="医生详情"
         width="50%"
     >
-
-
       <el-descriptions :column="1" border>
         <el-descriptions-item label="ID">{{ selectedDoctor.doctorId }}</el-descriptions-item>
         <el-descriptions-item label="姓名">{{ selectedDoctor.name }}</el-descriptions-item>
@@ -92,6 +93,28 @@
         <el-descriptions-item label="认证状态">{{ selectedDoctor.qualification != null ? '已认证' : '未认证' }}</el-descriptions-item>
         <el-descriptions-item label="账号状态">{{ selectedDoctor.status === 'active' ? '活跃' : '停用' }}</el-descriptions-item>
       </el-descriptions>
+    </el-dialog>
+
+    <!-- 导入用户对话框 -->
+    <el-dialog v-model="importDialogVisible" title="导入用户" width="30%">
+      <el-upload
+        class="upload-demo"
+        drag
+        action="#"
+        :auto-upload="false"
+        :on-change="handleFileChange"
+        accept=".xlsx,.csv"
+      >
+        <el-icon><upload /></el-icon>
+        <div class="el-upload__text">将文件拖拽到此处，或<em>点击上传</em></div>
+        <div class="el-upload__tip" slot="tip">请上传小于 500KB 的 XLSX/CSV 文件</div>
+      </el-upload>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="importDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="importDoctorData">确定</el-button>
+        </span>
+      </template>
     </el-dialog>
   </el-container>
 </template>
@@ -104,6 +127,8 @@ import axiosInstance from '../../axios/index';
 
 const allDoctors = ref([])
 const loading = ref(false)
+const uploadedFile = ref(null);
+const importDialogVisible = ref(false);
 
 // 获取所有医生数据
 const fetchDoctors = async () => {
@@ -192,6 +217,49 @@ const toggleDoctorStatus = async (doctor) => {
     ElMessage.error('更新医生状态失败，请稍后重试');
   }
 }
+
+const handleFileChange = (file) => {
+  uploadedFile.value = file;
+};
+
+const showImportDialog = () => {
+  importDialogVisible.value = true;
+};
+
+const importDoctorData = async () => {
+  if (!uploadedFile.value) {
+    ElMessage.error('请先选择要上传的文件');
+    return;
+  }
+
+  const file = uploadedFile.value.raw;
+  const fileExtension = file.name.split('.').pop().toLowerCase();
+
+  if (fileExtension !== 'xlsx' && fileExtension !== 'csv') {
+    ElMessage.error('文件类型不符合要求，请上传 .xlsx 或 .csv 文件');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('urlJson', JSON.stringify({ url: 'doctorList/' }));
+
+  try {
+    await axiosInstance.post('/api/import/doctor', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    ElMessage.success('医生数据导入成功');
+    importDialogVisible.value = false;
+    uploadedFile.value = null;
+    // 刷新用户列表
+    await fetchDoctors();
+  } catch (error) {
+    console.error('文件上传失败:', error);
+    ElMessage.error('文件上传失败，请稍后重试');
+  }
+};
 </script>
 
 <style scoped>
