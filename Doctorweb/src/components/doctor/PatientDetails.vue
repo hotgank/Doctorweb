@@ -28,6 +28,21 @@
 
     <el-dialog v-model="showReport" title="报告详情" width="70%">
       <el-form :model="currentReport" label-width="120px">
+        <el-form-item label="姓名">
+          <span>{{ currentReport.name}}</span>
+        </el-form-item>
+        <el-form-item label="性别">
+          <span>{{ currentReport.gender }}</span>
+        </el-form-item>
+        <el-form-item label="出生日期">
+          <span>{{formatDate2(currentReport.birthdate)}}</span>
+        </el-form-item>
+        <el-form-item label="身高">
+          <span>{{ currentReport.height }}</span>
+        </el-form-item>
+        <el-form-item label="体重">
+          <span>{{ currentReport.weight }}</span>
+        </el-form-item>
         <el-form-item label="报告类型">
           <span>{{ currentReport.reportType }}</span>
         </el-form-item>
@@ -83,7 +98,7 @@ const imageSrc = ref('') // 用于存储报告图片的 URL
 
 const fetchPatientReports = async () => {
   try {
-    const response = await axios.post('/api/api/doctor/relation/selectReports', 
+    const response = await axios.post('/api/api/doctor/relation/selectReports',
       { userId: props.patient.user.userId },
       {
         headers: {
@@ -139,6 +154,21 @@ const cancelEdit = () => {
 const saveReport = async () => {
   // 这里应该实现保存报告评论的逻辑
   // 由于API中没有提供相应的接口，这里只是模拟了保存操作
+  //发送POST请求，data为currentReport的id和comment
+  try {
+    const response = await axios.post('/api/api/doctorReport/comment',
+      { reportId: currentReport.value.reportId, comment: currentReport.value.comment },
+      {
+        headers: {
+          Authorization: `Bearer ${store.state.token}`
+        }
+      }
+    )
+    console.log('Report comment saved successfully:', response.data)
+  } catch (error) {
+    console.error('Failed to save report comment:', error)
+    ElMessage.error('保存报告评论失败')
+  }
   ElMessage.success('报告评论已保存')
   isEditing.value = false
   showReport.value = false
@@ -147,6 +177,11 @@ const saveReport = async () => {
 const formatDate = (dateArray) => {
   const [year, month, day, hour, minute, second] = dateArray
   return new Date(year, month - 1, day, hour, minute, second).toLocaleString()
+}
+
+const formatDate2 = (timestamp) => {
+  const date = new Date(timestamp);
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
 }
 
 watch(() => props.patient, (newPatient) => {
