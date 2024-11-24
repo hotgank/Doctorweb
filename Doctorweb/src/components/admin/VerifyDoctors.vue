@@ -27,17 +27,17 @@
     <el-main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- 医生表格 -->
       <el-table 
-        :data="filteredDoctors" 
+        :data="displayedDoctors" 
         style="width: 100%"
         :header-cell-style="{ background: '#f3f4f6', color: '#374151' }"
         :row-class-name="tableRowClassName"
+        v-loading="loading"
       >
-        <el-table-column prop="id" label="ID" width="80" align="center"></el-table-column>
+        <el-table-column prop="index" label="ID" width="80" align="center"></el-table-column>
         <el-table-column prop="name" label="姓名" width="120"></el-table-column>
-        <el-table-column prop="unit" label="单位" min-width="200"></el-table-column>
-        <el-table-column prop="department" label="科室" width="120"></el-table-column>
+        <el-table-column prop="gender" label="性别" width="80"></el-table-column>
         <el-table-column prop="position" label="职位" width="120"></el-table-column>
-        <el-table-column prop="certNumber" label="医师资格证" width="150"></el-table-column>
+        <el-table-column prop="workplace" label="工作单位" min-width="200"></el-table-column>
         <el-table-column label="详情" width="120" align="center">
           <template #default="scope">
             <el-button type="primary" size="small" @click="openDetails(scope.row)">查看详情</el-button>
@@ -46,7 +46,7 @@
       </el-table>
 
       <!-- 空数据提示 -->
-      <el-empty v-if="filteredDoctors.length === 0" description="没有待审核的医生"></el-empty>
+      <el-empty v-if="displayedDoctors.length === 0" description="没有待审核的医生"></el-empty>
     </el-main>
 
     <!-- 详情对话框 -->
@@ -57,238 +57,197 @@
       :before-close="handleClose"
     >
       <div v-if="selectedDoctor">
-        <el-form :model="selectedDoctor" label-width="120px">
-          <el-form-item label="ID">
-            <span>{{ selectedDoctor.id }}</span>
-          </el-form-item>
-          <el-form-item label="姓名">
-            <span>{{ selectedDoctor.name }}</span>
-          </el-form-item>
-          <el-form-item label="邮箱">
-            <span>{{ selectedDoctor.email }}</span>
-          </el-form-item>
-          <el-form-item label="资格状态">
-            <span>{{ selectedDoctor.qualified ? '已认证' : '未认证' }}</span>
-          </el-form-item>
-          <el-form-item label="单位">
-            <el-select v-model="selectedDoctor.unit" placeholder="请选择单位">
-              <el-option
-                v-for="item in unitOptions"
-                :key="item"
-                :label="item"
-                :value="item"
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="科室">
-            <el-input v-model="selectedDoctor.department"></el-input>
-          </el-form-item>
-          <el-form-item label="职位">
-            <el-input v-model="selectedDoctor.position"></el-input>
-          </el-form-item>
-          <el-form-item label="医师资格证号">
-            <span>{{ selectedDoctor.certNumber }}</span>
-          </el-form-item>
-        </el-form>
+        <el-descriptions :column="1" border>
+          <el-descriptions-item label="医生ID">{{ selectedDoctor.doctorId }}</el-descriptions-item>
+          <el-descriptions-item label="姓名">{{ selectedDoctor.name }}</el-descriptions-item>
+          <el-descriptions-item label="性别">{{ selectedDoctor.gender }}</el-descriptions-item>
+          <el-descriptions-item label="职位">{{ selectedDoctor.position }}</el-descriptions-item>
+          <el-descriptions-item label="工作单位">{{ selectedDoctor.workplace }}</el-descriptions-item>
+        </el-descriptions>
         <div class="cert-image mt-4">
           <h4 class="text-lg font-medium mb-2">医师资格证图片：</h4>
           <el-image
-            :src="selectedDoctor.certImage"
-            :preview-src-list="[selectedDoctor.certImage]"
+            v-if="doctorImage"
+            :src="doctorImage"
             fit="cover"
             class="w-48 h-48 object-cover rounded"
           />
+          <div v-else class="w-48 h-48 bg-gray-200 rounded flex items-center justify-center text-gray-500">
+            图片加载错误或不存在
+          </div>
         </div>
       </div>
       <template #footer>
         <span class="dialog-footer">
           <el-button type="success" @click="approveDoctor">认证成功</el-button>
-          <el-button type="danger" @click="rejectDoctor">打回认证</el-button>
+          <el-button type="danger" @click="openRejectDialog">打回认证</el-button>
         </span>
       </template>
     </el-dialog>
 
-    <!-- 添加/删除单位对话框 -->
-    <el-dialog v-model="unitDialogVisible" title="管理单位" width="30%">
-      <el-form>
-        <el-form-item label="添加新单位">
-          <el-input v-model="newUnit" placeholder="请输入新单位名称"></el-input>
-          <el-button type="primary" @click="addUnit" class="mt-2">添加单位</el-button>
-        </el-form-item>
-        <el-form-item label="删除单位">
-          <el-select v-model="unitToDelete" placeholder="请选择要删除的单位">
-            <el-option
-              v-for="item in unitOptions"
-              :key="item"
-              :label="item"
-              :value="item"
-            />
-          </el-select>
-          <el-button type="danger" @click="deleteUnit" class="mt-2">删除单位</el-button>
+    <!-- 打回认证对话框 -->
+    <el-dialog
+      v-model="rejectDialogVisible"
+      title="打回认证"
+      width="30%"
+    >
+      <el-form :model="rejectForm">
+        <el-form-item label="打回原因">
+          <el-input
+            v-model="rejectForm.comment"
+            type="textarea"
+            :rows="4"
+            placeholder="请输入打回原因"
+          ></el-input>
         </el-form-item>
       </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="rejectDialogVisible = false">取消</el-button>
+          <el-button type="danger" @click="confirmReject">确认打回</el-button>
+        </span>
+      </template>
     </el-dialog>
   </el-container>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import axiosInstance from '../../axios/index';
 
-// 初始化医生数据
-const pendingDoctors = ref([
-  { 
-    id: 1, 
-    name: '医生 A', 
-    email: 'doctorA@example.com', 
-    qualified: false,
-    unit: '宛平南路600号',
-    department: '内科', 
-    position: '主治医师', 
-    certNumber: 'D123456789',
-    certImage: 'https://via.placeholder.com/150', // 示例图片 URL
-  },
-  { 
-    id: 2, 
-    name: '医生 B', 
-    email: 'doctorB@example.com', 
-    qualified: false,
-    unit: '宛平南路600号',
-    department: '外科', 
-    position: '副主任医师', 
-    certNumber: 'D987654321',
-    certImage: 'https://via.placeholder.com/150', // 示例图片 URL
-  },
-  { 
-    id: 3, 
-    name: '医生 C', 
-    email: 'doctorC@example.com', 
-    qualified: false,
-    unit: '宛平南路600号',
-    department: '儿科', 
-    position: '住院医师', 
-    certNumber: 'D112233445',
-    certImage: 'https://via.placeholder.com/150', // 示例图片 URL
-  },
-])
-
-// 单位选项
-const unitOptions = ref(['宛平南路600号', '龙华西路190号', '乌鲁木齐中路12号'])
-
-// 搜索关键词
+const doctors = ref([])
+const displayedDoctors = ref([])
+const loading = ref(false)
+const dialogVisible = ref(false)
+const rejectDialogVisible = ref(false)
+const selectedDoctor = ref(null)
 const searchTerm = ref('')
+const doctorImage = ref(null)
+const rejectForm = ref({
+  comment: ''
+})
 
-// 计算属性：根据搜索关键词过滤医生列表
-const filteredDoctors = computed(() => {
+const fetchDoctors = async () => {
+  loading.value = true
+  try {
+    const response = await axiosInstance.get('/api/verifyDoctor/selectAll')
+    doctors.value = response.data.map((doctor, idx) => ({
+      ...doctor,
+      index: idx + 1 // 添加自定义行号
+    }));
+    displayedDoctors.value = [...doctors.value]
+  } catch (error) {
+    console.error('获取医生数据失败:', error)
+    ElMessage.error('获取医生数据失败，请稍后重试')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(fetchDoctors)
+
+const onSearch = () => {
   const term = searchTerm.value.trim().toLowerCase()
   if (term === '') {
-    return pendingDoctors.value
+    displayedDoctors.value = [...doctors.value]
   } else {
-    return pendingDoctors.value.filter(doctor => {
-      const idMatch = doctor.id.toString().includes(term)
+    displayedDoctors.value = doctors.value.filter(doctor => {
+      const idMatch = doctor.index.toString().includes(term)
       const nameMatch = doctor.name.toLowerCase().includes(term)
       return idMatch || nameMatch
     })
   }
-})
-
-// 搜索功能：触发计算属性已实现，无需额外操作
-const onSearch = () => {
-  // 触发计算属性更新
 }
 
-// 清空搜索
 const clearSearch = () => {
   searchTerm.value = ''
+  displayedDoctors.value = [...doctors.value]
 }
 
-// 对话框状态和选中的医生
-const dialogVisible = ref(false)
-const selectedDoctor = ref(null)
-
-// 打开详情对话框
-const openDetails = (doctor) => {
+const openDetails = async (doctor) => {
   selectedDoctor.value = { ...doctor }
   dialogVisible.value = true
+  doctorImage.value = null
+
+  try {
+  // 构建完整的 URL
+  const imageUrl = `http://localhost:8080/LicenseImage/${doctor.doctorId}.png`;
+
+  // 发送请求
+  const response = await axiosInstance.get(`/api/url/getLicenseImage?url=${encodeURIComponent(imageUrl)}`, {
+    responseType: 'blob'  // 设置响应类型为 blob
+  });
+
+  if (response.data) {
+    // 将 Blob 数据转换为可展示的 URL
+    const blob = new Blob([response.data], { type: 'image/png' });
+    const imageUrl = URL.createObjectURL(blob);
+
+    // 将生成的 URL 赋值给 imageSrc 用于显示图片
+    doctorImage.value = imageUrl;
+    console.log('Image URL:', imageUrl);
+    ElMessage.success('获取医生图片成功');
+  }
+} catch (error) {
+  console.error('获取医生图片失败:', error);
+  ElMessage.error('获取医生图片失败');
+}
 }
 
-// 关闭对话框
+
 const handleClose = () => {
   dialogVisible.value = false
   selectedDoctor.value = null
+  doctorImage.value = null
 }
 
-// 批准医生资格
-const approveDoctor = () => {
-  // 更新医生信息
-  const index = pendingDoctors.value.findIndex(doctor => doctor.id === selectedDoctor.value.id)
-  if (index !== -1) {
-    pendingDoctors.value[index] = { ...selectedDoctor.value, qualified: true }
-  }
-  ElMessage({
-    message: `已认证医生 ${selectedDoctor.value.name} 的资格`,
-    type: 'success',
-  })
-  handleClose()
-}
-
-// 拒绝医生资格
-const rejectDoctor = () => {
-  ElMessage({
-    message: `已打回医生 ${selectedDoctor.value.name} 的资格认证申请`,
-    type: 'warning',
-  })
-  handleClose()
-}
-
-// 表格行的样式
-const tableRowClassName = ({ row, rowIndex }) => {
-  if (rowIndex % 2 === 0) {
-    return 'bg-gray-50'
-  }
-  return ''
-}
-
-// 单位管理相关
-const unitDialogVisible = ref(false)
-const newUnit = ref('')
-const unitToDelete = ref('')
-
-const openUnitManagement = () => {
-  unitDialogVisible.value = true
-}
-
-const addUnit = () => {
-  if (newUnit.value.trim() && !unitOptions.value.includes(newUnit.value.trim())) {
-    unitOptions.value.push(newUnit.value.trim())
+const approveDoctor = async () => {
+  try {
+    await axiosInstance.post('/api/verifyDoctor/approve', { auditId: selectedDoctor.value.auditId })
     ElMessage({
-      message: '新单位已添加',
+      message: `已认证医生 ${selectedDoctor.value.name} 的资格`,
       type: 'success',
     })
-    newUnit.value = ''
-  } else {
-    ElMessage({
-      message: '请输入有效的新单位名称',
-      type: 'warning',
-    })
+    handleClose()
+    fetchDoctors() // 刷新医生列表
+  } catch (error) {
+    console.error('审核通过失败:', error)
+    ElMessage.error('审核通过失败，请稍后重试')
   }
 }
 
-const deleteUnit = () => {
-  if (unitToDelete.value) {
-    unitOptions.value = unitOptions.value.filter(unit => unit !== unitToDelete.value)
-    ElMessage({
-      message: '单位已删除',
-      type: 'success',
+const openRejectDialog = () => {
+  rejectDialogVisible.value = true
+}
+
+const confirmReject = async () => {
+  if (!rejectForm.value.comment.trim()) {
+    ElMessage.warning('请输入打回原因')
+    return
+  }
+
+  try {
+    await axiosInstance.post('/api/verifyDoctor/reject', {
+      auditId: selectedDoctor.value.auditId,
+      comment: rejectForm.value.comment
     })
-    unitToDelete.value = ''
-  } else {
     ElMessage({
-      message: '请选择要删除的单位',
+      message: `已打回医生 ${selectedDoctor.value.name} 的资格认证申请`,
       type: 'warning',
     })
+    rejectDialogVisible.value = false
+    handleClose()
+    fetchDoctors() // 刷新医生列表
+  } catch (error) {
+    console.error('审核拒绝失败:', error)
+    ElMessage.error('审核拒绝失败，请稍后重试')
   }
+}
+
+const tableRowClassName = ({ rowIndex }) => {
+  return rowIndex % 2 === 0 ? 'bg-gray-50' : ''
 }
 </script>
 
