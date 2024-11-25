@@ -5,7 +5,7 @@
       <el-tab-pane label="修改密码" name="password">
         <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" label-width="120px">
           <el-form-item label="当前密码" prop="currentPassword">
-            <el-input v-model="passwordForm.currentPassword" type="password"></el-input>
+            <el-input v-model="passwordForm.oldPassword" type="password"></el-input>
           </el-form-item>
           <el-form-item label="新密码" prop="newPassword">
             <el-input v-model="passwordForm.newPassword" type="password"></el-input>
@@ -141,7 +141,7 @@ const emailRules = {
 }
 
 const passwordForm = reactive({
-  currentPassword: '',
+  oldPassword: '',
   newPassword: '',
   confirmPassword: ''
 })
@@ -294,7 +294,7 @@ const changeEmail = async () => {
 
 const changePassword = async () => {
   try {
-    await axiosInstance.post('/api/doctor_manage/changePassword', passwordForm, {
+    await axiosInstance.post('/api/doctor_manage/updatePassword', passwordForm, {
       headers: { Authorization: `Bearer ${store.state.token}` }
     })
     ElMessage.success('密码修改成功')
