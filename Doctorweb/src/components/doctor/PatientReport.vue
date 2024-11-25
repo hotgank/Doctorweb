@@ -35,8 +35,23 @@
       </el-table>
     </div>
 
-    <el-dialog v-model="showReportDetails" title="报告详情" width="70%">
+    <el-dialog v-model="showReport" title="报告详情" width="70%">
       <el-form :model="currentReport" label-width="120px">
+        <el-form-item label="姓名">
+          <span>{{ currentReport.name}}</span>
+        </el-form-item>
+        <el-form-item label="性别">
+          <span>{{ currentReport.gender }}</span>
+        </el-form-item>
+        <el-form-item label="出生日期">
+          <span>{{formatDate2(currentReport.birthdate)}}</span>
+        </el-form-item>
+        <el-form-item label="身高">
+          <span>{{ currentReport.height }}</span>
+        </el-form-item>
+        <el-form-item label="体重">
+          <span>{{ currentReport.weight }}</span>
+        </el-form-item>
         <el-form-item label="报告类型">
           <span>{{ currentReport.reportType }}</span>
         </el-form-item>
@@ -50,7 +65,7 @@
           <el-input type="textarea" v-model="currentReport.analyse" :rows="4" readonly></el-input>
         </el-form-item>
         <el-form-item label="医生评论">
-          <el-input type="textarea" v-model="currentReport.comment" :rows="4"></el-input>
+          <el-input type="textarea" v-model="currentReport.comment" :rows="4" :readonly="!isEditing"></el-input>
         </el-form-item>
         <el-form-item label="报告图片">
           <el-image :src="imageSrc" :preview-src-list="[imageSrc]"></el-image>
@@ -58,7 +73,9 @@
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button type="primary" @click="saveReportComment">保存评论</el-button>
+          <el-button v-if="!isEditing" @click="startEdit">编辑评论</el-button>
+          <el-button v-else @click="cancelEdit">取消</el-button>
+          <el-button type="primary" @click="saveReport" :disabled="!isEditing">保存</el-button>
         </span>
       </template>
     </el-dialog>
@@ -83,6 +100,7 @@ const store = useStore()
 const patientReports = ref([])
 const showReportDetails = ref(false)
 const currentReport = ref({})
+const isEditing = ref(false)
 const imageSrc = ref('') // 用于存储报告图片的 URL
 
 const fetchPatientReports = async () => {
@@ -131,9 +149,36 @@ const fetchReportImage = async (url) => {
   }
 }
 
-const saveReportComment = async () => {
-  ElMessage.success('评论已保存')
-  showReportDetails.value = false
+const startEdit = () => {
+  isEditing.value = true
+}
+
+const cancelEdit = () => {
+  isEditing.value = false
+  currentReport.value = { ...currentReport.value }
+}
+
+const saveReport = async () => {
+  // 这里应该实现保存报告评论的逻辑
+  // 由于API中没有提供相应的接口，这里只是模拟了保存操作
+  //发送POST请求，data为currentReport的id和comment
+  try {
+    const response = await axios.post('/api/api/doctorReport/comment',
+        { reportId: currentReport.value.reportId, comment: currentReport.value.comment },
+        {
+          headers: {
+            Authorization: `Bearer ${store.state.token}`
+          }
+        }
+    )
+    console.log('Report comment saved successfully:', response.data)
+  } catch (error) {
+    console.error('Failed to save report comment:', error)
+    ElMessage.error('保存报告评论失败')
+  }
+  ElMessage.success('报告评论已保存')
+  isEditing.value = false
+  showReport.value = false
 }
 
 const formatDate = (dateArray) => {
@@ -141,13 +186,20 @@ const formatDate = (dateArray) => {
   return new Date(year, month - 1, day, hour, minute, second).toLocaleString()
 }
 
-onMounted(() => {
-  fetchPatientReports()
-})
+const formatDate2 = (timestamp) => {
+  const date = new Date(timestamp);
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+}
 
-watch(showReportDetails, (newVal) => {
-  if (!newVal) {
-    imageSrc.value = '' // 关闭对话框时清空图片
+watch(() => props.patient, (newPatient) => {
+  if (newPatient) {
+    fetchPatientReports()
+  }
+}, { immediate: true })
+
+onMounted(() => {
+  if (props.patient) {
+    fetchPatientReports()
   }
 })
 </script>
