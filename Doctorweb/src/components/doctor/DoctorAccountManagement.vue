@@ -2,19 +2,34 @@
   <div class="account-management">
     <h1 class="mb-4">账户管理</h1>
     <el-tabs v-model="activeTab">
-      <el-tab-pane label="账户信息" name="info">
-        <el-form :model="accountInfo" label-width="120px">
-          <el-form-item label="用户名">
-            <el-input v-model="accountInfo.username" disabled></el-input>
+      <el-tab-pane label="更改邮箱" name="email">
+        <el-form :model="emailForm" :rules="emailRules" ref="emailForm" label-width="120px">
+          <el-form-item label="当前邮箱">
+            <el-input v-model="profile.email" readonly :placeholder="profile.email || '未认证'"></el-input>
           </el-form-item>
-          <el-form-item label="邮箱">
-            <el-input v-model="accountInfo.email"></el-input>
+          <el-form-item label="新邮箱" prop="newEmail">
+            <el-input v-model="emailForm.newEmail"></el-input>
           </el-form-item>
-          <el-form-item label="手机号">
-            <el-input v-model="accountInfo.phone"></el-input>
+          <el-form-item label="旧邮箱验证码" prop="oldCode">
+            <el-input v-model="emailForm.oldCode">
+              <template #append>
+                <el-button @click="sendOldEmailCode" :disabled="oldCodeSent">
+                  {{ oldCodeSent ? `重新发送 (${oldCodeCountdown}s)` : '发送验证码' }}
+                </el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+          <el-form-item label="新邮箱验证码" prop="newCode">
+            <el-input v-model="emailForm.newCode">
+              <template #append>
+                <el-button @click="sendNewEmailCode" :disabled="newCodeSent || !emailForm.newEmail">
+                  {{ newCodeSent ? `重新发送 (${newCodeCountdown}s)` : '发送验证码' }}
+                </el-button>
+              </template>
+            </el-input>
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="updateAccountInfo">更新信息</el-button>
+            <el-button type="primary" @click="changeEmail">更改邮箱</el-button>
           </el-form-item>
         </el-form>
       </el-tab-pane>
@@ -34,34 +49,33 @@
           </el-form-item>
         </el-form>
       </el-tab-pane>
-        <el-tab-pane label="账户认证" name="verification">
-          <el-form :model="verificationForm" label-width="120px">
-            <el-form-item label="医师执照号">
-              <el-input v-model="verificationForm.licenseNumber"></el-input>
-            </el-form-item>
-            <el-form-item label="执照图片">
-              <el-upload
-                class="upload-demo"
-                action="https://jsonplaceholder.typicode.com/posts/"
-                :on-preview="handlePreview"
-                :on-remove="handleRemove"
-                :before-remove="beforeRemove"
-                multiple
-                :limit="1"
-                :on-exceed="handleExceed"
-                :file-list="fileList"
-              >
-                <el-button size="small" type="primary">点击上传</el-button>
-                <template #tip>
-                  <div class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div>
-                </template>
-              </el-upload>
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" @click="submitVerification">提交认证</el-button>
-            </el-form-item>
-          </el-form>
-        </el-tab-pane>
+      <el-tab-pane label="账户认证" name="verification">
+        <el-form :model="verificationForm" label-width="120px">
+          <el-form-item label="电子医生执照">
+            <el-upload
+              class="upload-demo"
+              action="/api/api/doctorlicense/insert"
+              :headers="uploadHeaders"
+              :on-success="handleUploadSuccess"
+              :on-error="handleUploadError"
+              :before-upload="beforeUpload"
+              :file-list="fileList"
+              name="multipartFile"
+            >
+              <el-button size="small" type="primary">上传电子医生执照</el-button>
+              <template #tip>
+                <div class="el-upload__tip">请上传您的电子医生执照（仅支持jpg/png格式，不超过5MB）</div>
+              </template>
+            </el-upload>
+          </el-form-item>
+        </el-form>
+        <div v-if="licenseStatus">
+          <h3>认证状态</h3>
+          <p>状态: {{ licenseStatus.status }}</p>
+          <p>评论: {{ licenseStatus.comment }}</p>
+          <el-image v-if="licenseStatus.url" :src="getLicenseImageUrl(licenseStatus.url)" :preview-src-list="[getLicenseImageUrl(licenseStatus.url)]"></el-image>
+        </div>
+      </el-tab-pane>
       <el-tab-pane label="注销账户" name="deactivate">
         <el-alert
           title="警告：注销账户将永久删除您的所有数据，此操作不可逆！"
@@ -70,8 +84,17 @@
         >
         </el-alert>
         <el-form :model="deactivateForm" :rules="deactivateRules" ref="deactivateForm" label-width="120px" class="mt-4">
-          <el-form-item label="密码确认" prop="password">
+          <el-form-item label="密码" prop="password">
             <el-input v-model="deactivateForm.password" type="password"></el-input>
+          </el-form-item>
+          <el-form-item label="验证码" prop="deleteCode">
+            <el-input v-model="deactivateForm.deleteCode">
+              <template #append>
+                <el-button @click="sendDeleteCode" :disabled="deleteCodeSent">
+                  {{ deleteCodeSent ? `重新发送 (${deleteCodeCountdown}s)` : '发送验证码' }}
+                </el-button>
+              </template>
+            </el-input>
           </el-form-item>
           <el-form-item label="确认注销" prop="confirm">
             <el-checkbox v-model="deactivateForm.confirm">我确认要注销我的账户</el-checkbox>
@@ -86,21 +109,36 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 
 const store = useStore()
 const router = useRouter()
 
-const activeTab = ref('info')
+const activeTab = ref('email')
+const profile = computed(() => store.state.doctor || {})
 
-const accountInfo = reactive({
-  username: 'doctor_zhang',
-  email: 'doctor_zhang@example.com',
-  phone: '13800138000'
+const emailForm = reactive({
+  newEmail: '',
+  oldCode: '',
+  newCode: ''
 })
+
+const emailRules = {
+  newEmail: [
+    { required: true, message: '请输入新邮箱地址', trigger: 'blur' },
+    { type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' }
+  ],
+  oldCode: [
+    { required: true, message: '请输入旧邮箱验证码', trigger: 'blur' }
+  ],
+  newCode: [
+    { required: true, message: '请输入新邮箱验证码', trigger: 'blur' }
+  ]
+}
 
 const passwordForm = reactive({
   currentPassword: '',
@@ -131,20 +169,22 @@ const passwordRules = {
   ]
 }
 
-const verificationForm = reactive({
-  licenseNumber: ''
-})
+const verificationForm = reactive({})
 
 const fileList = ref([])
 
 const deactivateForm = reactive({
   password: '',
+  deleteCode: '',
   confirm: false
 })
 
 const deactivateRules = {
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
+  ],
+  deleteCode: [
+    { required: true, message: '请输入验证码', trigger: 'blur' },
   ],
   confirm: [
     {
@@ -160,73 +200,123 @@ const deactivateRules = {
   ]
 }
 
-const updateAccountInfo = () => {
-  // 这里应该是一个API调用来更新账户信息
-  ElMessage({
-    message: '账户信息已更新',
-    type: 'success'
-  })
+const oldCodeSent = ref(false)
+const newCodeSent = ref(false)
+const deleteCodeSent = ref(false)
+const oldCodeCountdown = ref(60)
+const newCodeCountdown = ref(60)
+const deleteCodeCountdown = ref(60)
+const licenseStatus = ref(null)
+
+const uploadHeaders = computed(() => ({
+  Authorization: `Bearer ${store.state.token}`
+}))
+
+const sendOldEmailCode = async () => {
+  try {
+    await axios.post('/api/api/doctor_manage/sendOldEmailCode', {}, {
+      headers: { Authorization: `Bearer ${store.state.token}` }
+    })
+    ElMessage.success('验证码已发送到您的旧邮箱')
+    oldCodeSent.value = true
+    startCountdown('oldCode')
+  } catch (error) {
+    ElMessage.error('发送验证码失败')
+  }
 }
 
-const changePassword = () => {
-  // 这里应该是一个API调用来更改密码
-  ElMessage({
-    message: '密码已修改',
-    type: 'success'
-  })
+const sendNewEmailCode = async () => {
+  if (!emailForm.newEmail) {
+    ElMessage.error('请先填写新邮箱地址')
+    return
+  }
+  try {
+    await axios.post('/api/api/doctor_manage/sendNewEmailCode', { newEmail: emailForm.newEmail }, {
+      headers: { Authorization: `Bearer ${store.state.token}` }
+    })
+    ElMessage.success('验证码已发送到您的新邮箱')
+    newCodeSent.value = true
+    startCountdown('newCode')
+  } catch (error) {
+    ElMessage.error('发送验证码失败')
+  }
 }
 
-const submitVerification = () => {
-  // 这里应该是一个API调用来提交认证信息
-  ElMessage({
-    message: '认证信息已提交，请等待审核',
-    type: 'success'
-  })
-}
-
-const deactivateAccount = () => {
-  ElMessageBox.confirm(
-    '您确定要注销您的账户吗？此操作将永久删除您的所有数据，且不可逆！',
-    '警告',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning',
+const startCountdown = (type) => {
+  let countdown = type === 'oldCode' ? oldCodeCountdown : type === 'newCode' ? newCodeCountdown : deleteCodeCountdown
+  let interval = setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0) {
+      clearInterval(interval)
+      if (type === 'oldCode') oldCodeSent.value = false
+      if (type === 'newCode') newCodeSent.value = false
+      if (type === 'deleteCode') deleteCodeSent.value = false
     }
-  )
-    .then(() => {
-      // 这里应该是一个API调用来注销账户
-      store.dispatch('logout')
-      router.push('/login')
-      ElMessage({
-        type: 'success',
-        message: '账户已注销',
-      })
+  }, 1000)
+}
+
+const getLicenseStatus = async () => {
+  try {
+    const response = await axios.get('/api/api/doctorlicense/myLicense', {
+      headers: { Authorization: `Bearer ${store.state.token}` }
     })
-    .catch(() => {
-      ElMessage({
-        type: 'info',
-        message: '已取消注销',
-      })
+    if (response.data && response.data.length > 0) {
+      licenseStatus.value = response.data[0]
+    }
+  } catch (error) {
+    ElMessage.error('获取执照状态失败')
+  }
+}
+
+const getLicenseImageUrl = (url) => {
+  return `/api/api/url/getLicenseImage?url=${encodeURIComponent(url)}`
+}
+
+const handleUploadSuccess = (response, file, fileList) => {
+  ElMessage.success('执照上传成功')
+  getLicenseStatus()
+}
+
+const handleUploadError = (error, file, fileList) => {
+  ElMessage.error('执照上传失败')
+}
+
+const changeEmail = async () => {
+  try {
+    await axios.post('/api/api/doctor_manage/changeEmail', emailForm, {
+      headers: { Authorization: `Bearer ${store.state.token}` }
     })
+    ElMessage.success('邮箱已成功更改')
+  } catch (error) {
+    ElMessage.error('更改邮箱失败')
+  }
 }
 
-const handleRemove = (file, fileList) => {
-  console.log(file, fileList)
+const changePassword = async () => {
+  try {
+    await axios.post('/api/api/doctor_manage/changePassword', passwordForm, {
+      headers: { Authorization: `Bearer ${store.state.token}` }
+    })
+    ElMessage.success('密码修改成功')
+  } catch (error) {
+    ElMessage.error('修改密码失败')
+  }
 }
 
-const handlePreview = (file) => {
-  console.log(file)
-}
-
-const handleExceed = (files, fileList) => {
-  ElMessage.warning(`当前限制选择 1 个文件，本次选择了 ${files.length} 个文件，共选择了 ${files.length + fileList.length} 个文件`)
-}
-
-const beforeRemove = (file, fileList) => {
-  return ElMessageBox.confirm(`确定移除 ${file.name}？`)
+const deactivateAccount = async () => {
+  try {
+    await axios.post('/api/api/doctor_manage/deactivateAccount', deactivateForm, {
+      headers: { Authorization: `Bearer ${store.state.token}` }
+    })
+    ElMessage.success('账户已注销')
+    store.dispatch('logout')
+    router.push('/login')
+  } catch (error) {
+    ElMessage.error('账户注销失败')
+  }
 }
 </script>
+
 
 <style scoped>
 .account-management {
