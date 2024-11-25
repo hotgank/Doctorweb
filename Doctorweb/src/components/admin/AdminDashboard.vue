@@ -25,13 +25,11 @@
       <el-tab-pane label="待审核医生" name="pendingDoctors">
         <el-table :data="pendingDoctors" style="width: 100%">
           <el-table-column prop="name" label="医生姓名" width="180" />
-          <el-table-column prop="unit" label="单位" width="180" />
-          <el-table-column prop="applicationDate" label="申请日期" width="180" />
+          <el-table-column prop="gender" label="性别" width="180" />
+          <el-table-column prop="workplace" label="单位" width="180" />
           <el-table-column fixed="right" label="操作" width="240">
             <template #default="scope">
               <el-button link type="primary" size="small" @click="viewDoctorDetails(scope.row)">查看详情</el-button>
-              <el-button link type="success" size="small" @click="reviewDoctor(scope.row, 'approve')">批准</el-button>
-              <el-button link type="danger" size="small" @click="reviewDoctor(scope.row, 'reject')">拒绝</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -55,29 +53,57 @@
         v-model="doctorDetailsVisible"
         title="医生详情"
         width="50%"
-        :before-close="handleCloseDoctorDetails"
+        :before-close="handleClose"
     >
       <div v-if="selectedDoctor">
         <el-descriptions :column="1" border>
-          <el-descriptions-item label="ID">{{ selectedDoctor.id }}</el-descriptions-item>
+          <el-descriptions-item label="ID">{{ selectedDoctor.doctorId }}</el-descriptions-item>
           <el-descriptions-item label="姓名">{{ selectedDoctor.name }}</el-descriptions-item>
-          <el-descriptions-item label="邮箱">{{ selectedDoctor.email }}</el-descriptions-item>
-          <el-descriptions-item label="单位">{{ selectedDoctor.unit }}</el-descriptions-item>
-          <el-descriptions-item label="科室">{{ selectedDoctor.department }}</el-descriptions-item>
-          <el-descriptions-item label="职位">{{ selectedDoctor.position }}</el-descriptions-item>
-          <el-descriptions-item label="医师资格证号">{{ selectedDoctor.certNumber }}</el-descriptions-item>
-          <el-descriptions-item label="申请日期">{{ selectedDoctor.applicationDate }}</el-descriptions-item>
+          <el-descriptions-item label="性别">{{ selectedDoctor.gender }}</el-descriptions-item>
+          <el-descriptions-item label="单位">{{ selectedDoctor.workplace }}</el-descriptions-item>
         </el-descriptions>
-        <div class="cert-image mt-4" v-if="selectedDoctor.certImage">
+        <div class="cert-image mt-4">
           <h4 class="text-lg font-medium mb-2">医师资格证图片：</h4>
           <el-image
-              :src="selectedDoctor.certImage"
-              :preview-src-list="[selectedDoctor.certImage]"
+              v-if="doctorImage"
+              :src="doctorImage"
               fit="cover"
               class="w-48 h-48 object-cover rounded"
           />
+          <div v-else class="w-48 h-48 bg-gray-200 rounded flex items-center justify-center text-gray-500">
+            图片加载错误或不存在
+          </div>
         </div>
       </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="success" @click="approveDoctor">认证成功</el-button>
+          <el-button type="danger" @click="openRejectDialog">打回认证</el-button>
+        </span>
+      </template>
+    </el-dialog>
+    <!-- 打回认证对话框 -->
+    <el-dialog
+        v-model="rejectDialogVisible"
+        title="打回认证"
+        width="30%"
+    >
+      <el-form :model="rejectForm">
+        <el-form-item label="打回原因">
+          <el-input
+              v-model="rejectForm.comment"
+              type="textarea"
+              :rows="4"
+              placeholder="请输入打回原因"
+          ></el-input>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="rejectDialogVisible = false">取消</el-button>
+          <el-button type="danger" @click="confirmReject">确认打回</el-button>
+        </span>
+      </template>
     </el-dialog>
 
     <!-- 活动详情对话框 -->
@@ -142,6 +168,12 @@ const doctorDetailsVisible = ref(false)
 const activityDetailsVisible = ref(false)
 const selectedDoctor = ref(null)
 const selectedActivity = ref(null)
+const doctorImage = ref(null)
+const dialogVisible = ref(false)
+const rejectDialogVisible = ref(false)
+const rejectForm = ref({
+  comment: ''
+})
 
 const fetchStats = async () => {
   try {
@@ -172,7 +204,7 @@ const fetchStats = async () => {
 
 const fetchPendingDoctors = async () => {
   try {
-    const response = await axiosInstance.get('/api/getPendingDoctors')
+    const response = await axiosInstance.get('/api/verifyDoctor/selectRecent')
     pendingDoctors.value = response.data
   } catch (error) {
     console.error('获取待审核医生数据失败:', error)
@@ -191,35 +223,105 @@ const handleCardClick = (item) => {
   }
 }
 
-const viewDoctorDetails = (doctor) => {
+const viewDoctorDetails = async (doctor) => {
   selectedDoctor.value = doctor
   doctorDetailsVisible.value = true
-}
+  doctorImage.value = null
 
-const handleCloseDoctorDetails = () => {
-  doctorDetailsVisible.value = false
-  selectedDoctor.value = null
-}
+  try {
+    // 构建完整的 URL
+    const imageUrl = `http://localhost:8080/LicenseImage/${doctor.doctorId}.png`;
 
-const reviewDoctor = (doctor, action) => {
-  if (action === 'approve') {
-    ElMessage({
-      message: `已批准医生 ${doctor.name} 的资格`,
-      type: 'success',
-    })
-  } else if (action === 'reject') {
-    ElMessage({
-      message: `已拒绝医生 ${doctor.name} 的资格申请`,
-      type: 'warning',
-    })
+    // 发送请求
+    const response = await axiosInstance.get(`/api/url/getLicenseImage?url=${encodeURIComponent(imageUrl)}`, {
+      responseType: 'blob'  // 设置响应类型为 blob
+    });
+
+    if (response.data) {
+      // 将 Blob 数据转换为可展示的 URL
+      const blob = new Blob([response.data], {type: 'image/png'});
+      const imageUrl = URL.createObjectURL(blob);
+
+      // 将生成的 URL 赋值给 imageSrc 用于显示图片
+      doctorImage.value = imageUrl;
+      console.log('Image URL:', imageUrl);
+      ElMessage.success('获取医生图片成功');
+    }
+  } catch (error) {
+    console.error('获取医生图片失败:', error);
+    ElMessage.error('获取医生图片失败');
   }
-  // 从待审核列表中移除该医生
-  pendingDoctors.value = pendingDoctors.value.filter(d => d.id !== doctor.id)
 }
 
 const viewActivityDetails = (activity) => {
   selectedActivity.value = activity
   activityDetailsVisible.value = true
+}
+
+const approveDoctor = async () => {
+  if (!selectedDoctor.value.position.trim()) {
+    ElMessage.warning('职位不能为空，请填写职位后再提交');
+    return;
+  }
+
+  try {
+    const data = {
+      auditId: selectedDoctor.value.auditId,
+      position: selectedDoctor.value.position,
+    };
+
+    await axiosInstance.post('/api/verifyDoctor/approve', JSON.stringify(data), {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    ElMessage({
+      message: `已认证医生 ${selectedDoctor.value.name} 的资格`,
+      type: 'success',
+    });
+
+    handleClose();
+    await fetchPendingDoctors(); // 刷新医生列表
+  } catch (error) {
+    console.error('审核通过失败:', error);
+    ElMessage.error('审核通过失败，请稍后重试');
+  }
+};
+
+const confirmReject = async () => {
+  if (!rejectForm.value.comment || !rejectForm.value.comment.trim()) {
+    ElMessage.warning('请输入打回原因')
+    return
+  }
+
+  try {
+    await axiosInstance.post('/api/verifyDoctor/reject', {
+      auditId: selectedDoctor.value.auditId,
+      comment: rejectForm.value.comment
+    })
+    ElMessage({
+      message: `已打回医生 ${selectedDoctor.value.name} 的资格认证申请`,
+      type: 'warning',
+    })
+    rejectDialogVisible.value = false
+    handleClose()
+    await fetchPendingDoctors() // 刷新医生列表
+  } catch (error) {
+    console.error('审核拒绝失败:', error)
+    ElMessage.error('审核拒绝失败，请稍后重试')
+  }
+}
+
+const handleClose = () => {
+  dialogVisible.value = false
+  selectedDoctor.value = null
+  doctorImage.value = null
+  doctorDetailsVisible.value = false
+}
+
+const openRejectDialog = () => {
+  rejectDialogVisible.value = true
 }
 </script>
 

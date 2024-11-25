@@ -61,7 +61,14 @@
           <el-descriptions-item label="医生ID">{{ selectedDoctor.doctorId }}</el-descriptions-item>
           <el-descriptions-item label="姓名">{{ selectedDoctor.name }}</el-descriptions-item>
           <el-descriptions-item label="性别">{{ selectedDoctor.gender }}</el-descriptions-item>
-          <el-descriptions-item label="职位">{{ selectedDoctor.position }}</el-descriptions-item>
+          <el-descriptions-item label="职位">
+            <el-input
+                v-model="selectedDoctor.position"
+                placeholder="请输入职位"
+                clearable>
+            </el-input>
+          </el-descriptions-item>
+
           <el-descriptions-item label="工作单位">{{ selectedDoctor.workplace }}</el-descriptions-item>
         </el-descriptions>
         <div class="cert-image mt-4">
@@ -204,26 +211,42 @@ const handleClose = () => {
 }
 
 const approveDoctor = async () => {
+  if (!selectedDoctor.value.position.trim()) {
+    ElMessage.warning('职位不能为空，请填写职位后再提交');
+    return;
+  }
+
   try {
-    await axiosInstance.post('/api/verifyDoctor/approve', { auditId: selectedDoctor.value.auditId })
+    const data = {
+      auditId: selectedDoctor.value.auditId,
+      position: selectedDoctor.value.position,
+    };
+
+    await axiosInstance.post('/api/verifyDoctor/approve', JSON.stringify(data), {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
     ElMessage({
       message: `已认证医生 ${selectedDoctor.value.name} 的资格`,
       type: 'success',
-    })
-    handleClose()
-    fetchDoctors() // 刷新医生列表
+    });
+
+    handleClose();
+    await fetchDoctors(); // 刷新医生列表
   } catch (error) {
-    console.error('审核通过失败:', error)
-    ElMessage.error('审核通过失败，请稍后重试')
+    console.error('审核通过失败:', error);
+    ElMessage.error('审核通过失败，请稍后重试');
   }
-}
+};
 
 const openRejectDialog = () => {
   rejectDialogVisible.value = true
 }
 
 const confirmReject = async () => {
-  if (!rejectForm.value.comment.trim()) {
+  if (!rejectForm.value.comment || !rejectForm.value.comment.trim()) {
     ElMessage.warning('请输入打回原因')
     return
   }
@@ -239,7 +262,7 @@ const confirmReject = async () => {
     })
     rejectDialogVisible.value = false
     handleClose()
-    fetchDoctors() // 刷新医生列表
+    await fetchDoctors() // 刷新医生列表
   } catch (error) {
     console.error('审核拒绝失败:', error)
     ElMessage.error('审核拒绝失败，请稍后重试')

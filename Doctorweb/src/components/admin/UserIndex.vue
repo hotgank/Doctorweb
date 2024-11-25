@@ -50,7 +50,6 @@
         </el-table-column>
         <el-table-column label="操作" min-width="150" align="center">
           <template #default="scope">
-            <el-button type="primary" size="small" @click="editUser(scope.row)">编辑</el-button>
             <el-button 
               :type="scope.row.status === 'active' ? 'danger' : 'success'" 
               size="small" 
@@ -65,24 +64,6 @@
       <!-- 空数据提示 -->
       <el-empty v-if="filteredUsers.length === 0" description="没有用户数据"></el-empty>
     </el-main>
-
-    <!-- 编辑用户对话框 -->
-    <el-dialog v-model="editDialogVisible" title="编辑用户" width="30%">
-      <el-form :model="editingUser" label-width="100px">
-        <el-form-item label="账号">
-          <el-input v-model="editingUser.username" disabled></el-input>
-        </el-form-item>
-        <el-form-item label="姓名">
-          <el-input v-model="editingUser.username"></el-input>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="editDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="saveUserEdit">确定</el-button>
-        </span>
-      </template>
-    </el-dialog>
 
     <!-- 导入用户对话框 -->
     <el-dialog v-model="importDialogVisible" title="导入用户" width="30%">
@@ -179,20 +160,6 @@ const tableRowClassName = ({ row, rowIndex }) => {
 // 编辑用户
 const editDialogVisible = ref(false)
 const editingUser = ref({})
-
-const editUser = (user) => {
-  editingUser.value = { ...user }
-  editDialogVisible.value = true
-}
-
-const saveUserEdit = () => {
-  const index = allUsers.value.findIndex(u => u.id === editingUser.value.id)
-  if (index !== -1) {
-    allUsers.value[index] = { ...editingUser.value }
-    ElMessage.success('用户信息已更新')
-  }
-  editDialogVisible.value = false
-}
 
 // 切换用户状态
 const toggleUserStatus = (user) => {

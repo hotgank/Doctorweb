@@ -1,5 +1,6 @@
 import { createStore } from 'vuex';
 import axios from 'axios';
+import {ElMessage} from "element-plus";
 
 export default createStore({
   state: {
@@ -81,6 +82,12 @@ export default createStore({
         }
       } catch (error) {
         console.error('Login failed:', error);
+        // 检查错误响应中的状态码和消息
+        if (error.response && error.response.status === 400) {
+          ElMessage.error(error.response.data); // 显示后端返回的具体错误消息
+        } else {
+          ElMessage.error('登录失败，请稍后重试');
+        }
         return false;
       }
     },
@@ -107,6 +114,12 @@ export default createStore({
         }
       } catch (error) {
         console.error('Login failed:', error);
+        // 检查错误响应中的状态码和消息
+        if (error.response && error.response.status === 400) {
+          ElMessage.error(error.response.data); // 显示后端返回的具体错误消息
+        } else {
+          ElMessage.error('登录失败，请稍后重试');
+        }
         return false;
       }
     },

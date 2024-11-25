@@ -107,17 +107,14 @@ const handleLogin = async () => {
     if (success) {
       localStorage.setItem('role', role);
       if (role === 'doctor') {
-        router.push({ name: 'DoctorDashboard' });
+        await router.push({name: 'DoctorDashboard'});
       } else if (role === 'admin') {
-        router.push({ name: 'AdminDashboard' });
+        await router.push({name: 'AdminDashboard'});
       }
       ElMessage.success('登录成功');
-    } else {
-      ElMessage.error('登录失败，请检查您的凭据并重试。');
     }
   } catch (error) {
     console.error('Login error:', error);
-    ElMessage.error('登录失败，请稍后重试');
   }
 };
 
