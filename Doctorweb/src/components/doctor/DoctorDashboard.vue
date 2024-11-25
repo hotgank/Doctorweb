@@ -26,12 +26,7 @@
       <el-tab-pane label="待处理咨询" name="pending">
         <el-table :data="pendingPatients" style="width: 100%">
           <el-table-column prop="username" label="用户名" width="180" />
-          <el-table-column prop="status" label="状态" width="180" />
-          <el-table-column label="头像" width="180">
-            <template #default="scope">
-              <el-avatar :size="40" :src="scope.row.avatarUrl" />
-            </template>
-          </el-table-column>
+          <el-table-column prop="relationStatus" label="状态" width="180" />
           <el-table-column fixed="right" label="操作" width="180">
             <template #default="scope">
               <el-button link type="primary" size="small" @click="approvePatient(scope.row)">批准</el-button>
@@ -40,18 +35,14 @@
           </el-table-column>
         </el-table>
       </el-tab-pane>
-      <el-tab-pane label="我的患者" name="myPatients">
-        <el-table :data="myPatients" style="width: 100%">
+      <el-tab-pane label="待处理的结束咨询申请" name="removePending">
+        <el-table :data="removePendingPatients" style="width: 100%">
           <el-table-column prop="username" label="用户名" width="180" />
-          <el-table-column prop="status" label="状态" width="180" />
-          <el-table-column label="头像" width="180">
-            <template #default="scope">
-              <el-avatar :size="40" :src="scope.row.avatarUrl" />
-            </template>
-          </el-table-column>
+          <el-table-column prop="relationStatus" label="状态" width="180" />
           <el-table-column fixed="right" label="操作" width="180">
             <template #default="scope">
-              <el-button link type="primary" size="small" @click="viewPatientReports(scope.row)">查看报告</el-button>
+              <el-button link type="primary" size="small" @click="approveRemovePatient(scope.row)">批准</el-button>
+              <el-button link type="danger" size="small" @click="rejectRemovePatient(scope.row)">拒绝</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -116,10 +107,10 @@ import { User, ChatDotRound, Document, Star } from '@element-plus/icons-vue'
 const store = useStore()
 
 const stats = ref([
-  { title: '总患者数', value: '0', description: '较上月增长20%', icon: User, route: '/patient-index' },
-  { title: '今日咨询', value: '0', description: '比昨天多3个', icon: ChatDotRound, route: '/consultation' },
-  { title: '已发布文章', value: '0', description: '本周新增2篇', icon: Document, route: '/articles' },
-  { title: '评分', value: '0', description: '较上月提高0.1', icon: Star }
+  { title: '总患者数', value: '0', description: '', icon: User, route: '/patient-index' },
+  { title: '今日咨询', value: '0', description: '', icon: ChatDotRound, route: '/consultation' },
+  { title: '已发布文章', value: '0', description: '', icon: Document, route: '/articles' },
+  { title: '评分', value: '0', description: '', icon: Star }
 ])
 
 const activeTab = ref('pending')
@@ -129,10 +120,13 @@ const patientReports = ref([])
 const showReports = ref(false)
 const showReportDetails = ref(false)
 const currentReport = ref({})
+const removePendingPatients = ref([])
+//存储医生文章
+const doctorArticles = ref([])
 
 const fetchPendingPatients = async () => {
   try {
-    const response = await axios.get('/api/api/doctor/relation/selectPendingPatients', {
+    const response = await axios.get('/api/api/doctor/relation/selectPending', {
       headers: {
         Authorization: `Bearer ${store.state.token}`
       }
@@ -144,6 +138,20 @@ const fetchPendingPatients = async () => {
   }
 }
 
+const fetchRemovePendingPatients = async () => {
+  try {
+    const response = await axios.get('/api/api/doctor/relation/selectRemoveBinding', {
+      headers: {
+        Authorization: `Bearer ${store.state.token}`
+      }
+    })
+    removePendingPatients.value = response.data
+  } catch (error) {
+    console.error('Failed to fetch remove pending patients:', error)
+    ElMessage.error('获取待处理的结束咨询申请失败')
+  }
+}
+
 const fetchMyPatients = async () => {
   try {
     const response = await axios.get('/api/api/doctor/relation/selectMyPatients', {
@@ -152,6 +160,7 @@ const fetchMyPatients = async () => {
       }
     })
     myPatients.value = response.data
+    stats.value[0].value = myPatients.value.length
   } catch (error) {
     console.error('Failed to fetch my patients:', error)
     ElMessage.error('获取我的患者列表失败')
@@ -186,6 +195,52 @@ const rejectPatient = async (patient) => {
   } catch (error) {
     console.error('Failed to reject patient:', error)
     ElMessage.error('拒绝患者咨询失败')
+  }
+}
+
+const approveRemovePatient = async (patient) => {
+  try {
+    await axios.post('/api/api/doctor/relation/agreeRemoveBinding', { userId: patient.userId }, {
+      headers: {
+        Authorization: `Bearer ${store.state.token}`
+      }
+    })
+    ElMessage.success('已同意结束咨询申请')
+    await fetchRemovePendingPatients()
+    await fetchMyPatients()
+  } catch (error) {
+    console.error('Failed to approve removePatient:', error)
+  }
+}
+
+const rejectRemovePatient = async (patient) => {
+  try {
+    await axios.post('/api/api/doctor/relation/rejectRemoveBinding', { userId: patient.userId }, {
+      headers: {
+        Authorization: `Bearer ${store.state.token}`
+      }
+    })
+    ElMessage.success('已拒绝结束咨询申请')
+    await fetchRemovePendingPatients()
+    await fetchMyPatients()
+  } catch (error) {
+    console.error('Failed to reject removePatient:', error)
+  }
+}
+
+// 获取医生文章
+const fetchArticles = async () => {
+  try {
+    const response = await axios.get('/api/api/healthArticle/myArticles', {
+      headers: {
+        Authorization: `Bearer ${store.state.token}`
+      }
+    })
+    doctorArticles.value = response.data
+    stats.value[3].value = doctorArticles.value.length
+  } catch (error) {
+    console.error('Failed to fetch articles:', error)
+    ElMessage.error('获取医生文章失败')
   }
 }
 
@@ -231,6 +286,7 @@ const handleCardClick = (item) => {
 onMounted(() => {
   fetchPendingPatients()
   fetchMyPatients()
+  fetchRemovePendingPatients()
 })
 </script>
 
