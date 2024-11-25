@@ -2,10 +2,26 @@
   <div class="account-management">
     <h1 class="mb-4">账户管理</h1>
     <el-tabs v-model="activeTab">
+      <el-tab-pane label="修改密码" name="password">
+        <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" label-width="120px">
+          <el-form-item label="当前密码" prop="currentPassword">
+            <el-input v-model="passwordForm.currentPassword" type="password"></el-input>
+          </el-form-item>
+          <el-form-item label="新密码" prop="newPassword">
+            <el-input v-model="passwordForm.newPassword" type="password"></el-input>
+          </el-form-item>
+          <el-form-item label="确认新密码" prop="confirmPassword">
+            <el-input v-model="passwordForm.confirmPassword" type="password"></el-input>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="changePassword">修改密码</el-button>
+          </el-form-item>
+        </el-form>
+      </el-tab-pane>
       <el-tab-pane label="更改邮箱" name="email">
-        <el-form :model="emailForm" :rules="emailRules" ref="emailForm" label-width="120px">
+        <el-form :model="emailForm" :rules="emailRules" ref="emailFormRef" label-width="120px">
           <el-form-item label="当前邮箱">
-            <el-input v-model="profile.email" readonly :placeholder="profile.email || '未认证'"></el-input>
+            <el-input :value="profile.email || '未认证'" disabled></el-input>
           </el-form-item>
           <el-form-item label="新邮箱" prop="newEmail">
             <el-input v-model="emailForm.newEmail"></el-input>
@@ -33,34 +49,18 @@
           </el-form-item>
         </el-form>
       </el-tab-pane>
-      <el-tab-pane label="修改密码" name="password">
-        <el-form :model="passwordForm" :rules="passwordRules" ref="passwordForm" label-width="120px">
-          <el-form-item label="当前密码" prop="currentPassword">
-            <el-input v-model="passwordForm.currentPassword" type="password"></el-input>
-          </el-form-item>
-          <el-form-item label="新密码" prop="newPassword">
-            <el-input v-model="passwordForm.newPassword" type="password"></el-input>
-          </el-form-item>
-          <el-form-item label="确认新密码" prop="confirmPassword">
-            <el-input v-model="passwordForm.confirmPassword" type="password"></el-input>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="changePassword">修改密码</el-button>
-          </el-form-item>
-        </el-form>
-      </el-tab-pane>
       <el-tab-pane label="账户认证" name="verification">
         <el-form :model="verificationForm" label-width="120px">
           <el-form-item label="电子医生执照">
             <el-upload
-              class="upload-demo"
-              action="/api/api/doctorlicense/insert"
-              :headers="uploadHeaders"
-              :on-success="handleUploadSuccess"
-              :on-error="handleUploadError"
-              :before-upload="beforeUpload"
-              :file-list="fileList"
-              name="multipartFile"
+                class="upload-demo"
+                action="/api/api/doctorlicense/insert"
+                :headers="uploadHeaders"
+                :on-success="handleUploadSuccess"
+                :on-error="handleUploadError"
+                :before-upload="beforeUpload"
+                :file-list="fileList"
+                name="multipartFile"
             >
               <el-button size="small" type="primary">上传电子医生执照</el-button>
               <template #tip>
@@ -78,12 +78,12 @@
       </el-tab-pane>
       <el-tab-pane label="注销账户" name="deactivate">
         <el-alert
-          title="警告：注销账户将永久删除您的所有数据，此操作不可逆！"
-          type="warning"
-          :closable="false"
+            title="警告：注销账户将永久删除您的所有数据，此操作不可逆！"
+            type="warning"
+            :closable="false"
         >
         </el-alert>
-        <el-form :model="deactivateForm" :rules="deactivateRules" ref="deactivateForm" label-width="120px" class="mt-4">
+        <el-form :model="deactivateForm" :rules="deactivateRules" ref="deactivateFormRef" label-width="120px" class="mt-4">
           <el-form-item label="密码" prop="password">
             <el-input v-model="deactivateForm.password" type="password"></el-input>
           </el-form-item>
@@ -109,16 +109,16 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import axiosInstance from '../../axios/index'
 
 const store = useStore()
 const router = useRouter()
 
-const activeTab = ref('email')
+const activeTab = ref('password')
 const profile = computed(() => store.state.doctor || {})
 
 const emailForm = reactive({
@@ -214,7 +214,7 @@ const uploadHeaders = computed(() => ({
 
 const sendOldEmailCode = async () => {
   try {
-    await axios.post('/api/api/doctor_manage/sendOldEmailCode', {}, {
+    await axiosInstance.post('/api/doctor_manage/sendOldEmailCode', {}, {
       headers: { Authorization: `Bearer ${store.state.token}` }
     })
     ElMessage.success('验证码已发送到您的旧邮箱')
@@ -231,7 +231,7 @@ const sendNewEmailCode = async () => {
     return
   }
   try {
-    await axios.post('/api/api/doctor_manage/sendNewEmailCode', { newEmail: emailForm.newEmail }, {
+    await axiosInstance.post('/api/doctor_manage/sendNewEmailCode', { newEmail: emailForm.newEmail }, {
       headers: { Authorization: `Bearer ${store.state.token}` }
     })
     ElMessage.success('验证码已发送到您的新邮箱')
@@ -257,7 +257,7 @@ const startCountdown = (type) => {
 
 const getLicenseStatus = async () => {
   try {
-    const response = await axios.get('/api/api/doctorlicense/myLicense', {
+    const response = await axiosInstance.get('/api/doctorlicense/myLicense', {
       headers: { Authorization: `Bearer ${store.state.token}` }
     })
     if (response.data && response.data.length > 0) {
@@ -283,7 +283,7 @@ const handleUploadError = (error, file, fileList) => {
 
 const changeEmail = async () => {
   try {
-    await axios.post('/api/api/doctor_manage/changeEmail', emailForm, {
+    await axiosInstance.post('/api/doctor_manage/changeEmail', emailForm, {
       headers: { Authorization: `Bearer ${store.state.token}` }
     })
     ElMessage.success('邮箱已成功更改')
@@ -294,7 +294,7 @@ const changeEmail = async () => {
 
 const changePassword = async () => {
   try {
-    await axios.post('/api/api/doctor_manage/changePassword', passwordForm, {
+    await axiosInstance.post('/api/doctor_manage/changePassword', passwordForm, {
       headers: { Authorization: `Bearer ${store.state.token}` }
     })
     ElMessage.success('密码修改成功')
@@ -305,8 +305,8 @@ const changePassword = async () => {
 
 const deactivateAccount = async () => {
   try {
-    await axios.post('/api/api/doctor_manage/deactivateAccount', deactivateForm, {
-      headers: { Authorization: `Bearer ${store.state.token}` }
+    await axiosInstance.post('/api/doctor_manage/deactivateAccount', deactivateForm, {
+      headers: { Authorization: `Bearer ${store.state.token}`}
     })
     ElMessage.success('账户已注销')
     store.dispatch('logout')
@@ -315,12 +315,34 @@ const deactivateAccount = async () => {
     ElMessage.error('账户注销失败')
   }
 }
-</script>
 
+onMounted(() => {
+  getLicenseStatus()
+})
+</script>
 
 <style scoped>
 .account-management {
   max-width: 600px;
   margin: 0 auto;
+}
+
+/* 自定义 Element Plus 样式 */
+:deep(.el-button--primary) {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+}
+
+:deep(.el-button--primary:hover) {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+:deep(.el-tabs__item.is-active) {
+  color: #3b82f6;
+}
+
+:deep(.el-tabs__active-bar) {
+  background-color: #3b82f6;
 }
 </style>
