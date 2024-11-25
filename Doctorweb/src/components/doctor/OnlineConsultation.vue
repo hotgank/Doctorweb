@@ -95,10 +95,28 @@
 
     <el-dialog v-model="showReport" title="检测报告" width="70%" :before-close="handleCloseReport">
       <el-form :model="currentReport" label-width="120px">
+        <el-form-item label="姓名">
+          <span>{{ currentReport.name}}</span>
+        </el-form-item>
+        <el-form-item label="性别">
+          <span>{{ currentReport.gender }}</span>
+        </el-form-item>
+        <el-form-item label="出生日期">
+          <span>{{formatDate2(currentReport.birthdate)}}</span>
+        </el-form-item>
+        <el-form-item label="身高">
+          <span>{{ currentReport.height }}</span>
+        </el-form-item>
+        <el-form-item label="体重">
+          <span>{{ currentReport.weight }}</span>
+        </el-form-item>
         <el-form-item label="报告类型">
           <span>{{ currentReport.reportType }}</span>
         </el-form-item>
-        <el-form-item label="检测结果">
+        <el-form-item label="状态">
+          <span>{{ currentReport.state }}</span>
+        </el-form-item>
+        <el-form-item label="结果">
           <span>{{ currentReport.result }}</span>
         </el-form-item>
         <el-form-item label="分析">
@@ -108,7 +126,7 @@
           <el-input type="textarea" v-model="currentReport.comment" :rows="4" :readonly="!isEditing"></el-input>
         </el-form-item>
         <el-form-item label="报告图片">
-          <el-image :src="currentReport.url" :preview-src-list="[currentReport.url]"></el-image>
+          <el-image :src="imageSrc" :preview-src-list="[imageSrc]"></el-image>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -143,6 +161,7 @@ const showReport = ref(false)
 const isEditing = ref(false)
 const currentReport = ref({})
 const doctorAvatar = ref('/doctor-avatar.png')  // 假设医生头像的URL
+const imageSrc = ref('') // 用于存储报告图片的 URL
 
 let messagePollingInterval = null
 
@@ -290,6 +309,7 @@ const scrollToBottom = () => {
 const viewReport = (report) => {
   currentReport.value = report
   showReport.value = true
+  fetchReportImage(report.url) // 获取报告图片
 }
 
 const handleCloseReport = () => {
@@ -311,6 +331,21 @@ const cancelEdit = () => {
 const saveReport = async () => {
   // 这里应该实现保存报告评论的逻辑
   // 由于API中没有提供相应的接口，这里只是模拟了保存操作
+  //发送POST请求，data为currentReport的id和comment
+  try {
+    const response = await axios.post('/api/api/doctorReport/comment',
+        { reportId: currentReport.value.reportId, comment: currentReport.value.comment },
+        {
+          headers: {
+            Authorization: `Bearer ${store.state.token}`
+          }
+        }
+    )
+    console.log('Report comment saved successfully:', response.data)
+  } catch (error) {
+    console.error('Failed to save report comment:', error)
+    ElMessage.error('保存报告评论失败')
+  }
   ElMessage.success('报告评论已保存')
   isEditing.value = false
   showReport.value = false
@@ -340,6 +375,34 @@ watch(selectedRelation, (newRelation) => {
     stopMessagePolling()
   }
 })
+
+const fetchReportImage = async (url) => {
+  try {
+    // 使用 POST 请求获取图片
+    const response = await axios.post('api/api/url/getReportImage', { url: url }, {
+      responseType: 'blob',  // 获取二进制数据
+      headers: {
+        Authorization: `Bearer ${store.state.token}`  // 携带 token
+      }
+    })
+    // 将 Blob 数据转换为可展示的 URL
+    const blob = response.data
+    const imageUrl = URL.createObjectURL(blob)
+
+    // 将生成的 URL 赋值给 imageSrc 用于显示图片
+    imageSrc.value = imageUrl
+    console.log('Image URL:', imageUrl)
+    ElMessage.success('获取报告图片成功')
+  } catch (error) {
+    console.error('Failed to fetch report image:', error)
+    ElMessage.error('获取报告图片失败')
+  }
+}
+
+const formatDate2 = (timestamp) => {
+  const date = new Date(timestamp);
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+}
 </script>
 
 <style scoped>
