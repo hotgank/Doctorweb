@@ -1,6 +1,7 @@
 <template>
   <div class="consultation">
     <el-row :gutter="10" class="full-height">
+      <!-- 左侧患者列表部分保持不变 -->
       <el-col :span="6" class="full-height">
         <el-card class="box-card full-height">
           <template #header>
@@ -19,6 +20,8 @@
           </div>
         </el-card>
       </el-col>
+
+      <!-- 右侧聊天区域 -->
       <el-col :span="18" class="full-height">
         <el-tabs v-model="activeTab" class="full-height">
           <el-tab-pane label="在线咨询" name="chat">
@@ -29,30 +32,91 @@
                 </div>
               </template>
               <div class="chat-container">
+                <!-- 聊天消息区域 -->
                 <div class="chat-messages" ref="chatMessagesRef" @scroll="handleScroll">
                   <div v-for="msg in messages" :key="msg.messageSeq" :class="['message', msg.senderType === 'doctor' ? 'message-right' : 'message-left']">
                     <el-avatar :size="30" :src="msg.senderType === 'doctor' ? doctorAvatar : (selectedRelation.user.avatarUrl || '/default-avatar.png')" />
                     <div class="message-content">
-                      {{ msg.messageText }}
+                      <!-- 文本消息 -->
+                      <div v-if="!msg.url">{{ msg.messageText }}</div>
+                      <!-- 图片消息 -->
+                      <el-image
+                          v-else-if="msg.messageType === 'image'"
+                          :src="msg.url"
+                          :preview-src-list="[msg.url]"
+                          fit="cover"
+                          class="message-image"
+                      />
+                      <!-- 其他类型附件 -->
+                      <div v-else class="attachment-container">
+                        <div class="attachment-info">
+                          <el-icon><Document /></el-icon>
+                          <span>{{ msg.messageText }}</span>
+                        </div>
+                        <el-button
+                            type="primary"
+                            link
+                            @click="downloadAttachment(msg.url)"
+                        >
+                          下载附件
+                        </el-button>
+                      </div>
                     </div>
                     <span class="message-time">{{ formatTime(msg.timestamp) }}</span>
                   </div>
                 </div>
+
+                <!-- 输入区域 -->
                 <div class="chat-input">
-                  <el-input
-                    v-model="newMessage"
-                    placeholder="输入消息..."
-                    @keyup.enter="handleSendMessage"
-                  >
-                    <template #append>
-                      <el-button @click="handleSendMessage">发送</el-button>
-                    </template>
-                  </el-input>
+                  <div class="input-container">
+                    <el-upload
+                        class="upload-attachment"
+                        action="/api/api/messages/sendFile"
+                        :headers="uploadHeaders"
+                        :before-upload="beforeUpload"
+                        :on-success="handleUploadSuccess"
+                        :on-error="handleUploadError"
+                        :limit="1"
+                        :auto-upload="true"
+                        :show-file-list="false"
+                    >
+                      <el-button type="primary" link>
+                        <el-icon><Paperclip /></el-icon>
+                      </el-button>
+                    </el-upload>
+                    <el-upload
+                        class="upload-image"
+                        action="/api/image/uploadChatImage/{relation.relationId}"
+                        :headers="uploadHeaders"
+                        :before-upload="beforeImageUpload"
+                        :on-success="handleImageUploadSuccess"
+                        :on-error="handleUploadError"
+                        :limit="1"
+                        :auto-upload="true"
+                        :show-file-list="false"
+                        accept="image/*"
+                    >
+                      <el-button type="primary" link>
+                        <el-icon><Picture /></el-icon>
+                      </el-button>
+                    </el-upload>
+                    <el-input
+                        v-model="newMessage"
+                        placeholder="输入消息..."
+                        @keyup.enter="handleSendMessage"
+                    >
+                      <template #append>
+                        <el-button @click="handleSendMessage">发送</el-button>
+                      </template>
+                    </el-input>
+                  </div>
                 </div>
               </div>
             </el-card>
             <el-empty v-else description="请选择一个患者开始对话"></el-empty>
           </el-tab-pane>
+
+          <!-- 患者详情标签页保持不变 -->
           <el-tab-pane label="患者详情" name="details">
             <el-card v-if="selectedRelation" class="box-card full-height">
               <template #header>
@@ -92,7 +156,6 @@
         </el-tabs>
       </el-col>
     </el-row>
-
     <el-dialog v-model="showReport" title="检测报告" width="70%" :before-close="handleCloseReport">
       <el-form :model="currentReport" label-width="120px">
         <el-form-item label="姓名">
@@ -143,9 +206,11 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Document, Paperclip, Picture } from '@element-plus/icons-vue'
 import { useStore } from 'vuex'
-import axios from 'axios'
 import { useRoute } from 'vue-router'
+import axios from 'axios'
+import { computed } from 'vue';
 
 const store = useStore()
 const route = useRoute()
@@ -157,13 +222,16 @@ const patientReports = ref([])
 const messages = ref([])
 const newMessage = ref('')
 const chatMessagesRef = ref(null)
-const showReport = ref(false)
-const isEditing = ref(false)
-const currentReport = ref({})
-const doctorAvatar = ref('/doctor-avatar.png')  // 假设医生头像的URL
-const imageSrc = ref('') // 用于存储报告图片的 URL
+const doctorAvatar = ref('/doctor-avatar.png')
+const currentAttachment = ref(null)
+const minSeq = ref(5)
+const maxSeq = ref(10)
 
 let messagePollingInterval = null
+
+const uploadHeaders = computed(() => ({
+  Authorization: `Bearer ${store.state.token}`
+}))
 
 const fetchDoctorRelations = async () => {
   try {
@@ -190,7 +258,7 @@ const selectRelation = async (relation) => {
   messages.value = []
   await loadInitialMessages(relation.relationId)
   await fetchPatientReports(relation.user.userId)
-  startMessagePolling(relation.relationId)
+  startMessagePolling()
 }
 
 const fetchPatientReports = async (userId) => {
@@ -215,6 +283,10 @@ const loadInitialMessages = async (relationId) => {
       }
     })
     messages.value = response.data
+    if (messages.value.length > 0) {
+      minSeq.value = messages.value[0].messageSeq
+      maxSeq.value = messages.value[messages.value.length - 1].messageSeq
+    }
     scrollToBottom()
   } catch (error) {
     console.error('Failed to load initial messages:', error)
@@ -223,78 +295,140 @@ const loadInitialMessages = async (relationId) => {
 }
 
 const loadMoreMessages = async () => {
-  if (messages.value.length === 0) return
+  if (messages.value.length === 0 || minSeq.value <= 1) return
 
-  const oldestMessageSeq = messages.value[0].messageSeq
   try {
-    const response = await axios.get(`/api/api/messages/before/${selectedRelation.value.relationId}/${oldestMessageSeq}`, {
+    const response = await axios.get(`/api/api/messages/before/${selectedRelation.value.relationId}/${minSeq.value}`, {
       headers: {
         Authorization: `Bearer ${store.state.token}`
       }
     })
-    messages.value = [...response.data, ...messages.value]
+    if (response.data.length > 0) {
+      const newMessages = response.data.filter(msg =>
+          !messages.value.some(existing => existing.messageSeq === msg.messageSeq)
+      )
+      messages.value = [...newMessages, ...messages.value]
+      minSeq.value = newMessages[0].messageSeq
+    }
   } catch (error) {
     console.error('Failed to load more messages:', error)
     ElMessage.error('加载更多消息失败')
   }
 }
 
-const startMessagePolling = (relationId) => {
-  stopMessagePolling()
-  messagePollingInterval = setInterval(async () => {
-    if (messages.value.length === 0) return
+const pollNewMessages = async () => {
+  if (!selectedRelation.value || messages.value.length === 0) return
 
-    const latestMessageSeq = messages.value[messages.value.length - 1].messageSeq
-    try {
-      const response = await axios.get(`/api/api/messages/after/${relationId}/${latestMessageSeq}`, {
-        headers: {
-          Authorization: `Bearer ${store.state.token}`
-        }
-      })
-      messages.value = [...messages.value, ...response.data]
-      if (response.data.length > 0) {
-        scrollToBottom()
+  try {
+    const response = await axios.get(`/api/api/messages/after/${selectedRelation.value.relationId}/${maxSeq.value}`, {
+      headers: {
+        Authorization: `Bearer ${store.state.token}`
       }
-    } catch (error) {
-      console.error('Failed to poll new messages:', error)
+    })
+    if (response.data.length > 0) {
+      const newMessages = response.data.filter(msg =>
+          !messages.value.some(existing => existing.messageSeq === msg.messageSeq)
+      )
+      messages.value = [...messages.value, ...newMessages]
+      maxSeq.value = newMessages[newMessages.length - 1].messageSeq
+      scrollToBottom()
     }
-  }, 3000)
+  } catch (error) {
+    console.error('Failed to poll new messages:', error)
+  }
+}
+
+const handleSendMessage = async () => {
+  if ((!newMessage.value.trim() && !currentAttachment.value) || !selectedRelation.value) return
+
+  try {
+    const messageData = {
+      relationId: selectedRelation.value.relationId,
+      senderType: 'doctor',
+      messageText: newMessage.value.trim(),
+      messageType: currentAttachment.value ? currentAttachment.value.type : 'text',
+      url: currentAttachment.value ? currentAttachment.value.url : null
+    }
+
+    const response = await axios.post('/api/api/messages/send', messageData, {
+      headers: {
+        Authorization: `Bearer ${store.state.token}`
+      }
+    })
+
+    messages.value.push(response.data)
+    maxSeq.value = response.data.messageSeq
+    newMessage.value = ''
+    currentAttachment.value = null
+    scrollToBottom()
+  } catch (error) {
+    console.error('Failed to send message:', error)
+    ElMessage.error('发送消息失败')
+  }
+}
+
+const beforeUpload = (file) => {
+  const maxSize = 5 * 1024 * 1024 // 5MB
+  if (file.size > maxSize) {
+    ElMessage.error('文件大小不能超过5MB')
+    return false
+  }
+  return true
+}
+
+const handleUploadSuccess = (response) => {
+  currentAttachment.value = {
+    url: response.url,
+    type: response.type,
+    name: response.name
+  }
+  ElMessage.success('附件上传成功')
+}
+
+const handleUploadError = () => {
+  ElMessage.error('附件上传失败')
+}
+
+const downloadAttachment = async (url) => {
+  try {
+    const response = await axios.get(`/api/api/url/getMessageAttachment?url=${encodeURIComponent(url)}`, {
+      responseType: 'blob',
+      headers: {
+        Authorization: `Bearer ${store.state.token}`
+      }
+    })
+
+    const blob = new Blob([response.data])
+    const downloadUrl = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.download = url.split('/').pop() // 使用URL最后一部分作为文件名
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(downloadUrl)
+  } catch (error) {
+    console.error('Failed to download attachment:', error)
+    ElMessage.error('下载附件失败')
+  }
+}
+
+const handleScroll = (event) => {
+  const { scrollTop } = event.target
+  if (scrollTop === 0) {
+    loadMoreMessages()
+  }
+}
+
+const startMessagePolling = () => {
+  stopMessagePolling()
+  messagePollingInterval = setInterval(pollNewMessages, 3000)
 }
 
 const stopMessagePolling = () => {
   if (messagePollingInterval) {
     clearInterval(messagePollingInterval)
     messagePollingInterval = null
-  }
-}
-
-const handleSendMessage = async () => {
-  if (newMessage.value.trim() && selectedRelation.value) {
-    try {
-      const response = await axios.post('/api/api/messages/send', {
-        relationId: selectedRelation.value.relationId,
-        senderType: 'doctor',
-        messageText: newMessage.value.trim(),
-        messageType: 'text',
-        url: null
-      }, {
-        headers: {
-          Authorization: `Bearer ${store.state.token}`
-        }
-      })
-      messages.value.push(response.data)
-      newMessage.value = ''
-      scrollToBottom()
-    } catch (error) {
-      console.error('Failed to send message:', error)
-      ElMessage.error('发送消息失败')
-    }
-  }
-}
-
-const handleScroll = (event) => {
-  if (event.target.scrollTop === 0) {
-    loadMoreMessages()
   }
 }
 
@@ -305,6 +439,34 @@ const scrollToBottom = () => {
     }
   })
 }
+
+const formatTime = (timestamp) => {
+  return new Date(timestamp).toLocaleString()
+}
+
+onMounted(() => {
+  fetchDoctorRelations()
+})
+
+onUnmounted(() => {
+  stopMessagePolling()
+})
+
+watch(selectedRelation, (newRelation) => {
+  if (newRelation) {
+    startMessagePolling()
+  } else {
+    stopMessagePolling()
+  }
+})
+
+
+const showReport = ref(false)
+const isEditing = ref(false)
+const currentReport = ref({})
+const imageSrc = ref('') // 用于存储报告图片的 URL
+
+
 
 const viewReport = (report) => {
   currentReport.value = report
@@ -349,10 +511,6 @@ const saveReport = async () => {
   ElMessage.success('报告评论已保存')
   isEditing.value = false
   showReport.value = false
-}
-
-const formatTime = (timestamp) => {
-  return new Date(timestamp).toLocaleString()
 }
 
 const formatDate = (dateArray) => {
@@ -403,37 +561,66 @@ const formatDate2 = (timestamp) => {
   const date = new Date(timestamp);
   return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
 }
+
+const beforeImageUpload = (file) => {
+  const isImage = file.type.startsWith('image/')
+  const isLt5M = file.size / 1024 / 1024 < 5
+
+  if (!isImage) {
+    ElMessage.error('只能上传图片文件!')
+    return false
+  }
+  if (!isLt5M) {
+    ElMessage.error('图片大小不能超过 5MB!')
+    return false
+  }
+  return true
+}
+
+const handleImageUploadSuccess = (response) => {
+  currentAttachment.value = {
+    url: response.url,
+    type: 'image',
+    name: response.name
+  }
+  ElMessage.success('图片上传成功')
+  handleSendMessage()
+}
 </script>
 
 <style scoped>
 .consultation {
   height: calc(100vh - 60px);
 }
+
 .full-height {
   height: 100%;
 }
+
 .chat-container {
   display: flex;
   flex-direction: column;
   height: calc(100% - 40px);
 }
+
 .chat-messages {
   flex-grow: 1;
   overflow-y: auto;
   padding: 20px;
+  height: 400px; /* 固定高度 */
 }
+
 .message {
   display: flex;
   margin-bottom: 10px;
   align-items: flex-start;
 }
-.message-left {
-  justify-content: flex-start;
+
+.upload-image {
+  flex-shrink: 0;
+  margin-right: 10px;
 }
-.message-right {
-  justify-content: flex-end;
-  flex-direction: row-reverse;
-}
+
 .message-content {
   max-width: 70%;
   padding: 10px;
@@ -441,22 +628,52 @@ const formatDate2 = (timestamp) => {
   background-color: #f0f2f5;
   margin: 0 10px;
 }
+
 .message-right .message-content {
   background-color: #95ec69;
 }
+
 .message-time {
   font-size: 0.7em;
   color: #909399;
   margin-top: 5px;
 }
-.chat-input {
+
+.message-image {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 5px;
+}
+
+.attachment-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.attachment-info {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.input-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 20px;
 }
+
+.upload-attachment {
+  flex-shrink: 0;
+}
+
 .patient-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
+
 .patient-item {
   display: flex;
   align-items: center;
@@ -465,28 +682,23 @@ const formatDate2 = (timestamp) => {
   border-radius: 5px;
   transition: background-color 0.3s;
 }
+
 .patient-item:hover {
   background-color: #f5f7fa;
 }
+
 .patient-info {
   display: flex;
   flex-direction: column;
   margin-left: 10px;
 }
+
 .patient-name {
   font-weight: bold;
 }
+
 .patient-status {
   font-size: 0.8em;
   color: #909399;
-}
-.basic-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 20px;
-}
-.basic-info h2 {
-  margin: 10px 0;
 }
 </style>
