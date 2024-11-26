@@ -398,11 +398,10 @@ const beforeUpload = (file) => {
     // 更新当前附件信息
     currentAttachment.value = {
       url: response.data.url,
-      type: 'image',
+      type: 'file',
       name: file.name
     };
-    // 触发发送消息
-    handleSendMessage();
+    currentAttachment.value = null;  // 发送后立即清除当前附件
   }).catch(error => {
     console.error(error);
     ElMessage.error('图片上传失败');
