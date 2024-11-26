@@ -40,13 +40,16 @@
                       <!-- 文本消息 -->
                       <div v-if="!msg.url">{{ msg.messageText }}</div>
                       <!-- 图片消息 -->
-                      <el-image
-                          v-else-if="msg.messageType === 'image'"
-                          :src="msg.url"
-                          :preview-src-list="[msg.url]"
-                          fit="cover"
-                          class="message-image"
-                      />
+                      <div v-else-if="msg.messageType === 'image'">
+                        <el-image
+                            v-if="msg.imageUrl"
+                            :src="msg.imageUrl"
+                            fit="cover"
+                            class="message-image"
+                        />
+                        <el-skeleton v-else :rows="3" animated />
+                        <span>{{ msg.messageText }}</span>
+                      </div>
                       <!-- 其他类型附件 -->
                       <div v-else class="attachment-container">
                         <div class="attachment-info">
@@ -86,7 +89,7 @@
                     </el-upload>
                     <el-upload
                         class="upload-image"
-                        action="/api/image/uploadChatImage/{relation.relationId}"
+                        action="/api/api/messages/sendFile"
                         :headers="uploadHeaders"
                         :before-upload="beforeImageUpload"
                         :on-success="handleImageUploadSuccess"
@@ -118,40 +121,42 @@
 
           <!-- 患者详情标签页保持不变 -->
           <el-tab-pane label="患者详情" name="details">
-            <el-card v-if="selectedRelation" class="box-card full-height">
-              <template #header>
-                <div class="card-header">
-                  <span>患者详细信息</span>
+            <el-scrollbar class="details-scrollbar">
+              <el-card v-if="selectedRelation" class="box-card full-height">
+                <template #header>
+                  <div class="card-header">
+                    <span>患者详细信息</span>
+                  </div>
+                </template>
+                <div class="patient-details">
+                  <div class="basic-info">
+                    <el-avatar :size="64" :src="selectedRelation.user.avatarUrl || '/default-avatar.png'" />
+                    <h2>{{ selectedRelation.user.username }}</h2>
+                    <p><strong>状态：</strong>{{ selectedRelation.user.status }}</p>
+                    <p><strong>用户ID：</strong>{{ selectedRelation.user.userId }}</p>
+                  </div>
+                  <el-divider />
+                  <div class="reports">
+                    <h4>检测报告</h4>
+                    <el-table :data="patientReports" style="width: 100%">
+                      <el-table-column prop="createdAt" label="日期" width="180">
+                        <template #default="scope">
+                          {{ formatDate(scope.row.createdAt) }}
+                        </template>
+                      </el-table-column>
+                      <el-table-column prop="reportType" label="类型" width="120"></el-table-column>
+                      <el-table-column prop="state" label="状态" width="120"></el-table-column>
+                      <el-table-column label="操作" width="120">
+                        <template #default="scope">
+                          <el-button @click="viewReport(scope.row)" type="text" size="small">查看</el-button>
+                        </template>
+                      </el-table-column>
+                    </el-table>
+                  </div>
                 </div>
-              </template>
-              <div class="patient-details">
-                <div class="basic-info">
-                  <el-avatar :size="64" :src="selectedRelation.user.avatarUrl || '/default-avatar.png'" />
-                  <h2>{{ selectedRelation.user.username }}</h2>
-                  <p><strong>状态：</strong>{{ selectedRelation.user.status }}</p>
-                  <p><strong>用户ID：</strong>{{ selectedRelation.user.userId }}</p>
-                </div>
-                <el-divider />
-                <div class="reports">
-                  <h4>检测报告</h4>
-                  <el-table :data="patientReports" style="width: 100%" :max-height="400">
-                    <el-table-column prop="createdAt" label="日期" width="180">
-                      <template #default="scope">
-                        {{ formatDate(scope.row.createdAt) }}
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="reportType" label="类型" width="120"></el-table-column>
-                    <el-table-column prop="state" label="状态" width="120"></el-table-column>
-                    <el-table-column label="操作" width="120">
-                      <template #default="scope">
-                        <el-button @click="viewReport(scope.row)" type="text" size="small">查看</el-button>
-                      </template>
-                    </el-table-column>
-                  </el-table>
-                </div>
-              </div>
-            </el-card>
+              </el-card>
             <el-empty v-else description="请选择一个患者查看详情"></el-empty>
+            </el-scrollbar>
           </el-tab-pane>
         </el-tabs>
       </el-col>
@@ -204,13 +209,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Document, Paperclip, Picture } from '@element-plus/icons-vue'
-import { useStore } from 'vuex'
-import { useRoute } from 'vue-router'
+import {computed, nextTick, onMounted, onUnmounted, ref, watch} from 'vue'
+import {ElMessage} from 'element-plus'
+import {Document, Paperclip, Picture} from '@element-plus/icons-vue'
+import {useStore} from 'vuex'
+import {useRoute} from 'vue-router'
 import axios from 'axios'
-import { computed } from 'vue';
 
 const store = useStore()
 const route = useRoute()
@@ -275,6 +279,7 @@ const fetchPatientReports = async (userId) => {
   }
 }
 
+// 修改 loadInitialMessages 函数
 const loadInitialMessages = async (relationId) => {
   try {
     const response = await axios.get(`/api/api/messages/last30/${relationId}`, {
@@ -287,6 +292,7 @@ const loadInitialMessages = async (relationId) => {
       minSeq.value = messages.value[0].messageSeq
       maxSeq.value = messages.value[messages.value.length - 1].messageSeq
     }
+    await loadImageUrls() // 加载图片 URL
     scrollToBottom()
   } catch (error) {
     console.error('Failed to load initial messages:', error)
@@ -316,6 +322,7 @@ const loadMoreMessages = async () => {
   }
 }
 
+// 修改 pollNewMessages 函数
 const pollNewMessages = async () => {
   if (!selectedRelation.value || messages.value.length === 0) return
 
@@ -331,6 +338,7 @@ const pollNewMessages = async () => {
       )
       messages.value = [...messages.value, ...newMessages]
       maxSeq.value = newMessages[newMessages.length - 1].messageSeq
+      await loadImageUrls() // 加载新消息的图片 URL
       scrollToBottom()
     }
   } catch (error) {
@@ -359,7 +367,7 @@ const handleSendMessage = async () => {
     messages.value.push(response.data)
     maxSeq.value = response.data.messageSeq
     newMessage.value = ''
-    currentAttachment.value = null
+    currentAttachment.value = null  // 确保在这里清除当前附件
     scrollToBottom()
   } catch (error) {
     console.error('Failed to send message:', error)
@@ -373,16 +381,60 @@ const beforeUpload = (file) => {
     ElMessage.error('文件大小不能超过5MB')
     return false
   }
-  return true
+  const formData = new FormData();
+  formData.append('relationId', selectedRelation.value.relationId);
+  formData.append('messageText', newMessage.value.trim());
+  formData.append('file', file);
+
+  axios.post(`/api/api/messages/sendFile`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+      Authorization: `Bearer ${store.state.token}`
+    }
+  }).then(response => {
+    console.log(response.data);
+    // 处理成功响应
+    ElMessage.success('图片上传成功');
+    // 更新当前附件信息
+    currentAttachment.value = {
+      url: response.data.url,
+      type: 'image',
+      name: file.name
+    };
+    // 触发发送消息
+    handleSendMessage();
+  }).catch(error => {
+    console.error(error);
+    ElMessage.error('图片上传失败');
+  });
+
+  // 返回 false 阻止默认上传行为
+  return false;
 }
 
-const handleUploadSuccess = (response) => {
-  currentAttachment.value = {
-    url: response.url,
-    type: response.type,
-    name: response.name
-  }
-  ElMessage.success('附件上传成功')
+const handleUploadSuccess = (response, file) => {
+  const formData = new FormData();
+  formData.append('relationId', selectedRelation.value.relationId);
+  formData.append('messageText', newMessage.value.trim());
+  formData.append('file', file);
+
+  axios.post('/api/api/messages/sendFile', formData, {
+    headers: {
+      ...uploadHeaders.value,
+      'Content-Type': 'multipart/form-data'
+    }
+  }).then((response) => {
+    currentAttachment.value = {
+      url: response.data.url,
+      type: response.data.type,
+      name: response.data.name
+    };
+    ElMessage.success('附件上传成功');
+    handleSendMessage();
+  }).catch((error) => {
+    console.error('Failed to send file:', error);
+    ElMessage.error('附件上传失败');
+  });
 }
 
 const handleUploadError = () => {
@@ -534,6 +586,10 @@ watch(selectedRelation, (newRelation) => {
   }
 })
 
+watch(messages, async () => {
+  await loadImageUrls()
+}, { deep: true })
+
 const fetchReportImage = async (url) => {
   try {
     // 使用 POST 请求获取图片
@@ -574,7 +630,35 @@ const beforeImageUpload = (file) => {
     ElMessage.error('图片大小不能超过 5MB!')
     return false
   }
-  return true
+
+  const formData = new FormData();
+  formData.append('relationId', selectedRelation.value.relationId);
+  formData.append('messageText', newMessage.value.trim());
+  formData.append('file', file);
+
+  axios.post(`/api/api/messages/sendFile`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+      Authorization: `Bearer ${store.state.token}`
+    }
+  }).then(response => {
+    console.log(response.data);
+    // 处理成功响应
+    ElMessage.success('图片上传成功');
+    // 更新当前附件信息并立即发送消息
+    currentAttachment.value = {
+      url: response.data.url,
+      type: 'image',
+      name: file.name
+    };
+    currentAttachment.value = null;  // 发送后立即清除当前附件
+  }).catch(error => {
+    console.error(error);
+    ElMessage.error('图片上传失败');
+  });
+
+  // 返回 false 阻止默认上传行为
+  return false;
 }
 
 const handleImageUploadSuccess = (response) => {
@@ -584,7 +668,32 @@ const handleImageUploadSuccess = (response) => {
     name: response.name
   }
   ElMessage.success('图片上传成功')
-  handleSendMessage()
+  handleSendMessage()  // 直接调用handleSendMessage来发送图片消息
+  currentAttachment.value = null  // 发送后立即清除当前附件
+}
+
+const loadImageUrls = async () => {
+  for (const msg of messages.value) {
+    if (msg.messageType === 'image' && msg.url && !msg.imageUrl) {
+      msg.imageUrl = await imageUrl(msg.url)
+    }
+  }
+}
+
+const imageUrl = async (url) => {
+  try {
+    const response = await axios.get(`/api/api/url/getMessageAttachment?url=${url}`, {
+      responseType: 'blob',
+      headers: {
+        Authorization: `Bearer ${store.state.token}`
+      }
+    });
+    const blob = new Blob([response.data]);
+    return window.URL.createObjectURL(blob); // 返回字符串
+  } catch (error) {
+    console.error('Failed to fetch image:', error)
+    return null
+  }
 }
 </script>
 
@@ -700,5 +809,37 @@ const handleImageUploadSuccess = (response) => {
 .patient-status {
   font-size: 0.8em;
   color: #909399;
+}
+
+.details-scrollbar {
+  height: calc(100vh - 120px); /* 调整高度以适应页面布局 */
+}
+
+.patient-details {
+  padding: 20px;
+}
+
+.basic-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.basic-info h2 {
+  margin: 10px 0;
+}
+
+.reports {
+  margin-top: 20px;
+}
+
+.reports h4 {
+  margin-bottom: 10px;
+}
+
+/* 确保表格不会超出容器 */
+.el-table {
+  width: 100% !important;
 }
 </style>
