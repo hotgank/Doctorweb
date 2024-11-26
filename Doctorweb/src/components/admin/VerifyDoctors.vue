@@ -180,7 +180,7 @@ const openDetails = async (doctor) => {
 
   try {
   // 构建完整的 URL
-  const imageUrl = `http://localhost:8080/LicenseImage/${doctor.doctorId}.png`;
+  const imageUrl = selectedDoctor.value.url;
 
   // 发送请求
   const response = await axiosInstance.get(`/api/url/getLicenseImage?url=${encodeURIComponent(imageUrl)}`, {

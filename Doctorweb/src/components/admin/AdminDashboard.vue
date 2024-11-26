@@ -61,6 +61,13 @@
           <el-descriptions-item label="姓名">{{ selectedDoctor.name }}</el-descriptions-item>
           <el-descriptions-item label="性别">{{ selectedDoctor.gender }}</el-descriptions-item>
           <el-descriptions-item label="单位">{{ selectedDoctor.workplace }}</el-descriptions-item>
+          <el-descriptions-item label="职位">
+            <el-input
+                v-model="selectedDoctor.position"
+                placeholder="请输入职位"
+                clearable>
+            </el-input>
+          </el-descriptions-item>
         </el-descriptions>
         <div class="cert-image mt-4">
           <h4 class="text-lg font-medium mb-2">医师资格证图片：</h4>
@@ -230,7 +237,7 @@ const viewDoctorDetails = async (doctor) => {
 
   try {
     // 构建完整的 URL
-    const imageUrl = `http://localhost:8080/LicenseImage/${doctor.doctorId}.png`;
+    const imageUrl = selectedDoctor.value.url;
 
     // 发送请求
     const response = await axiosInstance.get(`/api/url/getLicenseImage?url=${encodeURIComponent(imageUrl)}`, {
