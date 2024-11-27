@@ -38,9 +38,14 @@
         <el-form-item>
           <div class="flex justify-between items-center">
             <el-button type="primary" native-type="submit">登录</el-button>
-            <router-link to="/register" class="register-link">
-              没有账号？立即注册
-            </router-link>
+            <div>
+              <router-link to="/forgot-password" class="forgot-password-link">
+                忘记密码
+              </router-link>
+              <router-link to="/register" class="register-link">
+                立即注册
+              </router-link>
+            </div>
           </div>
         </el-form-item>
       </el-form>
@@ -168,14 +173,16 @@ const handleRoleChange = () => {
   align-items: center;
 }
 
+.forgot-password-link,
 .register-link {
   color: #6b7280;
   text-decoration: underline;
   cursor: pointer;
   transition: color 0.3s;
-  margin-left: 50px;
+  margin-left: 10px;
 }
 
+.forgot-password-link:hover,
 .register-link:hover {
   color: #3b82f6;
 }

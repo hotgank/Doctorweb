@@ -22,11 +22,13 @@ import VerifyDoctors from '../components/admin/VerifyDoctors.vue'
 import AdminSystemAnnouncement from '../components/admin/AdminSystemAnnouncement.vue'
 import SuperAdmin from '../components/admin/SuperAdmin.vue'
 import Layout from '../components/Layout.vue'
+import ForgotPassword from '../components/ForgotPassword.vue'
 
 const routes = [
   // 登录和注册页面，不使用 Layout
   { path: '/login', name: 'Login', component: Login },
   { path: '/register', name: 'Register', component: Register },
+  { path: '/forgot-password', name: 'ForgotPassword', component: ForgotPassword },
 
   // 受保护的路由，使用 Layout
   {
