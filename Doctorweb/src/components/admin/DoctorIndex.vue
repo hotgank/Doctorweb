@@ -7,7 +7,7 @@
         <div class="search-bar">
           <el-input
               v-model="searchTerm"
-              placeholder="搜索医生ID或姓名"
+              placeholder="搜索医生姓名"
               clearable
               @clear="clearSearch"
               class="w-64 sm:w-80"
@@ -85,6 +85,7 @@
             :page-size="frontendPageSize"
             :total="parseInt(DoctorNumber,10)"
             @current-change="handleFrontendPageChange"
+            :pager-count="5"
             layout="prev, pager, next"
         />
       </div>
@@ -182,6 +183,10 @@ const fetchDoctors = async () => {
       ...doctor,
       index: (backendCurrentPage.value - 1) * backendPageSize.value + idx + 1
     }));
+    // 更新DoctorNumber, 用于分页
+    DoctorNumber.value = totalDoctors.value;
+    // 更新显示的医生数据
+    filteredDoctors.value = allDoctors.value;
     console.log(allDoctors);
   } catch (error) {
     console.error('获取医生数据失败:', error);
@@ -200,26 +205,32 @@ onMounted(async () => {
 // 搜索关键词
 const searchTerm = ref('')
 
-// 计算属性：根据搜索关键词过滤医生列表
-const filteredDoctors = computed(() => {
-  const term = searchTerm.value.trim().toLowerCase();
-  if (term === '') {
-    // 没有搜索关键词，恢复分页页码
-    DoctorNumber.value = totalDoctors.value;
-    return allDoctors.value;
-  } else {
-    // 搜索关键词，根据关键词过滤医生列表,更改分页页码
-    DoctorNumber.value = allDoctors.value.filter(doctor =>
-        doctor.index.toString().includes(term) || // 精确匹配自定义ID
-        doctor.name.toLowerCase().includes(term) // 模糊匹配姓名
-    ).length;
+//根据搜索关键词过滤医生列表
+const filteredDoctors = ref([]);
 
-    return allDoctors.value.filter(doctor =>
-        doctor.index.toString() === term || // 精确匹配自定义ID
-        doctor.name.toLowerCase().includes(term) // 模糊匹配姓名
-    );
+// 搜索医生
+const fetchFilteredDoctors = async (queryString) => {
+  loading.value = true;
+  try {
+    const response = await axiosInstance.post('/api/doctor/selectPage', {
+      currentPage: 1,
+      pageSize: totalDoctors.value,
+      queryString: queryString
+    });
+    filteredDoctors.value = response.data.map((doctor, idx) => ({
+      ...doctor,
+      index: (backendCurrentPage.value - 1) * backendPageSize.value + idx + 1
+    }));
+    // 更新DoctorNumber，用于分页
+    DoctorNumber.value = filteredDoctors.value.length;
+    console.log(filteredDoctors);
+  } catch (error) {
+    console.error('获取医生数据失败:', error);
+    ElMessage.error('获取医生数据失败，请稍后重试');
+  } finally {
+    loading.value = false;
   }
-});
+};
 
 // 计算属性：获取当前页的医生数据
 const paginatedDoctors = computed(() => {
@@ -242,12 +253,13 @@ const handleFrontendPageChange = async (page) => {
   }
 };
 
-// 搜索功能：由于使用了计算属性，这里不需要额外操作
+// 搜索功能
 const onSearch = () => {
-  // 计算属性会自动更新
+  // 触发更新
+  const term = searchTerm.value.trim().toLowerCase();
+  fetchFilteredDoctors(term);
   frontendCurrentPage.value = 1; // 重置前端页码到第一页
   backendCurrentPage.value = 1; // 重置后端页码到第一页
-  fetchDoctors(); // 重新获取第一页数据
 }
 
 // 清空搜索
