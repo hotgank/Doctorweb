@@ -30,7 +30,7 @@
     <el-main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- 医生表格 -->
       <el-table
-          :data="filteredDoctors"
+          :data="paginatedDoctors"
           style="width: 100%"
           :header-cell-style="{ background: '#f3f4f6', color: '#374151' }"
           :row-class-name="tableRowClassName"
@@ -72,10 +72,22 @@
             </el-button>
           </template>
         </el-table-column>
+        <template #empty>
+          <el-empty description="没有医生数据"></el-empty>
+        </template>
       </el-table>
 
-      <!-- 空数据提示 -->
-      <el-empty v-if="filteredDoctors.length === 0" description="没有医生数据"></el-empty>
+
+      <!-- 分页组件 -->
+      <div class="pagination-container">
+        <el-pagination
+            v-model:current-page="frontendCurrentPage"
+            :page-size="frontendPageSize"
+            :total="parseInt(DoctorNumber,10)"
+            @current-change="handleFrontendPageChange"
+            layout="prev, pager, next"
+        />
+      </div>
     </el-main>
 
     <!-- 医生详情对话框 -->
@@ -98,12 +110,12 @@
     <!-- 导入用户对话框 -->
     <el-dialog v-model="importDialogVisible" title="导入用户" width="30%">
       <el-upload
-        class="upload-demo"
-        drag
-        action="#"
-        :auto-upload="false"
-        :on-change="handleFileChange"
-        accept=".xlsx,.csv"
+          class="upload-demo"
+          drag
+          action="#"
+          :auto-upload="false"
+          :on-change="handleFileChange"
+          accept=".xlsx,.csv"
       >
         <el-icon><upload /></el-icon>
         <div class="el-upload__text">将文件拖拽到此处，或<em>点击上传</em></div>
@@ -120,9 +132,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { Search } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import {ref, computed, onMounted, watch} from 'vue'
+import {Search} from '@element-plus/icons-vue'
+import {ElMessage} from 'element-plus'
 import axiosInstance from '../../axios/index';
 
 const allDoctors = ref([])
@@ -130,15 +142,47 @@ const loading = ref(false)
 const uploadedFile = ref(null);
 const importDialogVisible = ref(false);
 
-// 获取所有医生数据
+// 新增：数据库中总医生数量
+const totalDoctors = ref(0)
+
+// 新增：分页显示的数量
+const DoctorNumber = ref(0)
+
+// 修改：后端分页相关变量
+const backendCurrentPage = ref(1)
+const backendPageSize = ref(50)
+
+// 新增：前端分页相关变量
+const frontendCurrentPage = ref(1)
+const frontendPageSize = ref(5)
+
+// 新增：获取总医生数量
+const fetchTotalDoctors = async () => {
+  try {
+    const response = await axiosInstance.get('/api/doctor/selectDoctorCount');
+    totalDoctors.value = response.data.doctorCount || 0; // 确保设置默认值
+    DoctorNumber.value = totalDoctors.value;
+    console.log('Total doctors:', totalDoctors.value); // 添加日志以便调试
+  } catch (error) {
+    console.error('获取医生总数失败:', error);
+    ElMessage.error('获取医生总数失败，请稍后重试');
+    totalDoctors.value = 0; // 发生错误时设置为0
+  }
+};
+
+// 修改：获取分页医生数据
 const fetchDoctors = async () => {
   loading.value = true;
   try {
-    const response = await axiosInstance.get('/api/doctor/selectAll');
+    const response = await axiosInstance.post('/api/doctor/selectPage', {
+      currentPage: backendCurrentPage.value,
+        pageSize: backendPageSize.value
+    });
     allDoctors.value = response.data.map((doctor, idx) => ({
       ...doctor,
-      index: idx + 1 // 添加自定义行号
+      index: (backendCurrentPage.value - 1) * backendPageSize.value + idx + 1
     }));
+    console.log(allDoctors);
   } catch (error) {
     console.error('获取医生数据失败:', error);
     ElMessage.error('获取医生数据失败，请稍后重试');
@@ -147,10 +191,10 @@ const fetchDoctors = async () => {
   }
 };
 
-
-// 在组件挂载时获取医生数据
-onMounted(() => {
-  fetchDoctors()
+// 在组件挂载时获取总医生数量和第一页医生数据
+onMounted(async () => {
+  await fetchTotalDoctors()
+  await fetchDoctors()
 })
 
 // 搜索关键词
@@ -160,8 +204,16 @@ const searchTerm = ref('')
 const filteredDoctors = computed(() => {
   const term = searchTerm.value.trim().toLowerCase();
   if (term === '') {
+    // 没有搜索关键词，恢复分页页码
+    DoctorNumber.value = totalDoctors.value;
     return allDoctors.value;
   } else {
+    // 搜索关键词，根据关键词过滤医生列表,更改分页页码
+    DoctorNumber.value = allDoctors.value.filter(doctor =>
+        doctor.index.toString().includes(term) || // 精确匹配自定义ID
+        doctor.name.toLowerCase().includes(term) // 模糊匹配姓名
+    ).length;
+
     return allDoctors.value.filter(doctor =>
         doctor.index.toString() === term || // 精确匹配自定义ID
         doctor.name.toLowerCase().includes(term) // 模糊匹配姓名
@@ -169,19 +221,46 @@ const filteredDoctors = computed(() => {
   }
 });
 
+// 计算属性：获取当前页的医生数据
+const paginatedDoctors = computed(() => {
+  const start = (frontendCurrentPage.value - 1) * frontendPageSize.value % backendPageSize.value;
+  const end = start + frontendPageSize.value;
+  if (end > filteredDoctors.value.length){
+    return filteredDoctors.value.slice(start);
+  }
+  return filteredDoctors.value.slice(start, end);
+});
+
+// 新增：处理前端页码变化
+const handleFrontendPageChange = async (page) => {
+  frontendCurrentPage.value = page;
+  const requiredBackendPage = Math.ceil((page * frontendPageSize.value) / backendPageSize.value);
+
+  if (requiredBackendPage !== backendCurrentPage.value) {
+    backendCurrentPage.value = requiredBackendPage;
+    await fetchDoctors();
+  }
+};
 
 // 搜索功能：由于使用了计算属性，这里不需要额外操作
 const onSearch = () => {
   // 计算属性会自动更新
+  frontendCurrentPage.value = 1; // 重置前端页码到第一页
+  backendCurrentPage.value = 1; // 重置后端页码到第一页
+  fetchDoctors(); // 重新获取第一页数据
 }
 
 // 清空搜索
 const clearSearch = () => {
   searchTerm.value = ''
+  frontendCurrentPage.value = 1; // 重置前端页码到第一页
+  backendCurrentPage.value = 1; // 重置后端页码到第一页
+  DoctorNumber.value = totalDoctors.value;
+  fetchDoctors(); // 重新获取第一页数据
 }
 
 // 表格行的样式
-const tableRowClassName = ({ row, rowIndex }) => {
+const tableRowClassName = ({row, rowIndex}) => {
   return rowIndex % 2 === 0 ? 'bg-gray-50' : ''
 }
 
@@ -242,7 +321,7 @@ const importDoctorData = async () => {
 
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('urlJson', JSON.stringify({ url: 'doctorList/' }));
+  formData.append('urlJson', JSON.stringify({url: 'doctorList/'}));
 
   try {
     await axiosInstance.post('/api/import/doctor', formData, {
@@ -254,12 +333,18 @@ const importDoctorData = async () => {
     importDialogVisible.value = false;
     uploadedFile.value = null;
     // 刷新用户列表
+    await fetchTotalDoctors();
     await fetchDoctors();
   } catch (error) {
     console.error('文件上传失败:', error);
     ElMessage.error('文件上传失败，请稍后重试');
   }
 };
+
+// 新增：监听搜索词变化，重置分页
+watch(searchTerm, () => {
+  frontendCurrentPage.value = 1;
+});
 </script>
 
 <style scoped>
@@ -304,4 +389,12 @@ const importDoctorData = async () => {
 .dialog-footer .el-button + .el-button {
   margin-left: 10px;
 }
+
+/* 分页容器样式 */
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
 </style>
+

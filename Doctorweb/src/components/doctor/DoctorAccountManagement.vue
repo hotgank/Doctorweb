@@ -54,7 +54,7 @@
           <el-form-item label="电子医生执照">
             <el-upload
                 class="upload-demo"
-                action="/api/api/doctorlicense/insert"
+                action="/api/api/doctorLicense/insert"
                 :headers="uploadHeaders"
                 :on-success="handleUploadSuccess"
                 :on-error="handleUploadError"
@@ -257,7 +257,7 @@ const startCountdown = (type) => {
 
 const getLicenseStatus = async () => {
   try {
-    const response = await axiosInstance.get('/api/doctorlicense/myLicense', {
+    const response = await axiosInstance.get('/api/doctorLicense/myLicense', {
       headers: { Authorization: `Bearer ${store.state.token}` }
     })
     /**
