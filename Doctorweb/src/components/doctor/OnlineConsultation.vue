@@ -14,7 +14,7 @@
               <el-avatar :size="30" :src="relation.user.avatarUrl || '/default-avatar.png'" />
               <div class="patient-info">
                 <span class="patient-name">{{ relation.user.username }}</span>
-                <span class="patient-status">{{ relation.user.status }}</span>
+                <span class="patient-status">{{ relation.user.status === 'active' ? '活跃' : '停用' }}</span>
               </div>
             </div>
           </div>
@@ -132,13 +132,14 @@
                   <div class="basic-info">
                     <el-avatar :size="64" :src="selectedRelation.user.avatarUrl || '/default-avatar.png'" />
                     <h2>{{ selectedRelation.user.username }}</h2>
-                    <p><strong>状态：</strong>{{ selectedRelation.user.status }}</p>
+                    <p><strong>状态：</strong>{{ selectedRelation.user.status === 'active' ? '活跃' : '停用' }}</p>
                     <p><strong>用户ID：</strong>{{ selectedRelation.user.userId }}</p>
                   </div>
                   <el-divider />
                   <div class="reports">
                     <h4>检测报告</h4>
                     <el-table :data="patientReports" style="width: 100%">
+                      <el-table-column prop="name" label="姓名" width="120"></el-table-column>
                       <el-table-column prop="createdAt" label="日期" width="180">
                         <template #default="scope">
                           {{ formatDate(scope.row.createdAt) }}

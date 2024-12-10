@@ -32,10 +32,6 @@
             <el-icon><EditPen /></el-icon>
             <span>发布文章</span>
           </el-menu-item>
-          <el-menu-item index="/community">
-            <el-icon><Service /></el-icon>
-            <span>社区交流</span>
-          </el-menu-item>
           <el-menu-item index="/user-announcement">
             <el-icon><Document /></el-icon>
             <span>系统公告</span>
@@ -85,6 +81,10 @@
           <el-menu-item index="/admin-account">
             <el-icon><Setting /></el-icon>
             <span>账户管理</span>
+          </el-menu-item>
+          <el-menu-item index="/hospital-management">
+            <el-icon><Loading /></el-icon>
+            <span>医院管理</span>
           </el-menu-item>
         </template>
       </el-menu>

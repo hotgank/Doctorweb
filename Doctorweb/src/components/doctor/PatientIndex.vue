@@ -9,7 +9,11 @@
     <el-table :data="filteredPatients" style="width: 100%">
       <el-table-column prop="user.userId" label="用户ID" width="280"></el-table-column>
       <el-table-column prop="user.username" label="用户名" width="120"></el-table-column>
-      <el-table-column prop="user.status" label="状态" width="100"></el-table-column>
+      <el-table-column label="状态" width="100">
+        <template #default="scope">
+          {{ scope.row.user.status === 'active' ? '活跃' : '停用' }}
+        </template>
+      </el-table-column>
       <el-table-column label="头像" width="100">
         <template #default="scope">
           <el-avatar :size="40" :src="scope.row.user.avatarUrl" />
