@@ -23,10 +23,14 @@
     </el-row>
 
     <el-tabs v-model="activeTab" class="mt-6">
-      <el-tab-pane label="待处理咨询" name="pending">
+      <el-tab-pane label="待处理咨询申请" name="pending">
         <el-table :data="pendingPatients" style="width: 100%">
           <el-table-column prop="username" label="用户名" width="180" />
-          <el-table-column prop="relationStatus" label="状态" width="180" />
+          <el-table-column label="状态" width="180">
+            <template #default="scope">
+              {{ scope.row.relationStatus === 'pending' ? '待同意' : scope.row.relationStatus }}
+            </template>
+          </el-table-column>
           <el-table-column fixed="right" label="操作" width="180">
             <template #default="scope">
               <el-button link type="primary" size="small" @click="approvePatient(scope.row)">批准</el-button>
@@ -35,14 +39,17 @@
           </el-table-column>
         </el-table>
       </el-tab-pane>
-      <el-tab-pane label="待处理的结束咨询申请" name="removePending">
+      <el-tab-pane label="结束咨询" name="removePending">
         <el-table :data="removePendingPatients" style="width: 100%">
           <el-table-column prop="username" label="用户名" width="180" />
-          <el-table-column prop="relationStatus" label="状态" width="180" />
+          <el-table-column label="状态" width="180">
+            <template #default="scope">
+              {{ scope.row.relationStatus === 'removeBinding' ? '结束' : scope.row.relationStatus }}
+            </template>
+          </el-table-column>
           <el-table-column fixed="right" label="操作" width="180">
             <template #default="scope">
-              <el-button link type="primary" size="small" @click="approveRemovePatient(scope.row)">批准</el-button>
-              <el-button link type="danger" size="small" @click="rejectRemovePatient(scope.row)">拒绝</el-button>
+              <el-button link type="primary" size="small" @click="approveRemovePatient(scope.row)">确定</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -205,7 +212,7 @@ const approveRemovePatient = async (patient) => {
         Authorization: `Bearer ${store.state.token}`
       }
     })
-    ElMessage.success('已同意结束咨询申请')
+    ElMessage.success('已确定结束咨询申请')
     await fetchRemovePendingPatients()
     await fetchMyPatients()
   } catch (error) {
