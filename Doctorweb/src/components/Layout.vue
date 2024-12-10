@@ -32,10 +32,6 @@
             <el-icon><EditPen /></el-icon>
             <span>发布文章</span>
           </el-menu-item>
-          <el-menu-item index="/community">
-            <el-icon><Service /></el-icon>
-            <span>社区交流</span>
-          </el-menu-item>
           <el-menu-item index="/user-announcement">
             <el-icon><Document /></el-icon>
             <span>系统公告</span>
