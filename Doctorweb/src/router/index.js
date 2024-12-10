@@ -19,6 +19,8 @@ import DoctorIndex from '../components/admin/DoctorIndex.vue'
 import AdminIndex from '../components/admin/AdminIndex.vue'
 import AdminAccountManagement from '../components/admin/AdminAccountManagement.vue'
 import VerifyDoctors from '../components/admin/VerifyDoctors.vue'
+import VerifyArticles from '../components/admin/ArticleList.vue'
+import VerifyArticlesDetails from '../components/admin/ArticleDetail.vue'
 import AdminSystemAnnouncement from '../components/admin/AdminSystemAnnouncement.vue'
 import SuperAdmin from '../components/admin/SuperAdmin.vue'
 import Layout from '../components/Layout.vue'
@@ -60,6 +62,8 @@ const routes = [
       { path: '/admin-announcement', name: 'AdminSystemAnnouncement', component: AdminSystemAnnouncement, meta: { requiresAuth: true, role: 'admin' } },
       { path: '/admin-account', name: 'AdminAccountManagement', component: AdminAccountManagement, meta: { requiresAuth: true, role: 'admin' } },
       { path: '/ranking', name: 'DoctorRanking', component: DoctorRanking, meta: { requiresAuth: true, role: 'admin' } },
+      { path: '/verify-articles', name: 'VerifyArticles', component: VerifyArticles, meta: { requiresAuth: true, role: 'admin' } },
+      { path: '/verify-articles/:id', name: 'VerifyArticlesDetails', component: VerifyArticlesDetails, meta: { requiresAuth: true, role: 'admin' } },
 
       { path: '/superadmin', name: 'SuperAdmin', component: SuperAdmin, meta: { requiresAuth: true, role: 'admin' } },
       { path: '/hospital-management', name: 'HospitalManagement', component: HospitalManagement, meta: { requiresAuth: true, role: 'admin' } },
