@@ -15,6 +15,15 @@
         :value="type"
       ></el-option>
     </el-select>
+    <el-select v-model="selectedStatus" placeholder="选择文章状态" class="mb-4">
+      <el-option label="全部" value=""></el-option>
+      <el-option
+        v-for="status in articleStatuses"
+        :key="status"
+        :label="status"
+        :value="status"
+      ></el-option>
+    </el-select>
     <el-table :data="paginatedArticles" style="width: 100%">
       <el-table-column prop="title" label="标题" width="250"></el-table-column>
       <el-table-column prop="doctorName" label="作者" width="120"></el-table-column>
@@ -54,6 +63,7 @@ const search = ref('')
 const currentPage = ref(1)
 const pageSize = 15
 const selectedType = ref('')
+const selectedStatus = ref('')
 
 const articleTypes = [
   '脊柱侧弯',
@@ -66,9 +76,15 @@ const articleTypes = [
   '其他'
 ]
 
+const articleStatuses = [
+  '已发布',
+  '未审核',
+  '已打回'
+]
+
 const fetchArticles = async () => {
   try {
-    const response = await axios.post('/api/api/healthArticle/getAll', {}, {
+    const response = await axios.post('/api/api/healthArticle/getTotalAll', {}, {
       headers: {
         Authorization: `Bearer ${store.state.token}`
       }
@@ -110,6 +126,7 @@ const fetchDoctorNames = async () => {
 const filteredArticles = computed(() => {
   return articles.value.filter(article => 
     (selectedType.value === '' || article.type === selectedType.value) &&
+    (selectedStatus.value === '' || article.status === selectedStatus.value) &&
     (article.title.toLowerCase().includes(search.value.toLowerCase()) ||
      article.doctorName.toLowerCase().includes(search.value.toLowerCase()) ||
      article.type.toLowerCase().includes(search.value.toLowerCase()))
@@ -127,7 +144,7 @@ const handlePageChange = (page) => {
 }
 
 const viewArticle = (id) => {
-  router.push(`/article/${id}`)
+  router.push(`/verify-articles/${id}`)
 }
 
 onMounted(() => {

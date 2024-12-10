@@ -58,6 +58,10 @@
             <el-icon><Loading /></el-icon>
             <span>人工审核</span>
           </el-menu-item>
+          <el-menu-item index="/verify-articles">
+            <el-icon><Reading /></el-icon>
+            <span>文章审核</span>
+          </el-menu-item>
           <el-menu-item index="/user-index">
             <el-icon><User /></el-icon>
             <span>用户列表</span>

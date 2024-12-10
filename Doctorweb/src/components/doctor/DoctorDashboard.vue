@@ -121,8 +121,9 @@ const showReports = ref(false)
 const showReportDetails = ref(false)
 const currentReport = ref({})
 const removePendingPatients = ref([])
-//存储医生文章
 const doctorArticles = ref([])
+const publishedArticlesCount = ref(0)
+const todayConsultations = ref(0)
 
 const fetchPendingPatients = async () => {
   try {
@@ -228,7 +229,6 @@ const rejectRemovePatient = async (patient) => {
   }
 }
 
-// 获取医生文章
 const fetchArticles = async () => {
   try {
     const response = await axios.get('/api/api/healthArticle/myArticles', {
@@ -283,11 +283,57 @@ const handleCardClick = (item) => {
   }
 }
 
+const fetchPublishedArticlesCount = async () => {
+  try {
+    const response = await axios.get('/api/api/healthArticle/myPublished', {
+      headers: {
+        Authorization: `Bearer ${store.state.token}`
+      }
+    })
+    publishedArticlesCount.value = response.data
+    stats.value[2].value = publishedArticlesCount.value
+  } catch (error) {
+    console.error('Failed to fetch published articles count:', error)
+    ElMessage.error('获取已发布文章数量失败')
+  }
+}
+
+const fetchTodayConsultations = async () => {
+  try {
+    const response = await axios.get('/api/api/messages/TodayCousultationDoctorCount', {
+      headers: {
+        Authorization: `Bearer ${store.state.token}`
+      }
+    });
+    todayConsultations.value = response.data;
+    stats.value[1].value = todayConsultations.value; // 更新 stats 数组中的今日咨询人数
+  } catch (error) {
+    console.error('Failed to fetch today consultations:', error);
+    ElMessage.error('获取今日咨询人数失败');
+  }
+};
+
 onMounted(() => {
-  fetchPendingPatients()
-  fetchMyPatients()
-  fetchRemovePendingPatients()
-})
+  fetchPendingPatients();
+  fetchMyPatients();
+  fetchRemovePendingPatients();
+  fetchPublishedArticlesCount();
+  fetchTodayConsultations();
+
+  const doctor = JSON.parse(localStorage.getItem('doctor'));
+  if (doctor && doctor.rating !== undefined) {
+    let rating = parseFloat(doctor.rating);
+
+    if (rating === -1) {
+      rating = 0; // 默认未有人评分
+    } else if (rating < 0 || rating > 5) {
+      console.error('评分必须在0到5之间');
+      return;
+    }
+
+    stats.value[3].value = rating.toString();
+  }
+});
 </script>
 
 <style scoped>
