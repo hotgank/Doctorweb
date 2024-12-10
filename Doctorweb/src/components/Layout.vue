@@ -78,6 +78,10 @@
             <el-icon><Setting /></el-icon>
             <span>账户管理</span>
           </el-menu-item>
+          <el-menu-item index="/hospital-management">
+            <el-icon><Loading /></el-icon>
+            <span>医院管理</span>
+          </el-menu-item>
         </template>
       </el-menu>
     </el-aside>

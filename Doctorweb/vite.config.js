@@ -15,7 +15,7 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'https://zeropw.cn', // 后端 HTTPS 地址
+        target: 'https://localhost:8081', // 后端 HTTPS 地址
         changeOrigin: true, // 修改请求头中的 Origin 字段
         secure: false, // 忽略后端自签名证书的验证
         rewrite: (path) => path.replace(/^\/api/, ''), // 去掉 /api 前缀
