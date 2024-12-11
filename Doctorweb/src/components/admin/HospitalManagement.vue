@@ -38,7 +38,7 @@
       >
         <el-table-column prop="hospitalName" label="医院名称" width="200"></el-table-column>
         <el-table-column prop="address" label="地址" width="250"></el-table-column>
-        <el-table-column prop="adminId" label="管理员ID" width="120"></el-table-column>
+        <el-table-column prop="adminId" label="管理员ID" width="450"></el-table-column>
         <el-table-column prop="adminUsername" label="管理员用户名" width="150"></el-table-column>
         <el-table-column label="操作" min-width="300" align="center">
           <template #default="scope">
@@ -120,15 +120,42 @@
     </el-dialog>
 
     <!-- 更新医院管理员对话框 -->
-    <el-dialog v-model="updateAdminDialogVisible" title="更新医院管理员" width="30%">
+    <el-dialog v-model="updateAdminDialogVisible" title="更新医院管理员" width="50%">
       <el-form :model="updateAdminForm" label-width="100px">
         <el-form-item label="医院名称">
           <el-input v-model="updateAdminForm.hospitalName" disabled></el-input>
         </el-form-item>
-        <el-form-item label="新管理员ID">
-          <el-input v-model="updateAdminForm.adminId"></el-input>
-        </el-form-item>
       </el-form>
+      <!-- 管理员表格 -->
+      <div style="max-height: 700px; overflow-y: auto;">
+      <el-table
+          :data="allAdmins"
+          style="width: 100%"
+          :header-cell-style="{ background: '#f3f4f6', color: '#374151' }"
+          :row-class-name="tableRowClassName"
+          @row-click="selectAdmin"
+          highlight-current-row
+      >
+        <el-table-column prop="displayId" label="ID" width="80" align="center"></el-table-column>
+        <el-table-column prop="username" label="姓名" width="120"></el-table-column>
+        <el-table-column prop="email" label="邮箱" width="170"></el-table-column>
+        <el-table-column prop="phone" label="电话" width="150"></el-table-column>
+        <el-table-column prop="role" label="角色" width="120">
+          <template #default="scope">
+            <el-tag :type="getTagType(scope.row.adminType)">
+              {{ getTagName(scope.row.adminType) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="status" label="状态" min-width="100" align="center">
+          <template #default="scope">
+            <el-tag :type="scope.row.status === 'active' ? 'success' : 'danger'" effect="dark">
+              {{ scope.row.status === 'active' ? '活跃' : '停用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+      </el-table>
+      </div>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="updateAdminDialogVisible = false">取消</el-button>
@@ -141,13 +168,14 @@
 
 <script setup>
 import {ref, onMounted, computed} from 'vue'
-import { Search } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import {Search} from '@element-plus/icons-vue'
+import {ElMessage} from 'element-plus'
 import axios from 'axios'
 import axiosInstance from '../../axios/index';
 
 // 状态变量
 const hospitals = ref([])
+const allAdmins = ref([])
 const loading = ref(false)
 const searchTerm = ref('')
 const currentPage = ref(1)
@@ -191,6 +219,7 @@ const fetchHospitals = async () => {
       pageSize: pageSize.value
     })
     hospitals.value = response.data
+    console.log('获取到的医院列表:', hospitals.value)
     hospitalNumber.value = totalHospitals.value
   } catch (error) {
     console.error('获取医院数据失败:', error)
@@ -219,6 +248,20 @@ const fetchHospitalsByCondition = async () => {
   }
 }
 
+// 获取所有管理员
+const fetchAllAdmins = async () => {
+  try {
+    const response = await axiosInstance.get('/api/admin/selectAll');
+    allAdmins.value = response.data.map((admin, index) => ({
+      ...admin,
+      displayId: index + 1
+    }));
+  } catch (error) {
+    console.error('获取管理员数据失败:', error);
+    ElMessage.error('获取管理员数据失败，请稍后重试');
+  }
+};
+
 // 计算属性：获取当前页的医院数据
 const currentPageHospitals = computed(() => {
   if (searchTerm.value === '') {
@@ -238,17 +281,16 @@ const currentPageHospitals = computed(() => {
   }
 })
 
-
-// 在组件挂载时获取医院数据
+// 在组件挂载时获取医院数据和管理员数据
 onMounted(async () => {
   await fetchHospitalCount()
   await fetchHospitals()
+  await fetchAllAdmins()
 })
 
 // 搜索功能
 const onSearch = () => {
   currentPage.value = 1
-  //fetchHospitals()
   fetchHospitalsByCondition()
 }
 
@@ -323,8 +365,8 @@ const updateHospitalAddress = async () => {
     updateAddressDialogVisible.value = false
     await fetchHospitals()
   } catch (error) {
-    console.error('更新医院地址失败:', error)
-    ElMessage.error('更新医院地址失败，请稍后重试')
+    console.error('更新医院地址失败:')
+    ElMessage.error('更新医院地址更新失败，请稍后重试')
   }
 }
 
@@ -332,21 +374,56 @@ const updateHospitalAddress = async () => {
 const showUpdateAdminDialog = (hospital) => {
   updateAdminForm.value = {
     hospitalName: hospital.hospitalName,
-    adminId: hospital.adminId
+    adminId: ''
   }
   updateAdminDialogVisible.value = true
+}
+
+// 选择管理员
+const selectAdmin = (row) => {
+  updateAdminForm.value.adminId = row.adminId
+  //ElMessage.success('已选择管理员'+updateAdminForm.value.adminId)
+  ElMessage.success('已选择管理员' + ' '+row.displayId)
 }
 
 // 更新医院管理员
 const updateHospitalAdmin = async () => {
   try {
     await axiosInstance.post('/api/hospital/updateAdminId', updateAdminForm.value)
-    ElMessage.success('医院管理员更新成功')
+    //ElMessage.success('医院管理员更新成功')
     updateAdminDialogVisible.value = false
     await fetchHospitals()
   } catch (error) {
     console.error('更新医院管理员失败:', error)
     ElMessage.error('更新医院管理员失败，请稍后重试')
+  }
+}
+
+// 获取管理员类型对应的标签类型
+const getTagType = (adminType) => {
+  switch (adminType) {
+    case 'super':
+      return 'danger'
+    case 'first':
+      return 'warning'
+    case 'second':
+      return 'success'
+    default:
+      return ''
+  }
+}
+
+// 获取管理员类型对应的标签名称
+const getTagName = (adminType) => {
+  switch (adminType) {
+    case 'super':
+      return '超级管理员'
+    case 'first':
+      return '管理员'
+    case 'second':
+      return '二级管理员'
+    default:
+      return ''
   }
 }
 </script>
@@ -401,3 +478,4 @@ const updateHospitalAdmin = async () => {
   justify-content: flex-end;
 }
 </style>
+
