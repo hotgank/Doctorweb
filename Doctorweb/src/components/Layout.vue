@@ -292,36 +292,37 @@ const beforeAvatarUpload = (file) => {
 
 const uploadAvatar = async () => {
   if (!newAvatarFile.value) {
-    ElMessage.warning('请先选择一个新的头像文件')
-    return
+    ElMessage.warning('请先选择一个新的头像文件');
+    return;
   }
 
   try {
-    const base64 = await convertToBase64(newAvatarFile.value)
-      const response = await fetch('/api/api/${userRole.value}/upload_avatar_base64', {
+    const base64 = await convertToBase64(newAvatarFile.value);
+    const url = `/api/api/${userRole.value}/upload_avatar_base64`; // 使用模板字符串
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${store.state.token}`
       },
       body: JSON.stringify({ base64Image: base64 })
-    })
+    });
 
     if (response.ok) {
-      ElMessage.success('头像上传成功')
-      avatarUrl.value = base64
-      avatarDialogVisible.value = false
-      if(userRole.value === 'doctor'){
-        await fetchDoctorAvatar() // Fetch the updated avatar
-      }else{
-        await fetchAdminAvatar() // Fetch the updated avatar
+      ElMessage.success('头像上传成功');
+      avatarUrl.value = base64;
+      avatarDialogVisible.value = false;
+      if (userRole.value === 'doctor') {
+        await fetchDoctorAvatar(); // Fetch the updated avatar
+      } else {
+        await fetchAdminAvatar(); // Fetch the updated avatar
       }
     } else {
-      throw new Error('Upload failed')
+      throw new Error('Upload failed');
     }
   } catch (error) {
-    console.error('Failed to upload avatar:', error)
-    ElMessage.error('头像上传失败')
+    console.error('Failed to upload avatar:', error);
+    ElMessage.error('头像上传失败');
   }
 }
 
