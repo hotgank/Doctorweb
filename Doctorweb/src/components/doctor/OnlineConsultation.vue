@@ -407,7 +407,7 @@ const beforeUpload = (file) => {
   }).then(response => {
     console.log(response.data);
     // 处理成功响应
-    ElMessage.success('图片上传成功');
+    ElMessage.success('上传成功');
     // 更新当前附件信息
     currentAttachment.value = {
       url: response.data.url,
@@ -417,7 +417,7 @@ const beforeUpload = (file) => {
     currentAttachment.value = null;  // 发送后立即清除当前附件
   }).catch(error => {
     console.error(error);
-    ElMessage.error('图片上传失败');
+    ElMessage.error('上传失败');
   });
 
   // 返回 false 阻止默认上传行为

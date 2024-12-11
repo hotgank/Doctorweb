@@ -55,13 +55,24 @@ const fetchPatients = async () => {
       headers: {
         Authorization: `Bearer ${store.state.token}`
       }
-    })
-    patients.value = response.data
+    });
+
+    // 处理响应数据，替换 avatarUrl
+    patients.value = response.data.map(patient => {
+      const newAvatarUrl = patient.user.avatarUrl.replace('http://localhost:8080/UserAvatar/', 'https://zeropw.cn:8081/UserAvatar/');
+      return {
+        ...patient,
+        user: {
+          ...patient.user,
+          avatarUrl: newAvatarUrl
+        }
+      };
+    });
   } catch (error) {
-    console.error('Failed to fetch patients:', error)
-    ElMessage.error('获取患者列表失败')
+    console.error('Failed to fetch patients:', error);
+    ElMessage.error('获取患者列表失败');
   }
-}
+};
 
 const filteredPatients = computed(() => {
   return patients.value.filter(patient => 
