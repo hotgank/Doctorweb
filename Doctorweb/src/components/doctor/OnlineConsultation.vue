@@ -244,19 +244,31 @@ const fetchDoctorRelations = async () => {
       headers: {
         Authorization: `Bearer ${store.state.token}`
       }
-    })
-    doctorRelations.value = response.data
+    });
+    
+    // 处理响应数据，替换 avatarUrl
+    doctorRelations.value = response.data.map(relation => {
+      const newAvatarUrl = relation.user.avatarUrl.replace('http://localhost:8080/UserAvatar/', 'https://zeropw.cn:8081/UserAvatar/');
+      return {
+        ...relation,
+        user: {
+          ...relation.user,
+          avatarUrl: newAvatarUrl
+        }
+      };
+    });
+
     if (route.query.relationId) {
-      const relation = doctorRelations.value.find(r => r.relationId === parseInt(route.query.relationId))
+      const relation = doctorRelations.value.find(r => r.relationId === parseInt(route.query.relationId));
       if (relation) {
-        selectRelation(relation)
+        selectRelation(relation);
       }
     }
   } catch (error) {
-    console.error('Failed to fetch doctor relations:', error)
-    ElMessage.error('获取医生关系列表失败')
+    console.error('Failed to fetch doctor relations:', error);
+    ElMessage.error('获取医生关系列表失败');
   }
-}
+};
 
 const selectRelation = async (relation) => {
   selectedRelation.value = relation
