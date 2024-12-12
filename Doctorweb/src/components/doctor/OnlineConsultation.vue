@@ -1,7 +1,7 @@
 <template>
   <div class="consultation">
     <el-row :gutter="10" class="full-height">
-      <!-- 左侧患者列表部分保持不变 -->
+      <!-- 左侧患者列表部分 -->
       <el-col :span="6" class="full-height">
         <el-card class="box-card full-height">
           <template #header>
@@ -11,16 +11,19 @@
           </template>
           <div class="patient-list">
             <div v-for="relation in doctorRelations" :key="relation.relationId" class="patient-item" @click="selectRelation(relation)">
-              <el-avatar :size="30" :src="relation.user.avatarUrl || '/default-avatar.png'" />
+              <div class="avatar-wrapper" :class="{ 'has-unread': relation.doctorUnread > 0 }">
+                <el-avatar :size="30" :src="relation.user.avatarUrl || '/default-avatar.png'" />
+                <span v-if="relation.doctorUnread > 0" class="unread-dot">{{ relation.doctorUnread }}</span>
+              </div>
               <div class="patient-info">
                 <span class="patient-name">{{ relation.user.username }}</span>
-                <span class="patient-status">{{ relation.user.status === 'active' ? '活跃' : '停用' }}</span>
+                <span class="patient-status">{{ relation.user.status === 'active'? '活跃' : '停用' }}</span>
+                <span v-if="relation.userUnread > 0" class="unread-tip">用户未读：{{ relation.userUnread }}</span>
               </div>
             </div>
           </div>
         </el-card>
       </el-col>
-
       <!-- 右侧聊天区域 -->
       <el-col :span="18" class="full-height">
         <el-tabs v-model="activeTab" class="full-height">
@@ -34,8 +37,8 @@
               <div class="chat-container">
                 <!-- 聊天消息区域 -->
                 <div class="chat-messages" ref="chatMessagesRef" @scroll="handleScroll">
-                  <div v-for="msg in messages" :key="msg.messageSeq" :class="['message', msg.senderType === 'doctor' ? 'message-right' : 'message-left']">
-                    <el-avatar :size="30" :src="msg.senderType === 'doctor' ? doctorAvatar : (selectedRelation.user.avatarUrl || '/default-avatar.png')" />
+                  <div v-for="msg in messages" :key="msg.messageSeq" :class="['message', msg.senderType === 'doctor'? 'message-right' : 'message-left']">
+                    <el-avatar :size="30" :src="msg.senderType === 'doctor'? doctorAvatar : (selectedRelation.user.avatarUrl || '/default-avatar.png')" />
                     <div class="message-content">
                       <!-- 文本消息 -->
                       <div v-if="!msg.url">{{ msg.messageText }}</div>
@@ -119,7 +122,7 @@
             <el-empty v-else description="请选择一个患者开始对话"></el-empty>
           </el-tab-pane>
 
-          <!-- 患者详情标签页保持不变 -->
+          <!-- 患者详情标签页 -->
           <el-tab-pane label="患者详情" name="details">
             <el-scrollbar class="details-scrollbar">
               <el-card v-if="selectedRelation" class="box-card full-height">
@@ -132,7 +135,7 @@
                   <div class="basic-info">
                     <el-avatar :size="64" :src="selectedRelation.user.avatarUrl || '/default-avatar.png'" />
                     <h2>{{ selectedRelation.user.username }}</h2>
-                    <p><strong>状态：</strong>{{ selectedRelation.user.status === 'active' ? '活跃' : '停用' }}</p>
+                    <p><strong>状态：</strong>{{ selectedRelation.user.status === 'active'? '活跃' : '停用' }}</p>
                     <p><strong>用户ID：</strong>{{ selectedRelation.user.userId }}</p>
                   </div>
                   <el-divider />
@@ -156,7 +159,7 @@
                   </div>
                 </div>
               </el-card>
-            <el-empty v-else description="请选择一个患者查看详情"></el-empty>
+              <el-empty v-else description="请选择一个患者查看详情"></el-empty>
             </el-scrollbar>
           </el-tab-pane>
         </el-tabs>
@@ -165,13 +168,13 @@
     <el-dialog v-model="showReport" title="检测报告" width="70%" :before-close="handleCloseReport">
       <el-form :model="currentReport" label-width="120px">
         <el-form-item label="姓名">
-          <span>{{ currentReport.name}}</span>
+          <span>{{ currentReport.name }}</span>
         </el-form-item>
         <el-form-item label="性别">
           <span>{{ currentReport.gender }}</span>
         </el-form-item>
         <el-form-item label="出生日期">
-          <span>{{formatDate2(currentReport.birthdate)}}</span>
+          <span>{{ formatDate2(currentReport.birthdate) }}</span>
         </el-form-item>
         <el-form-item label="身高">
           <span>{{ currentReport.height }}</span>
@@ -240,7 +243,7 @@ const uploadHeaders = computed(() => ({
 
 const fetchDoctorRelations = async () => {
   try {
-    const response = await axios.get('/api/api/doctor/relation/selectMyPatientsAndRelationId', {
+    const response = await axios.get('/api/api/doctor/relation/selectMyPatientsAndRelationIdAndUnread', {
       headers: {
         Authorization: `Bearer ${store.state.token}`
       }
@@ -849,7 +852,27 @@ const imageUrl = async (url) => {
 .reports h4 {
   margin-bottom: 10px;
 }
-
+.has-unread {
+    position: relative;
+  }
+ .unread-dot {
+    position: absolute;
+    right: 0;
+    top: 0;
+    background-color: red;
+    color: white;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 10px;
+  }
+ .unread-tip {
+    font-size: 12px;
+    color: gray;
+  }
 /* 确保表格不会超出容器 */
 .el-table {
   width: 100% !important;
