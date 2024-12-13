@@ -307,7 +307,7 @@ const fetchPublishedArticlesCount = async () => {
 
 const fetchTodayConsultations = async () => {
   try {
-    const response = await axios.get('/api/api/messages/TodayCousultationDoctorCount', {
+    const response = await axios.get('/api/api/messages/todayCousultationDoctorCount', {
       headers: {
         Authorization: `Bearer ${store.state.token}`
       }
