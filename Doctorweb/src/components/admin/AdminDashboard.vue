@@ -34,18 +34,6 @@
           </el-table-column>
         </el-table>
       </el-tab-pane>
-      <el-tab-pane label="最近活动" name="recentActivities">
-        <el-table :data="recentActivities" style="width: 100%">
-          <el-table-column prop="action" label="活动" width="180" />
-          <el-table-column prop="user" label="用户" width="180" />
-          <el-table-column prop="date" label="日期" width="180" />
-          <el-table-column fixed="right" label="操作" width="120">
-            <template #default="scope">
-              <el-button link type="primary" size="small" @click="viewActivityDetails(scope.row)">查看详情</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-tab-pane>
     </el-tabs>
 
     <!-- 医生详情对话框 -->
@@ -141,21 +129,21 @@ const stats = ref([
   {
     title: '总用户数',
     value: '0',
-    description: '较上月增长5%',
+    description: '',
     icon: User,
     route: '/user-index'
   },
   {
     title: '待审核医生',
     value: '0',
-    description: '较昨天增加3位',
+    description: '',
     icon: Loading,
     route: '/verify'
   },
   {
     title: '系统公告',
     value: '0',
-    description: '本周新增2条',
+    description: '',
     icon: Document,
     route: '/admin-announcement'
   },

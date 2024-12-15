@@ -25,7 +25,8 @@ import AdminSystemAnnouncement from '../components/admin/AdminSystemAnnouncement
 import SuperAdmin from '../components/admin/SuperAdmin.vue'
 import Layout from '../components/Layout.vue'
 import ForgotPassword from '../components/ForgotPassword.vue'
-import HospitalManagement from "../components/admin/HospitalManagement.vue";
+import HospitalManagement from "../components/admin/HospitalManagement.vue"
+import APIManagement from "../components/admin/APIManagement.vue";
 
 const routes = [
   // 登录和注册页面，不使用 Layout
@@ -67,6 +68,7 @@ const routes = [
 
       { path: '/superadmin', name: 'SuperAdmin', component: SuperAdmin, meta: { requiresAuth: true, role: 'admin' } },
       { path: '/hospital-management', name: 'HospitalManagement', component: HospitalManagement, meta: { requiresAuth: true, role: 'admin' } },
+      { path: '/api-management', name: 'APIManagement', component: APIManagement, meta: { requiresAuth: true, role: 'admin' } },
     ],
   },
 
