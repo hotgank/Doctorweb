@@ -37,11 +37,14 @@
           v-loading="loading"
       >
         <el-table-column prop="displayId" label="ID" width="80" align="center"></el-table-column>
-        <el-table-column prop="username" label="姓名" width="120"></el-table-column>
-        <el-table-column prop="email" label="邮箱" width="170"></el-table-column>
-        <el-table-column prop="phone" label="手机号" width="170"></el-table-column>
-        <el-table-column prop="lastLogin" label="上次登录时间" width="150"></el-table-column>
-        <el-table-column prop="status" label="状态" width="100" align="center">
+        <el-table-column prop="username" label="姓名" width="200"></el-table-column>
+        <!-- 修改后 -->
+        <el-table-column prop="lastLogin" label="上次登录时间" width="300">
+          <template #default="scope">
+            {{ formatDate2(scope.row.lastLogin) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="status" label="状态" width="200" align="center">
           <template #default="scope">
             <el-tag :type="scope.row.status === 'active' ? 'success' : 'danger'" effect="dark">
               {{ scope.row.status === 'active' ? '活跃' : '停用' }}
@@ -316,6 +319,19 @@ const importUserData = async () => {
 watch(searchTerm, () => {
   frontendCurrentPage.value = 1;
 });
+
+// 添加时间格式化函数
+const formatDate2 = (timestamp) => {
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // 月份从0开始，需要加1，并补零
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
 </script>
 
 <style scoped>

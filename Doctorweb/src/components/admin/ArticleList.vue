@@ -6,7 +6,7 @@
       placeholder="搜索文章"
       class="mb-4"
     ></el-input>
-    <el-select v-model="selectedType" placeholder="选择文章类型" class="mb-4">
+    <el-select v-model="selectedType" placeholder="选择文章类型" class="mb-4" style="width: 200px; margin-top: 20px;">
       <el-option label="全部" value=""></el-option>
       <el-option
         v-for="type in articleTypes"
@@ -15,7 +15,7 @@
         :value="type"
       ></el-option>
     </el-select>
-    <el-select v-model="selectedStatus" placeholder="选择文章状态" class="mb-4">
+    <el-select v-model="selectedStatus" placeholder="选择文章状态" class="mb-4" style="width: 200px; margin-top: 20px; margin-left: 10px;">
       <el-option label="全部" value=""></el-option>
       <el-option
         v-for="status in articleStatuses"
