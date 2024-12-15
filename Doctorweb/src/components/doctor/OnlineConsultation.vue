@@ -141,7 +141,15 @@
                   <el-divider />
                   <div class="reports">
                     <h4>检测报告</h4>
-                    <el-table :data="patientReports" style="width: 100%">
+                    <el-input
+                        v-model="reportSearchQuery"
+                        placeholder="输入姓名"
+                        prefix-icon="el-icon-search"
+                        clearable
+                        @input="filterReports"
+                        style="margin-bottom: 15px; width: 300px;"
+                    />
+                    <el-table :data="filteredReports" style="width: 100%">
                       <el-table-column prop="name" label="姓名" width="120"></el-table-column>
                       <el-table-column prop="createdAt" label="日期" width="180">
                         <template #default="scope">
@@ -241,6 +249,11 @@ const uploadHeaders = computed(() => ({
   Authorization: `Bearer ${store.state.token}`
 }))
 
+// Add these new refs
+const reportSearchQuery = ref('')
+const filteredReports = ref([])
+
+
 const fetchDoctorRelations = async () => {
   try {
     const response = await axios.get('/api/api/doctor/relation/selectMyPatientsAndRelationIdAndUnread', {
@@ -248,7 +261,7 @@ const fetchDoctorRelations = async () => {
         Authorization: `Bearer ${store.state.token}`
       }
     });
-    
+
     // 处理响应数据，替换 avatarUrl
     doctorRelations.value = response.data.map(relation => {
       const newAvatarUrl = relation.user.avatarUrl.replace('http://localhost:8080/UserAvatar/', 'https://zeropw.cn:8081/UserAvatar/');
@@ -289,6 +302,7 @@ const fetchPatientReports = async (userId) => {
       }
     })
     patientReports.value = response.data
+    filteredReports.value = response.data // Initialize filteredReports
   } catch (error) {
     console.error('Failed to fetch patient reports:', error)
     ElMessage.error('获取患者报告失败')
@@ -708,6 +722,17 @@ const imageUrl = async (url) => {
   } catch (error) {
     console.error('Failed to fetch image:', error)
     return null
+  }
+}
+
+// Add this new function
+const filterReports = () => {
+  if (reportSearchQuery.value) {
+    filteredReports.value = patientReports.value.filter(report =>
+        report.name.toLowerCase().includes(reportSearchQuery.value.toLowerCase())
+    )
+  } else {
+    filteredReports.value = patientReports.value
   }
 }
 </script>

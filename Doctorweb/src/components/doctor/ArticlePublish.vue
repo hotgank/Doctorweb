@@ -9,7 +9,7 @@
         <el-input type="textarea" v-model="article.content" :rows="10" />
       </el-form-item>
       <el-form-item label="类型">
-        <el-select v-model="article.type" placeholder="请选择文章类型">
+        <el-select v-model="article.type" placeholder="请选择文章类型" style="width: 200px;">
           <el-option
             v-for="type in articleTypes"
             :key="type"
@@ -29,7 +29,7 @@
     <!-- 筛选条件 -->
     <el-form :inline="true" class="filter-form">
       <el-form-item label="文章类型">
-        <el-select v-model="selectedType" placeholder="请选择文章类型" @change="currentPage = 1">
+        <el-select v-model="selectedType" placeholder="请选择文章类型" @change="currentPage = 1" style="width: 200px;">
           <el-option label="全部" value="" />
           <el-option
             v-for="type in articleTypes"
@@ -40,7 +40,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="文章状态">
-        <el-select v-model="selectedStatus" placeholder="请选择文章状态" @change="currentPage = 1">
+        <el-select v-model="selectedStatus" placeholder="请选择文章状态" @change="currentPage = 1" style="width: 200px;">
           <el-option label="全部" value="" />
           <el-option
             v-for="status in statuses"
