@@ -1,6 +1,6 @@
 <template>
   <div class="patient-details">
-    <el-descriptions title="患者信息" :column="2" border>
+    <el-descriptions title="家属信息" :column="2" border>
       <el-descriptions-item label="用户ID">{{ patient.user.userId }}</el-descriptions-item>
       <el-descriptions-item label="用户名">{{ patient.user.username }}</el-descriptions-item>
       <el-descriptions-item label="状态">{{ patient.user.status === 'active' ? '活跃' : '停用'}}</el-descriptions-item>

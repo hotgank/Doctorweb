@@ -1,12 +1,12 @@
 <template>
   <div class="consultation">
     <el-row :gutter="10" class="full-height">
-      <!-- 左侧患者列表部分 -->
+      <!-- 左侧家属列表部分 -->
       <el-col :span="6" class="full-height">
         <el-card class="box-card full-height">
           <template #header>
             <div class="card-header">
-              <span>患者列表</span>
+              <span>家属列表</span>
             </div>
           </template>
           <div class="patient-list">
@@ -119,16 +119,16 @@
                 </div>
               </div>
             </el-card>
-            <el-empty v-else description="请选择一个患者开始对话"></el-empty>
+            <el-empty v-else description="请选择一个家属开始对话"></el-empty>
           </el-tab-pane>
 
-          <!-- 患者详情标签页 -->
-          <el-tab-pane label="患者详情" name="details">
+          <!-- 家属详情标签页 -->
+          <el-tab-pane label="家属详情" name="details">
             <el-scrollbar class="details-scrollbar">
               <el-card v-if="selectedRelation" class="box-card full-height">
                 <template #header>
                   <div class="card-header">
-                    <span>患者详细信息</span>
+                    <span>家属详细信息</span>
                   </div>
                 </template>
                 <div class="patient-details">
@@ -136,7 +136,6 @@
                     <el-avatar :size="64" :src="selectedRelation.user.avatarUrl || '/default-avatar.png'" />
                     <h2>{{ selectedRelation.user.username }}</h2>
                     <p><strong>状态：</strong>{{ selectedRelation.user.status === 'active'? '活跃' : '停用' }}</p>
-                    <p><strong>用户ID：</strong>{{ selectedRelation.user.userId }}</p>
                   </div>
                   <el-divider />
                   <div class="reports">
@@ -167,7 +166,7 @@
                   </div>
                 </div>
               </el-card>
-              <el-empty v-else description="请选择一个患者查看详情"></el-empty>
+              <el-empty v-else description="请选择一个家属查看详情"></el-empty>
             </el-scrollbar>
           </el-tab-pane>
         </el-tabs>

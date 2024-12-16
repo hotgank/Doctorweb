@@ -30,17 +30,16 @@
     <el-main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- 医院表格 -->
       <el-table
-          :data="currentPageHospitals"
-          style="width: 100%"
+          :data="currentPageHospitals"    style="width: 100%"
           :header-cell-style="{ background: '#f3f4f6', color: '#374151' }"
           :row-class-name="tableRowClassName"
           v-loading="loading"
       >
+        <el-table-column prop="displayId" label="ID" width="80" align="center"></el-table-column>
         <el-table-column prop="hospitalName" label="医院名称" width="200"></el-table-column>
         <el-table-column prop="address" label="地址" width="250"></el-table-column>
-        <el-table-column prop="adminId" label="管理员ID" width="450"></el-table-column>
         <el-table-column prop="adminUsername" label="管理员用户名" width="150"></el-table-column>
-        <el-table-column label="操作" min-width="300" align="center">
+        <el-table-column label="操作" min-width="350" align="center">
           <template #default="scope">
             <el-button
                 type="primary"
@@ -55,6 +54,13 @@
                 @click="showUpdateAdminDialog(scope.row)"
             >
               更新管理员
+            </el-button>
+            <el-button
+                type="info"
+                size="small"
+                @click="deleteAdmin(scope.row.hospitalName)"
+            >
+              取消管理员
             </el-button>
             <el-button
                 type="danger"
@@ -251,7 +257,7 @@ const fetchHospitalsByCondition = async () => {
 // 获取所有管理员
 const fetchAllAdmins = async () => {
   try {
-    const response = await axiosInstance.get('/api/admin/selectAll');
+    const response = await axiosInstance.get('/api/admin/selectSecondAdmins');
     allAdmins.value = response.data.map((admin, index) => ({
       ...admin,
       displayId: index + 1
@@ -264,22 +270,19 @@ const fetchAllAdmins = async () => {
 
 // 计算属性：获取当前页的医院数据
 const currentPageHospitals = computed(() => {
-  if (searchTerm.value === '') {
-    const start = (currentPage.value - 1) * pageSize.value % pageSize.value
-    const end = start + pageSize.value
-    if (end > hospitals.value.length) {
-      return hospitals.value.slice(start)
-    }
-    return hospitals.value.slice(start, end)
-  } else {
-    const start = (currentPage.value - 1) * pageSize.value
-    const end = start + pageSize.value
-    if (end > hospitals.value.length) {
-      return hospitals.value.slice(start)
-    }
-    return hospitals.value.slice(start, end)
+  let filteredHospitals = hospitals.value;
+  if (searchTerm.value !== '') {
+    filteredHospitals = hospitals.value.filter(hospital =>
+        hospital.hospitalName.toLowerCase().includes(searchTerm.value.toLowerCase())
+    );
   }
-})
+  const start = (currentPage.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return filteredHospitals.slice(start, end).map((hospital, index) => ({
+    ...hospital,
+    displayId: start + index + 1
+  }));
+});
 
 // 在组件挂载时获取医院数据和管理员数据
 onMounted(async () => {
@@ -332,6 +335,18 @@ const addHospital = async () => {
   } catch (error) {
     console.error('添加医院失败:', error)
     ElMessage.error('添加医院失败，请稍后重试')
+  }
+}
+
+// 取消管理员
+const deleteAdmin = async (hospitalName) => {
+  try {
+    await axiosInstance.post('/api/hospital/deleteAdmin', {hospitalName})
+    ElMessage.success('管理员取消成功')
+    await fetchHospitals()
+  } catch (error) {
+    console.error('取消管理员失败:', error)
+    ElMessage.error('取消管理员失败，请稍后重试')
   }
 }
 

@@ -1,14 +1,14 @@
 <template>
   <div class="patient-index">
-    <h1 class="mb-4">我的患者</h1>
+    <h1 class="mb-4">家属列表</h1>
     <el-input
       v-model="search"
-      placeholder="搜索患者"
+      placeholder="搜索家属"
       class="mb-4"
     ></el-input>
     <el-table :data="filteredPatients" style="width: 100%">
-      <el-table-column prop="user.userId" label="用户ID" width="280"></el-table-column>
-      <el-table-column prop="user.username" label="用户名" width="120"></el-table-column>
+      <el-table-column prop="displayId" label="ID" width="80" align="center"></el-table-column>
+      <el-table-column prop="user.username" label="用户名" width="250"></el-table-column>
       <el-table-column label="状态" width="100">
         <template #default="scope">
           {{ scope.row.user.status === 'active' ? '活跃' : '停用' }}
@@ -26,11 +26,11 @@
         </template>
       </el-table-column>
       <template #empty>
-        <el-empty description="没有患者"></el-empty>
+        <el-empty description="没有家属"></el-empty>
       </template>
     </el-table>
 
-    <el-dialog v-model="showDetails" title="患者详情" width="50%">
+    <el-dialog v-model="showDetails" title="家属详情" width="50%">
       <PatientDetails :patient="selectedPatient" @close="showDetails = false" />
     </el-dialog>
   </div>
@@ -73,15 +73,20 @@ const fetchPatients = async () => {
     });
   } catch (error) {
     console.error('Failed to fetch patients:', error);
-    ElMessage.error('获取患者列表失败');
+    ElMessage.error('获取家属列表失败');
   }
 };
 
 const filteredPatients = computed(() => {
-  return patients.value.filter(patient => 
-    patient.user.username.toLowerCase().includes(search.value.toLowerCase()) ||
-    patient.user.userId.includes(search.value)
-  )
+  return patients.value
+      .filter(patient =>
+          patient.user.username.toLowerCase().includes(search.value.toLowerCase()) ||
+          patient.user.userId.includes(search.value)
+      )
+      .map((patient, index) => ({
+        ...patient,
+        displayId: index + 1
+      }))
 })
 
 const viewPatientDetails = (patient) => {

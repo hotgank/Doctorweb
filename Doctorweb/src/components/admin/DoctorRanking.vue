@@ -13,11 +13,11 @@
         <!-- 第二名 -->
         <div class="top-item second" v-if="doctors[1]">
           <div class="crown silver">2</div>
-          <div class="doctor-ID ">{{ doctors[1].doctorId }}</div>
           <h3 class="doctor-name">{{ doctors[1].name }}</h3>
           <div class="doctor-hospital">{{ doctors[1].workplace }}</div>
+          <div class="doctor-position ">{{ doctors[1].position}}</div>
           <div class="score">
-            {{ doctors[1].rating }}
+            {{ doctors[1].rating >= 0 ? doctors[1].rating : 0 }}
             <el-rate
                 v-model="doctors[1].rating"
                 disabled
@@ -30,11 +30,11 @@
         <!-- 第一名 -->
         <div class="top-item first" v-if="doctors[0]">
           <div class="crown gold">1</div>
-          <div class="doctor-ID ">{{ doctors[0].doctorId }}</div>
           <h3 class="doctor-name">{{ doctors[0].name }}</h3>
           <div class="doctor-hospital">{{ doctors[0].workplace }}</div>
+          <div class="doctor-position ">{{ doctors[0].position }}</div>
           <div class="score">
-            {{ doctors[0].rating }}
+            {{ doctors[0].rating >= 0 ? doctors[0].rating : 0 }}
             <el-rate
                 v-model="doctors[0].rating"
                 disabled
@@ -47,11 +47,11 @@
         <!-- 第三名 -->
         <div class="top-item third" v-if="doctors[2]">
           <div class="crown bronze">3</div>
-          <div class="doctor-ID ">{{ doctors[2].doctorId }}</div>
           <h3 class="doctor-name">{{ doctors[2].name }}</h3>
           <div class="doctor-hospital">{{ doctors[2].workplace }}</div>
+          <div class="doctor-position ">{{ doctors[2].position }}</div>
           <div class="score">
-            {{ doctors[2].rating }}
+            {{ doctors[2].rating >= 0 ? doctors[2].rating : 0 }}
             <el-rate
                 v-model="doctors[2].rating"
                 disabled
@@ -80,14 +80,14 @@
             </template>
           </el-table-column>
 
-          <!--医生ID-->
+          <!--医生职位-->
           <el-table-column
-              label="医生ID"
+              label="医生职位"
               width="350"
               align="center"
           >
             <template #default="scope">
-              <div class="doctor-ID-b">{{ scope.row.doctorId }}</div>
+              <div class="doctor-position-b">{{ scope.row.position }}</div>
             </template>
           </el-table-column>
 
@@ -112,7 +112,7 @@
           >
             <template #default="scope">
               <div class="score-display">
-                <span class="score-number">{{ scope.row.rating }}</span>
+                <span class="score-number">{{ scope.row.rating >= 0 ? scope.row.rating : 0 }}</span>
                 <el-rate
                     v-model="scope.row.rating"
                     disabled
@@ -258,13 +258,13 @@ onMounted(() => {
   color: #6b7280;
   margin-bottom: 5px;
 }
-.doctor-ID {
+.doctor-position {
   font-size: 10px;
   color: #6b7280;
   margin-bottom: 5px;
 }
 
-.doctor-ID-b {
+.doctor-position-b {
   font-size: 14px;
   color: #6b7280;
   margin-bottom: 5px;

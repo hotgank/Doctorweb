@@ -18,7 +18,7 @@
           </el-menu-item>
           <el-menu-item index="/patient-index">
             <el-icon><List /></el-icon>
-            <span>患者索引</span>
+            <span>家属列表</span>
           </el-menu-item>
           <el-menu-item index="/consultation">
             <el-icon><ChatDotRound /></el-icon>
@@ -52,7 +52,7 @@
           </el-menu-item>
           <el-menu-item index="/verify">
             <el-icon><Loading /></el-icon>
-            <span>人工审核</span>
+            <span>医生审核</span>
           </el-menu-item>
           <el-menu-item index="/verify-articles">
             <el-icon><Reading /></el-icon>
@@ -66,21 +66,9 @@
             <el-icon><Service /></el-icon>
             <span>医生列表</span>
           </el-menu-item>
-          <el-menu-item index="/admin-index">
-            <el-icon><Coordinate /></el-icon>
-            <span>管理员列表</span>
-          </el-menu-item>
           <el-menu-item index="/ranking">
             <el-icon><TrendCharts /></el-icon>
             <span>医生排行</span>
-          </el-menu-item>
-          <el-menu-item index="/admin-announcement">
-            <el-icon><Document /></el-icon>
-            <span>系统公告</span>
-          </el-menu-item>
-          <el-menu-item index="/admin-account">
-            <el-icon><Setting /></el-icon>
-            <span>账户管理</span>
           </el-menu-item>
           <el-menu-item index="/hospital-management">
             <el-icon><Loading /></el-icon>
@@ -89,6 +77,18 @@
           <el-menu-item index="/api-management">
             <el-icon><Loading /></el-icon>
             <span>API接口管理</span>
+          </el-menu-item>
+          <el-menu-item v-if="!isSuperAdmin" index="/admin-index">
+            <el-icon><Coordinate /></el-icon>
+            <span>管理员列表</span>
+          </el-menu-item>
+          <el-menu-item index="/admin-announcement">
+            <el-icon><Document /></el-icon>
+            <span>系统公告</span>
+          </el-menu-item>
+          <el-menu-item index="/admin-account">
+            <el-icon><Setting /></el-icon>
+            <span>账户管理</span>
           </el-menu-item>
         </template>
       </el-menu>

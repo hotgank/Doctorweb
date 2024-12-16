@@ -16,9 +16,10 @@
       ></el-option>
     </el-select>
     <el-table :data="paginatedArticles" style="width: 100%">
+      <el-table-column prop="displayId" label="ID" width="80" align="center"></el-table-column>
       <el-table-column prop="title" label="标题" width="250"></el-table-column>
       <el-table-column prop="doctorName" label="作者" width="120"></el-table-column>
-      <el-table-column prop="publishDate" label="发布日期" width="180"></el-table-column>
+      <el-table-column prop="publishDate" label="发布日期" width="160"></el-table-column>
       <el-table-column prop="type" label="类型" width="100"></el-table-column>
       <el-table-column prop="status" label="状态" width="100"></el-table-column>
       <el-table-column label="操作">
@@ -122,7 +123,10 @@ const filteredArticles = computed(() => {
 const paginatedArticles = computed(() => {
   const start = (currentPage.value - 1) * pageSize
   const end = start + pageSize
-  return filteredArticles.value.slice(start, end)
+  return filteredArticles.value.slice(start, end).map((article, index) => ({
+    ...article,
+    displayId: start + index + 1
+  }))
 })
 
 const handlePageChange = (page) => {

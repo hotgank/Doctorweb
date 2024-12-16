@@ -95,16 +95,16 @@
     >
       <el-form :model="adminForm" label-width="100px">
         <el-form-item label="用户名">
-          <el-input v-model="adminForm.username"></el-input>
+          <el-input v-model="adminForm.username" placeholder="请填写用户名"></el-input>
         </el-form-item>
         <el-form-item label="邮箱">
-          <el-input v-model="adminForm.email"></el-input>
+          <el-input v-model="adminForm.email" placeholder="请填写邮箱"></el-input>
         </el-form-item>
         <el-form-item label="密码" v-if="!isEditing">
-          <el-input v-model="adminForm.password" type="password"></el-input>
+          <el-input v-model="adminForm.password" type="password" placeholder="请填写10-16位密码"></el-input>
         </el-form-item>
         <el-form-item label="角色">
-          <el-select v-model="adminForm.adminType">
+          <el-select v-model="adminForm.adminType" placeholder="请选择管理员类型">
             <el-option label="管理员" value="first"></el-option>
             <el-option label="超级管理员" value="super"></el-option>
             <el-option label="二级管理员" value="second"></el-option>
@@ -152,7 +152,7 @@ const adminForm = ref({
   username: '',
   email: '',
   password: '',
-  adminType: 'admin'
+  adminType: ''
 })
 const deleteConfirmVisible = ref(false)
 const adminToDelete = ref(null)
@@ -183,7 +183,7 @@ const tableRowClassName = ({ rowIndex }) => {
 
 const showCreateAdminForm = () => {
   isEditing.value = false
-  adminForm.value = { username: '', email: '', password: '', adminType: 'admin' }
+  adminForm.value = { username: '', email: '', password: '', adminType: '' }
   dialogVisible.value = true
 }
 
@@ -194,6 +194,32 @@ const editAdmin = (admin) => {
 }
 
 const submitAdminForm = async () => {
+  if (!adminForm.value.username || (!isEditing.value && !adminForm.value.password) || !adminForm.value.adminType) {
+    ElMessage.error('请填写所有必填字段')
+    return
+  }
+
+// 密码校验：长度为10-16位，包含大小写字母和数字
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{10,16}$/;
+  if (!isEditing.value && !passwordRegex.test(adminForm.value.password)) {
+    ElMessage.error('密码长度为10-16位，必须包含大小写字母和数字')
+    return
+  }
+
+  // 邮箱校验：使用正则表达式验证邮箱格式
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(adminForm.value.email)) {
+    ElMessage.error('请输入有效的邮箱地址')
+    return
+  }
+
+// adminType 校验：必须为“超级管理员”、“管理员”或“二级管理员”
+  const validAdminTypes = ['first', 'super', 'second'];
+  if (!validAdminTypes.includes(adminForm.value.adminType)) {
+    ElMessage.error('adminType 必须为超级管理员、管理员或二级管理员之一')
+    return
+  }
+
   try {
     if (isEditing.value) {
       await axiosInstance.post('/api/admin/edit', JSON.stringify(adminForm.value), {
