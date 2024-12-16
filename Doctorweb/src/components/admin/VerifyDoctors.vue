@@ -43,10 +43,11 @@
             <el-button type="primary" size="small" @click="openDetails(scope.row)">查看详情</el-button>
           </template>
         </el-table-column>
+        <template #empty>
+          <el-empty description="没有待审核的医生"></el-empty>
+        </template>
       </el-table>
 
-      <!-- 空数据提示 -->
-      <el-empty v-if="displayedDoctors.length === 0" description="没有待审核的医生"></el-empty>
     </el-main>
 
     <!-- 详情对话框 -->

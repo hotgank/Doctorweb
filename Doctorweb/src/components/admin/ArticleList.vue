@@ -35,6 +35,9 @@
           <el-button size="small" @click="viewArticle(scope.row.articleId)">查看详情</el-button>
         </template>
       </el-table-column>
+      <template #empty>
+        <el-empty description="没有科普文章"></el-empty>
+      </template>
     </el-table>
     <el-pagination
       class="mt-4"

@@ -122,6 +122,9 @@
               </div>
             </template>
           </el-table-column>
+          <template #empty>
+            <el-empty description="没有医生数据"></el-empty>
+          </template>
         </el-table>
       </div>
     </el-card>

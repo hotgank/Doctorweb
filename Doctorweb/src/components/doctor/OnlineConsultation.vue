@@ -24,7 +24,7 @@
           </div>
         </el-card>
       </el-col>
-      <!-- 右侧聊天区域 -->
+      <!-- 右侧聊天                                                                                                                       区域 -->
       <el-col :span="18" class="full-height">
         <el-tabs v-model="activeTab" class="full-height">
           <el-tab-pane label="在线咨询" name="chat">

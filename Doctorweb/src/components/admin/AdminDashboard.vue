@@ -32,6 +32,9 @@
               <el-button link type="primary" size="small" @click="viewDoctorDetails(scope.row)">查看详情</el-button>
             </template>
           </el-table-column>
+          <template #empty>
+            <el-empty description="没有待审核的医生"></el-empty>
+          </template>
         </el-table>
       </el-tab-pane>
     </el-tabs>
@@ -134,6 +137,13 @@ const stats = ref([
     route: '/user-index'
   },
   {
+    title: '总医生数',
+    value: '0',
+    description: '',
+    icon: Document,
+    route: '/doctor-index'
+  },
+  {
     title: '待审核医生',
     value: '0',
     description: '',
@@ -152,13 +162,6 @@ const stats = ref([
 const activeTab = ref('pendingDoctors')
 
 const pendingDoctors = ref([])
-
-const recentActivities = [
-  { action: '新用户注册', user: '用户A', date: '2024-05-10 14:30' },
-  { action: '医生资格审核', user: '管理员B', date: '2024-05-10 15:00' },
-  { action: '系统设置更新', user: '管理员C', date: '2024-05-10 16:15' },
-]
-
 const doctorDetailsVisible = ref(false)
 const activityDetailsVisible = ref(false)
 const selectedDoctor = ref(null)
@@ -180,19 +183,27 @@ const fetchStats = async () => {
   }
 
   try {
-    const doctorCountResponse = await axiosInstance.get('/api/doctor/selectUnqualifiedDoctorCount');
-    stats.value[1].value = doctorCountResponse.data.unqualifiedDoctorCount || '0';
+    const doctorCountResponse = await axiosInstance.get('/api/doctor/selectMyDoctorCount');
+    stats.value[1].value = doctorCountResponse.data.doctorCount || '0';
   } catch (error) {
-    console.error('获取待审核医生数失败:', error);
+    console.error('获取总医生数失败:', error);
     stats.value[1].value = '0';
   }
 
   try {
+    const unqualifiedDoctorCountResponse = await axiosInstance.get('/api/doctor/selectUnqualifiedDoctorCount');
+    stats.value[2].value = unqualifiedDoctorCountResponse.data.unqualifiedDoctorCount || '0';
+  } catch (error) {
+    console.error('获取待审核医生数失败:', error);
+    stats.value[2].value = '0';
+  }
+
+  try {
     const systemInfoResponse = await axiosInstance.get('/api/getSystemInfo');
-    stats.value[2].value = systemInfoResponse.data.systemInfoCount || '0';
+    stats.value[3].value = systemInfoResponse.data.systemInfoCount || '0';
   } catch (error) {
     console.error('获取系统公告数失败:', error);
-    stats.value[2].value = '0';
+    stats.value[3].value = '0';
   }
 };
 

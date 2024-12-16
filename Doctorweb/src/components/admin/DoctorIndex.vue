@@ -160,7 +160,7 @@ const frontendPageSize = ref(5)
 // 新增：获取总医生数量
 const fetchTotalDoctors = async () => {
   try {
-    const response = await axiosInstance.get('/api/doctor/selectDoctorCount');
+    const response = await axiosInstance.get('/api/doctor/selectMyDoctorCount');
     totalDoctors.value = response.data.doctorCount || 0; // 确保设置默认值
     DoctorNumber.value = totalDoctors.value;
     console.log('Total doctors:', totalDoctors.value); // 添加日志以便调试

@@ -37,6 +37,9 @@
               <el-button link type="danger" size="small" @click="rejectPatient(scope.row)">拒绝</el-button>
             </template>
           </el-table-column>
+          <template #empty>
+            <el-empty description="没有待处理的申请"></el-empty>
+          </template>
         </el-table>
       </el-tab-pane>
       <el-tab-pane label="结束咨询" name="removePending">
@@ -52,6 +55,9 @@
               <el-button link type="primary" size="small" @click="approveRemovePatient(scope.row)">确定</el-button>
             </template>
           </el-table-column>
+          <template #empty>
+            <el-empty description="没有待处理的申请"></el-empty>
+          </template>
         </el-table>
       </el-tab-pane>
     </el-tabs>
@@ -106,11 +112,13 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
 import { useStore } from 'vuex'
 import { User, ChatDotRound, Document, Star } from '@element-plus/icons-vue'
 
+const router = useRouter()
 const store = useStore()
 
 const stats = ref([
@@ -285,7 +293,7 @@ const formatDate = (dateArray) => {
 
 const handleCardClick = (item) => {
   if (item.route) {
-    // 这里应该实现路由跳转逻辑
+    router.push(item.route)
     console.log('Navigate to:', item.route)
   }
 }

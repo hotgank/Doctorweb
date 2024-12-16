@@ -25,6 +25,9 @@
           <el-button size="small" type="primary" @click="startConsultation(scope.row)">开始咨询</el-button>
         </template>
       </el-table-column>
+      <template #empty>
+        <el-empty description="没有患者"></el-empty>
+      </template>
     </el-table>
 
     <el-dialog v-model="showDetails" title="患者详情" width="50%">

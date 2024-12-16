@@ -62,6 +62,9 @@
           <el-button size="small" @click="editArticle(scope.row)">编辑</el-button>
         </template>
       </el-table-column>
+      <template #empty>
+        <el-empty description="没有发布文章"></el-empty>
+      </template>
     </el-table>
 
     <!-- 分页组件 -->

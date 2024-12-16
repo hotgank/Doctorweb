@@ -43,10 +43,11 @@
             </el-tag>
           </template>
         </el-table-column>
+        <template #empty>
+          <el-empty description="没有检测接口数据"></el-empty>
+        </template>
       </el-table>
 
-      <!-- 空数据提示 -->
-      <el-empty v-if="filteredAPIs.length === 0" description="没有检测接口数据"></el-empty>
     </el-main>
   </el-container>
 </template>

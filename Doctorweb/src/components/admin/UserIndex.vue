@@ -62,10 +62,10 @@
             </el-button>
           </template>
         </el-table-column>
+        <template #empty>
+          <el-empty description="没有用户数据"></el-empty>
+        </template>
       </el-table>
-
-      <!-- 空数据提示 -->
-      <el-empty v-if="paginatedUsers.length === 0" description="没有用户数据"></el-empty>
 
       <!-- 分页组件 -->
       <div class="pagination-container">
