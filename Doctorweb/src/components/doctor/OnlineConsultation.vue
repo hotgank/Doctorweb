@@ -24,7 +24,7 @@
           </div>
         </el-card>
       </el-col>
-      <!-- 右侧聊天                                                                                                                       区域 -->
+      <!-- 右侧聊天区域 -->
       <el-col :span="18" class="full-height">
         <el-tabs v-model="activeTab" class="full-height">
           <el-tab-pane label="在线咨询" name="chat">
@@ -173,46 +173,59 @@
       </el-col>
     </el-row>
     <el-dialog v-model="showReport" title="检测报告" width="70%" :before-close="handleCloseReport">
-      <el-form :model="currentReport" label-width="120px">
-        <el-form-item label="姓名">
-          <span>{{ currentReport.name }}</span>
-        </el-form-item>
-        <el-form-item label="性别">
-          <span>{{ currentReport.gender }}</span>
-        </el-form-item>
-        <el-form-item label="出生日期">
-          <span>{{ formatDate2(currentReport.birthdate) }}</span>
-        </el-form-item>
-        <el-form-item label="身高">
-          <span>{{ currentReport.height }}</span>
-        </el-form-item>
-        <el-form-item label="体重">
-          <span>{{ currentReport.weight }}</span>
-        </el-form-item>
-        <el-form-item label="报告类型">
-          <span>{{ currentReport.reportType }}</span>
-        </el-form-item>
-        <el-form-item label="状态">
-          <span>{{ currentReport.state }}</span>
-        </el-form-item>
-        <el-form-item label="结果">
-          <span>{{ currentReport.result }}</span>
-        </el-form-item>
-        <el-form-item label="分析">
-          <el-input type="textarea" v-model="currentReport.analyse" :rows="4" readonly></el-input>
-        </el-form-item>
-        <el-form-item label="医生评论">
-          <el-input type="textarea" v-model="currentReport.comment" :rows="4" :readonly="!isEditing"></el-input>
-        </el-form-item>
-        <el-form-item label="报告图片">
-          <el-image :src="imageSrc" :preview-src-list="[imageSrc]"></el-image>
-        </el-form-item>
-      </el-form>
+      <div id="report-content" class="report-container">
+        <div class="report-header">
+          <img src="/img/logo.png" alt="Logo" class="report-logo">
+          <h2>检测报告</h2>
+        </div>
+        <div class="report-body">
+          <el-form :model="currentReport" label-width="120px">
+            <el-form-item label="姓名">
+              <span>{{ currentReport.name }}</span>
+            </el-form-item>
+            <el-form-item label="性别">
+              <span>{{ currentReport.gender }}</span>
+            </el-form-item>
+            <el-form-item label="出生日期">
+              <span>{{ formatDate2(currentReport.birthdate) }}</span>
+            </el-form-item>
+            <el-form-item label="身高">
+              <span>{{ currentReport.height }}</span>
+            </el-form-item>
+            <el-form-item label="体重">
+              <span>{{ currentReport.weight }}</span>
+            </el-form-item>
+            <el-form-item label="报告类型">
+              <span>{{ currentReport.reportType }}</span>
+            </el-form-item>
+            <el-form-item label="状态">
+              <span>{{ currentReport.state }}</span>
+            </el-form-item>
+            <el-form-item label="结果">
+              <span>{{ currentReport.result }}</span>
+            </el-form-item>
+            <el-form-item label="分析">
+              <el-input type="textarea" v-model="currentReport.analyse" :rows="4" readonly></el-input>
+            </el-form-item>
+            <el-form-item label="医生评论">
+              <el-input type="textarea" v-model="currentReport.comment" :rows="4" :readonly="!isEditing"></el-input>
+            </el-form-item>
+            <el-form-item label="报告图片">
+              <el-image :src="imageSrc" :preview-src-list="[imageSrc]"></el-image>
+            </el-form-item>
+          </el-form>
+        </div>
+        <div class="report-footer">
+          <p>报告生成日期：{{ formatDate2(new Date()) }}</p>
+        </div>
+        <div class="report-watermark"></div>
+      </div>
       <template #footer>
         <span class="dialog-footer">
           <el-button v-if="!isEditing" @click="startEdit">编辑评论</el-button>
           <el-button v-else @click="cancelEdit">取消</el-button>
           <el-button type="primary" @click="saveReport" :disabled="!isEditing">保存</el-button>
+          <el-button type="primary" @click="generatePDF">下载PDF</el-button>
         </span>
       </template>
     </el-dialog>
@@ -226,6 +239,8 @@ import {Document, Paperclip, Picture} from '@element-plus/icons-vue'
 import {useStore} from 'vuex'
 import {useRoute} from 'vue-router'
 import axios from 'axios'
+import html2canvas from 'html2canvas'
+import jsPDF from 'jspdf'
 
 const store = useStore()
 const route = useRoute()
@@ -243,6 +258,7 @@ const minSeq = ref(5)
 const maxSeq = ref(10)
 
 let messagePollingInterval = null
+let doctorRelationsPollingInterval = null
 
 const uploadHeaders = computed(() => ({
   Authorization: `Bearer ${store.state.token}`
@@ -374,7 +390,47 @@ const pollNewMessages = async () => {
     console.error('Failed to poll new messages:', error)
   }
 }
-
+// 修改 generatePDF 函数
+const generatePDF = async () => {
+  try {
+    const element = document.getElementById('report-content')
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      logging: false
+    })
+    const imgData = canvas.toDataURL('image/png')
+    
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    })
+    
+    const imgProps = pdf.getImageProperties(imgData)
+    const pdfWidth = pdf.internal.pageSize.getWidth()
+    const pdfHeight = pdf.internal.pageSize.getHeight()
+    const imgWidth = pdfWidth
+    const imgHeight = (imgProps.height * pdfWidth) / imgProps.width
+    
+    let position = 0
+    
+    while (position < imgHeight) {
+      pdf.addImage(imgData, 'PNG', 0, -position, imgWidth, imgHeight)
+      position += pdfHeight
+      if (position < imgHeight) {
+        pdf.addPage()
+      }
+    }
+    
+    pdf.save(`患者报告_${currentReport.value.name}.pdf`)
+    
+    ElMessage.success('PDF报告已生成并开始下载')
+  } catch (error) {
+    console.error('Failed to generate PDF:', error)
+    ElMessage.error('生成PDF报告失败')
+  }
+}
 const handleSendMessage = async () => {
   if ((!newMessage.value.trim() && !currentAttachment.value) || !selectedRelation.value) return
 
@@ -737,9 +793,90 @@ const filterReports = () => {
     filteredReports.value = patientReports.value
   }
 }
+
+onMounted(() => {
+  fetchDoctorRelations();
+  store.dispatch('fetchDoctorAvatar').then(() => {
+    doctorAvatar.value = store.state.avatar;
+  });
+
+  // 启动定时器，每7秒调用一次 fetchDoctorRelations
+  doctorRelationsPollingInterval = setInterval(fetchDoctorRelations, 7000);
+});
+
+onUnmounted(() => {
+  stopMessagePolling();
+  // 清除定时器
+  clearInterval(doctorRelationsPollingInterval);
+});
 </script>
 
 <style scoped>
+.consultation {
+  height: calc(100vh - 60px);
+}
+
+.full-height {
+  height: 100%;
+}
+
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 40px);
+}
+
+.chat-messages {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 20px;
+  height: 400px;
+}
+
+.message {
+  display: flex;
+  margin-bottom: 10px;
+  align-items: flex-start;
+}
+
+.upload-image {
+  flex-shrink: 0;
+  margin-right: 10px;
+}
+
+.message-content {
+  max-width: 70%;
+  padding: 10px;
+  border-radius: 10px;
+  background-color: #f0f2f5;
+  margin: 0 10px;
+}
+
+.message-right .message-content {
+  background-color: #95ec69;
+}
+
+.message-time {
+  font-size: 0.7em;
+  color: #909399;
+  margin-top: 5px;
+}
+
+.message-image {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 5px;
+}
+
+.attachment-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.attachment-info {
+  display: flex;
+}
 .consultation {
   height: calc(100vh - 60px);
 }
@@ -903,5 +1040,99 @@ const filterReports = () => {
 /* 确保表格不会超出容器 */
 .el-table {
   width: 100% !important;
+}
+.report-container {
+  position: relative;
+  border: 2px solid #1989fa;
+  border-radius: 10px;
+  padding: 20px;
+  background-color: #f5f7fa;
+  overflow: hidden;
+}
+
+.report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #1989fa;
+  padding-bottom: 10px;
+}
+
+.report-logo {
+  width: 100px;
+  height: auto;
+}
+
+.report-body {
+  position: relative;
+  z-index: 1;
+}
+
+.report-footer {
+  margin-top: 20px;
+  border-top: 1px solid #1989fa;
+  padding-top: 10px;
+  text-align: right;
+  font-style: italic;
+}
+
+.report-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  font-size: 100px;
+  opacity: 0.1;
+  color: #1989fa;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.report-watermark::after {
+  content: '医疗报告 仅供参考';
+}
+
+/* 确保表单内容在水印之上 */
+.el-form-item {
+  position: relative;
+  z-index: 2;
+  background-color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 15px;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.el-form-item__label {
+  font-weight: bold;
+  color: #1989fa;
+}
+
+.el-form-item__content {
+  color: #333;
+}
+
+/* 添加一些装饰元素 */
+.report-container::before,
+.report-container::after {
+  content: '';
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  border: 2px solid #1989fa;
+}
+
+.report-container::before {
+  top: 10px;
+  left: 10px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.report-container::after {
+  bottom: 10px;
+  right: 10px;
+  border-left: none;
+  border-top: none;
 }
 </style>

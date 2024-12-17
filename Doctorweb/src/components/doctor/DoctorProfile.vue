@@ -21,6 +21,7 @@
           placeholder="选择日期"
           format="YYYY-MM-DD"
           value-format="x"
+          :disabled-date="disabledDate"
         />
       </el-form-item>
       <el-form-item label="性别" prop="gender">
@@ -83,6 +84,10 @@ const rules = {
   ]
 }
 
+const disabledDate = (time) => {
+  return time.getTime() > Date.now()
+}
+
 const fetchDoctorInfo = async () => {
   try {
     await store.dispatch('fetchDoctorInfo')
@@ -119,7 +124,7 @@ const handleSubmit = async () => {
         ElMessage.error('用户名已存在')
     }else{
       console.error('Failed to update doctor information:', error)
-    ElMessage.error('更新个人资料失败')
+      ElMessage.error('更新个人资料失败')
     }
     
   }
