@@ -67,15 +67,15 @@
             <span>医生列表</span>
           </el-menu-item>
           <el-menu-item index="/ranking">
-            <el-icon><TrendCharts /></el-icon>
+            <el-icon><TrophyBase /></el-icon>
             <span>医生排行</span>
           </el-menu-item>
           <el-menu-item index="/hospital-management">
-            <el-icon><Loading /></el-icon>
+            <el-icon><OfficeBuilding /></el-icon>
             <span>医院管理</span>
           </el-menu-item>
           <el-menu-item index="/api-management">
-            <el-icon><Loading /></el-icon>
+            <el-icon><Open /></el-icon>
             <span>API接口管理</span>
           </el-menu-item>
           <el-menu-item v-if="!isSuperAdmin" index="/admin-index">
@@ -96,8 +96,12 @@
     <el-container>
       <el-header v-if="isAuthenticated">
         <div class="header-content">
-          <el-button @click="goBack" icon="ArrowLeft">返回</el-button>
-          <el-button @click="goHome" icon="HomeFilled">主页</el-button>
+          <el-button @click="goBack">
+            <el-icon style="margin-right: 10px"><ArrowLeft /></el-icon>
+            返回</el-button>
+          <el-button @click="goHome">
+            <el-icon style="margin-right: 10px"><HomeFilled /></el-icon>
+            主页</el-button>
           <el-popover
             placement="bottom-end"
             width="200"
@@ -159,7 +163,7 @@
         :before-upload="beforeAvatarUpload"
         :auto-upload="false"
       >
-        <img v-if="avatarUrl" :src="avatarUrl" class="avatar" />
+        <el-image v-if="avatarUrl" :src="avatarUrl" class="avatar" />
         <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
       </el-upload>
       <template #footer>
@@ -176,7 +180,9 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useStore } from 'vuex'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElButton } from 'element-plus'
+import { HomeFilled, User, List, ChatDotRound, Reading, EditPen, Document, Setting, Avatar, Loading, Service,
+  TrophyBase, Coordinate, Plus, ArrowLeft, OfficeBuilding, Open} from '@element-plus/icons-vue'
 
 const router = useRouter()
 const store = useStore()
