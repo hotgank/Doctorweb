@@ -12,7 +12,7 @@
         <el-input v-model="profile.phone" placeholder="未填写" />
       </el-form-item>
       <el-form-item label="邮箱">
-        <el-input v-model="profile.email" readonly :placeholder="profile.email || '未认证'" />
+        <el-input v-model="profile.email" disabled :placeholder="profile.email || '未认证'" />
       </el-form-item>
       <el-form-item label="出生日期" prop="birthdate">
         <el-date-picker
@@ -31,13 +31,13 @@
         </el-select>
       </el-form-item>
       <el-form-item label="职位">
-        <el-input v-model="profile.position" readonly :placeholder="profile.position || '未认证'" />
+        <el-input v-model="profile.position" disabled :placeholder="profile.position || '未认证'" />
       </el-form-item>
       <el-form-item label="工作单位">
-        <el-input v-model="profile.workplace" readonly :placeholder="profile.workplace || '未认证'" />
+        <el-input v-model="profile.workplace" disabled :placeholder="profile.workplace || '未认证'" />
       </el-form-item>
       <el-form-item label="资格">
-        <el-input v-model="profile.qualification" readonly :placeholder="profile.qualification || '未认证'" />
+        <el-input v-model="profile.qualification" disabled :placeholder="profile.qualification || '未认证'" />
       </el-form-item>
       <el-form-item label="工作经验" prop="experience">
         <el-input type="textarea" v-model="profile.experience" :rows="5" placeholder="未填写" />
