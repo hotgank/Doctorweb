@@ -7,7 +7,7 @@
         <div class="search-bar">
           <el-input
               v-model="searchTerm"
-              placeholder="搜索医生ID或姓名"
+              placeholder="搜索医生UID或姓名"
               clearable
               @clear="clearSearch"
               class="w-64 sm:w-80"
@@ -103,7 +103,7 @@
         <el-descriptions-item label="电话号码">{{ selectedDoctor.phone }}</el-descriptions-item>
         <el-descriptions-item label="单位">{{ selectedDoctor.workplace }}</el-descriptions-item>
         <el-descriptions-item label="职位">{{ selectedDoctor.position }}</el-descriptions-item>
-        <el-descriptions-item label="ID">{{ selectedDoctor.doctorId }}</el-descriptions-item>
+        <el-descriptions-item label="UID">{{ selectedDoctor.doctorId }}</el-descriptions-item>
         <el-descriptions-item label="认证状态">{{ selectedDoctor.qualification != null ? '已认证' : '未认证' }}</el-descriptions-item>
         <el-descriptions-item label="账号状态">{{ selectedDoctor.status === 'active' ? '活跃' : '停用' }}</el-descriptions-item>
       </el-descriptions>
