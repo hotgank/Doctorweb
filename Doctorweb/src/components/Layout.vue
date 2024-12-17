@@ -156,16 +156,17 @@
       width="30%"
     >
       <el-upload
-        class="avatar-uploader"
-        action="#"
-        :show-file-list="false"
-        @change="handleAvatarChange"
-        :before-upload="beforeAvatarUpload"
-        :auto-upload="false"
+          class="avatar-uploader"
+          action="#"
+          :show-file-list="false"
+          @change="handleAvatarChange"
+          :before-upload="beforeAvatarUpload"
+          :auto-upload="false"
       >
-        <el-image v-if="avatarUrl" :src="avatarUrl" class="avatar" />
+        <el-image v-if="uploadedAvatarUrl || avatarUrl" :src="uploadedAvatarUrl || avatarUrl" class="avatar" />
         <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
       </el-upload>
+      <div class="size-limit">* 图片大小不能超过 500KB</div> <!-- 添加提示信息 -->
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="avatarDialogVisible = false">取消</el-button>
@@ -190,14 +191,14 @@ const route = useRoute()
 
 const doctorInfo = ref(null)
 const adminInfo = ref(null)
-const avatarUrl = computed(() => store.state.avatar)
+const uploadedAvatarUrl = ref('')
 const avatarDialogVisible = ref(false)
 const newAvatarFile = ref(null)
 
+const avatarUrl = computed(() => store.state.avatar)
 const isAuthenticated = computed(() => store.getters.isLoggedIn)
 const userRole = computed(() => localStorage.getItem('role'))
 const isSuperAdmin = computed(() => store.state.user && store.state.user.adminType === 'super')
-
 const activeMenu = computed(() => {
   return route.path === '/' ? '/' : route.path.split('/')[1] ? `/${route.path.split('/')[1]}` : '/'
 })
@@ -269,23 +270,29 @@ const showAvatarDialog = () => {
 }
 
 const handleAvatarChange = (file) => {
-  newAvatarFile.value = file.raw
+  newAvatarFile.value = file.raw;
+  // 将文件转换为base64格式并赋值给avatarUrl，以便预览
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    uploadedAvatarUrl.value = e.target.result;
+  };
+  reader.readAsDataURL(file.raw);
 }
 
 const beforeAvatarUpload = (file) => {
-  const isJPG = file.type === 'image/jpeg'
-  const isPNG = file.type === 'image/png'
-  const isLt500K = file.size / 1024 < 500
+  const isJPG = file.type === 'image/jpeg';
+  const isPNG = file.type === 'image/png';
+  const isLt500K = file.size / 1024 < 500;
 
   if (!isJPG && !isPNG) {
-    ElMessage.error('头像只能是 JPG 或 PNG 格式!')
-    return false
+    ElMessage.error('头像只能是 JPG 或 PNG 格式!');
+    return false;
   }
   if (!isLt500K) {
-    ElMessage.error('头像大小不能超过 500KB!')
-    return false
+    ElMessage.error('头像大小不能超过 500KB!');
+    return false;
   }
-  return true
+  return true;
 }
 
 const uploadAvatar = async () => {
@@ -309,6 +316,7 @@ const uploadAvatar = async () => {
     if (response.ok) {
       ElMessage.success('头像上传成功');
       avatarUrl.value = base64;
+      uploadedAvatarUrl.value = '';
       avatarDialogVisible.value = false;
       if (userRole.value === 'doctor') {
         await fetchDoctorAvatar(); // Fetch the updated avatar
