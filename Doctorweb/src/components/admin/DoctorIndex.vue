@@ -135,7 +135,7 @@
 
 <script setup>
 import {ref, computed, onMounted, watch} from 'vue'
-import {Search} from '@element-plus/icons-vue'
+import {Search, Upload} from '@element-plus/icons-vue'
 import {ElMessage} from 'element-plus'
 import axiosInstance from '../../axios/index';
 

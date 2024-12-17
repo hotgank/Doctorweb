@@ -58,7 +58,7 @@
             <el-icon><Reading /></el-icon>
             <span>文章审核</span>
           </el-menu-item>
-          <el-menu-item index="/user-index">
+          <el-menu-item v-if="!isSecondAdmin" index="/user-index">
             <el-icon><User /></el-icon>
             <span>用户列表</span>
           </el-menu-item>
@@ -70,15 +70,15 @@
             <el-icon><TrophyBase /></el-icon>
             <span>医生排行</span>
           </el-menu-item>
-          <el-menu-item index="/hospital-management">
+          <el-menu-item v-if="!isSecondAdmin" index="/hospital-management">
             <el-icon><OfficeBuilding /></el-icon>
             <span>医院管理</span>
           </el-menu-item>
-          <el-menu-item index="/api-management">
+          <el-menu-item v-if="!isSecondAdmin" index="/api-management">
             <el-icon><Open /></el-icon>
             <span>API接口管理</span>
           </el-menu-item>
-          <el-menu-item v-if="!isSuperAdmin" index="/admin-index">
+          <el-menu-item v-if="isFirstAdmin" index="/admin-index">
             <el-icon><Coordinate /></el-icon>
             <span>管理员列表</span>
           </el-menu-item>
@@ -199,6 +199,8 @@ const avatarUrl = computed(() => store.state.avatar)
 const isAuthenticated = computed(() => store.getters.isLoggedIn)
 const userRole = computed(() => localStorage.getItem('role'))
 const isSuperAdmin = computed(() => store.state.user && store.state.user.adminType === 'super')
+const isFirstAdmin = computed(() => store.state.user && store.state.user.adminType === 'first')
+const isSecondAdmin = computed(() => store.state.user && store.state.user.adminType === 'second')
 const activeMenu = computed(() => {
   return route.path === '/' ? '/' : route.path.split('/')[1] ? `/${route.path.split('/')[1]}` : '/'
 })
