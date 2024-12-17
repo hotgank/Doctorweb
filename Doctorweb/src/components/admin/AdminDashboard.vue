@@ -2,8 +2,9 @@
   <div class="admin-dashboard">
     <h1 class="mb-4">管理员仪表板</h1>
     <el-row :gutter="20">
-      <el-col :span="6" v-for="(item, index) in stats" :key="index">
+      <el-col :span="6" v-for="(item, index) in filteredStats" :key="index">
         <el-card
+            v-if="!(item.title === '总用户数' && isSecondAdmin)"
             class="box-card clickable-card"
             @click="handleCardClick(item)"
         >
@@ -120,13 +121,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import {ref, onMounted, computed} from 'vue'
 import { useRouter } from 'vue-router'
+import { useStore } from 'vuex'
 import { User, Document, Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import axiosInstance from '../../axios/index'
 
 const router = useRouter()
+const store = useStore()
 
 const stats = ref([
   {
@@ -172,6 +175,11 @@ const rejectDialogVisible = ref(false)
 const rejectForm = ref({
   comment: ''
 })
+
+const isSecondAdmin = computed(() => store.state.user && store.state.user.adminType === 'second')
+const filteredStats = computed(() => {
+  return stats.value.filter(item => !(item.title === '总用户数' && isSecondAdmin.value));
+});
 
 const fetchStats = async () => {
   try {
