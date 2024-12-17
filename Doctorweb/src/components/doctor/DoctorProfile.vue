@@ -6,7 +6,7 @@
         <el-input v-model="profile.name" placeholder="未填写" />
       </el-form-item>
       <el-form-item label="用户名" prop="username">
-        <el-input v-model="profile.username" placeholder="未填写" />
+        <el-input v-model="profile.username" disabled placeholder="未填写" />
       </el-form-item>
       <el-form-item label="电话" prop="phone">
         <el-input v-model="profile.phone" placeholder="未填写" />

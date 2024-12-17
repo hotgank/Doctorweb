@@ -30,7 +30,7 @@
       </template>
     </el-table>
 
-    <el-dialog v-model="showDetails" title="家属详情" width="50%">
+    <el-dialog v-model="showDetails" title="家属详情" width="55%">
       <PatientDetails :patient="selectedPatient" @close="showDetails = false" />
     </el-dialog>
   </div>

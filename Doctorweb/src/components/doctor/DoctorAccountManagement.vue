@@ -69,11 +69,12 @@
             </el-upload>
           </el-form-item>
         </el-form>
+        <h4>历史记录</h4>
         <el-table :data="licenseStatus" style="width: 100%">
-          <el-table-column prop="doctorId" label="用户ID" width="280"></el-table-column>
           <el-table-column prop="status" label="状态" width="100"></el-table-column>
           <el-table-column prop="createdAt" label="创建时间" width="120"></el-table-column>
           <el-table-column prop="updatedAt" label="更新时间" width="120"></el-table-column>
+          <el-table-column prop="comment" label="管理员留言" width="300"></el-table-column>
         </el-table>
       </el-tab-pane>
       <el-tab-pane label="注销账户" name="deactivate">
@@ -268,8 +269,8 @@ const getLicenseStatus = async () => {
     licenseStatus.value = response.data;
     //遍历，把createdAt和updatedAt转换为日期格式，只要年月日
     licenseStatus.value.forEach(item => {
-      item.createdAt = new Date(item.createdAt).toLocaleDateString()
-      item.updatedAt = new Date(item.updatedAt).toLocaleDateString()
+      item.createdAt = new Date(item.createdAt).toLocaleString();
+      item.updatedAt = new Date(item.updatedAt).toLocaleString();
     })
   } catch (error) {
     ElMessage.error('获取执照状态失败')
@@ -331,7 +332,7 @@ onMounted(() => {
 
 <style scoped>
 .account-management {
-  max-width: 600px;
+  max-width: 700px;
   margin: 0 auto;
 }
 

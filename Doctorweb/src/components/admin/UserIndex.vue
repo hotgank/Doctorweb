@@ -7,7 +7,7 @@
         <div class="search-bar">
           <el-input
               v-model="searchTerm"
-              placeholder="搜索用户ID或账号"
+              placeholder="搜索用户UID或账号"
               clearable
               @clear="clearSearch"
               class="w-64 sm:w-80"
@@ -37,7 +37,7 @@
           v-loading="loading"
       >
         <el-table-column prop="displayId" label="ID" width="80" align="center"></el-table-column>
-        <el-table-column prop="username" label="姓名" width="200"></el-table-column>
+        <el-table-column prop="username" label="用户名" width="200"></el-table-column>
         <!-- 修改后 -->
         <el-table-column prop="lastLogin" label="上次登录时间" width="300">
           <template #default="scope">
@@ -53,6 +53,13 @@
         </el-table-column>
         <el-table-column label="操作" min-width="150" align="center">
           <template #default="scope">
+            <el-button
+                type="primary"
+                size="small"
+                @click="viewUserDetails(scope.row)"
+            >
+              查看详情
+            </el-button>
             <el-button
                 :type="scope.row.status === 'active' ? 'danger' : 'success'"
                 size="small"
@@ -79,6 +86,20 @@
         />
       </div>
     </el-main>
+
+    <!-- 用户详情对话框 -->
+    <el-dialog
+        v-model="detailsDialogVisible"
+        title="用户详情"
+        width="50%"
+    >
+      <el-descriptions :column="1" border>
+        <el-descriptions-item label="用户名">{{ selectedUser.username }}</el-descriptions-item>
+        <el-descriptions-item label="UID">{{ selectedUser.userId }}</el-descriptions-item>
+        <el-descriptions-item label="账号状态">{{ selectedUser.status === 'active' ? '活跃' : '停用' }}</el-descriptions-item>
+        <el-descriptions-item label="注册时间">{{ formatDate2(selectedUser.registrationDate) }}</el-descriptions-item>
+      </el-descriptions>
+    </el-dialog>
 
     <!-- 导入用户对话框 -->
     <el-dialog v-model="importDialogVisible" title="导入用户" width="30%">
@@ -246,6 +267,15 @@ const tableRowClassName = ({ row, rowIndex }) => {
     return 'bg-gray-50'
   }
   return ''
+}
+
+const detailsDialogVisible = ref(false)
+const selectedUser = ref(null)
+
+// 查看用户详情
+const viewUserDetails= (user) => {
+  selectedUser.value = user
+  detailsDialogVisible.value = true
 }
 
 // 切换用户状态
