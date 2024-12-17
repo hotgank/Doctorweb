@@ -526,6 +526,9 @@ const formatTime = (timestamp) => {
 
 onMounted(() => {
   fetchDoctorRelations()
+  store.dispatch('fetchDoctorAvatar').then(() => {
+    doctorAvatar.value = store.state.avatar
+  })
 })
 
 onUnmounted(() => {

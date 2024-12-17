@@ -11,6 +11,7 @@ export default createStore({
     role: localStorage.getItem('role') || '',
     doctors: [],
     admins: [],
+    avatar: '',
   },
 
   mutations: {
@@ -55,6 +56,10 @@ export default createStore({
     },
     setAdmins(state, admins) {
       state.admins = admins;
+    },
+    setAvatar(state, avatar) {
+      state.avatar = avatar;
+      localStorage.setItem('avatar', avatar);
     },
   },
 
@@ -214,6 +219,34 @@ export default createStore({
       } catch (error) {
         console.error('Failed to update doctor information:', error);
         throw error;
+      }
+    },
+
+    async fetchDoctorAvatar({ commit, state }) {
+      try {
+        const response = await axios.get('/api/api/doctor/get_avatar_base64', {
+          headers: {
+            Authorization: `Bearer ${state.token}`
+          }
+        });
+        const data = response.data; // 直接使用 response.data
+        commit('setAvatar', data.base64Image);
+      } catch (error) {
+        console.error('Failed to fetch avatar:', error);
+      }
+    },
+
+    async fetchAdminAvatar({ commit, state }) {
+      try {
+        const response = await axios.get('/api/api/admin/get_avatar_base64', {
+          headers: {
+            Authorization: `Bearer ${state.token}`
+          }
+        });
+        const data = response.data; // 直接使用 response.data
+        commit('setAvatar', data.base64Image);
+      } catch (error) {
+        console.error('Failed to fetch avatar:', error);
       }
     },
   },

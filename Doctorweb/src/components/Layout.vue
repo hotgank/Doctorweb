@@ -110,7 +110,7 @@
           >
             <template #reference>
               <div class="user-info">
-                <el-avatar size="40" :src="avatarUrl" @error="handleAvatarError">
+                <el-avatar size="default" :src="avatarUrl" @error="handleAvatarError">
                   {{ doctorInfo?.name ? doctorInfo.name.charAt(0).toUpperCase() : 'U' }}
                 </el-avatar>
                 <span class="username">{{ doctorInfo?.name || '请重新登录' }}</span>
@@ -132,7 +132,7 @@
           >
             <template #reference>
               <div class="user-info">
-                <el-avatar size="40" :src="avatarUrl" @error="handleAvatarError">
+                <el-avatar size="default" :src="avatarUrl" @error="handleAvatarError">
                   {{ adminInfo?.name ? adminInfo.name.charAt(0).toUpperCase() : 'U' }}
                 </el-avatar>
                 <span class="username">{{ adminInfo?.username || '请重新登录' }}</span>
@@ -190,7 +190,7 @@ const route = useRoute()
 
 const doctorInfo = ref(null)
 const adminInfo = ref(null)
-const avatarUrl = ref('')
+const avatarUrl = computed(() => store.state.avatar)
 const avatarDialogVisible = ref(false)
 const newAvatarFile = ref(null)
 
@@ -246,29 +246,17 @@ const fetchAdminInfo = async () => {
 
 const fetchDoctorAvatar = async () => {
   try {
-    const response = await fetch('/api/api/doctor/get_avatar_base64', {
-      headers: {
-        Authorization: `Bearer ${store.state.token}`
-      }
-    })
-    const data = await response.json()
-    avatarUrl.value = data.base64Image
+    await store.dispatch('fetchDoctorAvatar');
   } catch (error) {
-    console.error('Failed to fetch avatar:', error)
+    console.error('Failed to fetch avatar:', error);
   }
 }
 
 const fetchAdminAvatar = async () => {
   try {
-    const response = await fetch('/api/api/admin/get_avatar_base64', {
-      headers: {
-        Authorization: `Bearer ${store.state.token}`
-      }
-    })
-    const data = await response.json()
-    avatarUrl.value = data.base64Image
+    await store.dispatch('fetchAdminAvatar');
   } catch (error) {
-    console.error('Failed to fetch avatar:', error)
+    console.error('Failed to fetch avatar:', error);
   }
 }
 
