@@ -39,19 +39,19 @@
         <el-table-column prop="displayId" label="ID" width="80" align="center"></el-table-column>
         <el-table-column prop="username" label="用户名" width="200"></el-table-column>
         <!-- 修改后 -->
-        <el-table-column prop="lastLogin" label="上次登录时间" width="300">
+        <el-table-column prop="lastLogin" label="上次登录时间" width="160">
           <template #default="scope">
             {{ formatDate2(scope.row.lastLogin) }}
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="200" align="center">
+        <el-table-column prop="status" label="状态" width="100" align="center">
           <template #default="scope">
             <el-tag :type="scope.row.status === 'active' ? 'success' : 'danger'" effect="dark">
               {{ scope.row.status === 'active' ? '活跃' : '停用' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" min-width="150" align="center">
+        <el-table-column label="操作" min-width="160" align="center">
           <template #default="scope">
             <el-button
                 type="primary"
