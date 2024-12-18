@@ -178,7 +178,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useStore } from 'vuex'
 import { ElMessage, ElButton } from 'element-plus'
@@ -216,16 +216,6 @@ onMounted(async () => {
     }
   }
 })
-
-//watch(() => route.path, async () => {
-//  if (isAuthenticated.value) {
-//    if(userRole.value === 'doctor'){
-//      await fetchDoctorAvatar()
-//    }else{
-//      await fetchAdminAvatar()
-//    }
-//  }
-//})
 
 const fetchDoctorInfo = async () => {
   try {
