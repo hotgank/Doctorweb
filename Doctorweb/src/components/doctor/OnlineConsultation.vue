@@ -582,9 +582,9 @@ const formatTime = (timestamp) => {
 
 onMounted(() => {
   fetchDoctorRelations()
-  store.dispatch('fetchDoctorAvatar').then(() => {
-    doctorAvatar.value = store.state.avatar
-  })
+  //store.dispatch('fetchDoctorAvatar').then(() => {
+  //  doctorAvatar.value = store.state.avatar
+  //})
 })
 
 onUnmounted(() => {
@@ -796,9 +796,9 @@ const filterReports = () => {
 
 onMounted(() => {
   fetchDoctorRelations();
-  store.dispatch('fetchDoctorAvatar').then(() => {
-    doctorAvatar.value = store.state.avatar;
-  });
+  //store.dispatch('fetchDoctorAvatar').then(() => {
+  //  doctorAvatar.value = store.state.avatar;
+  //});
 
   // 启动定时器，每7秒调用一次 fetchDoctorRelations
   doctorRelationsPollingInterval = setInterval(fetchDoctorRelations, 7000);
