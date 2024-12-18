@@ -217,15 +217,15 @@ onMounted(async () => {
   }
 })
 
-watch(() => route.path, async () => {
-  if (isAuthenticated.value) {
-    if(userRole.value === 'doctor'){
-      await fetchDoctorAvatar()
-    }else{
-      await fetchAdminAvatar()
-    }
-  }
-})
+//watch(() => route.path, async () => {
+//  if (isAuthenticated.value) {
+//    if(userRole.value === 'doctor'){
+//      await fetchDoctorAvatar()
+//    }else{
+//      await fetchAdminAvatar()
+//    }
+//  }
+//})
 
 const fetchDoctorInfo = async () => {
   try {
