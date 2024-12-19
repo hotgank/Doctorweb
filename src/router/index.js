@@ -24,7 +24,6 @@ const routes = [
       { path: '/patient-index', name: 'PatientIndex', component: () => import('../components/doctor/PatientIndex.vue'), meta: { requiresAuth: true, role: 'doctor' } },
       { path: '/articles', name: 'ArticleList', component: () => import('../components/doctor/ArticleList.vue'), meta: { requiresAuth: true, role: 'doctor' } },
       { path: '/article/:id', name: 'ArticleDetail', component: () => import('../components/doctor/ArticleDetail.vue'), meta: { requiresAuth: true, role: 'doctor' } },
-      { path: '/user-announcement', name: 'UserSystemAnnouncement', component: () => import('../components/doctor/UserSystemAnnouncement.vue'), meta: { requiresAuth: true, role: 'doctor' } },
       { path: '/doctor-account', name: 'DoctorAccountManagement', component: () => import('../components/doctor/DoctorAccountManagement.vue'), meta: { requiresAuth: true, role: 'doctor' } },
 
       { path: 'admin-dashboard', name: 'AdminDashboard', component: () => import('../components/admin/AdminDashboard.vue'), meta: { requiresAuth: true, role: 'admin' } },
@@ -32,7 +31,6 @@ const routes = [
       { path: '/user-index', name: 'UserIndex', component: () => import('../components/admin/UserIndex.vue'), meta: { requiresAuth: true, role: 'admin' } },
       { path: '/doctor-index', name: 'DoctorIndex', component: () => import('../components/admin/DoctorIndex.vue'), meta: { requiresAuth: true, role: 'admin' } },
       { path: '/admin-index', name: 'AdminIndex', component: () => import('../components/admin/AdminIndex.vue'), meta: { requiresAuth: true, role: 'admin' } },
-      { path: '/admin-announcement', name: 'AdminSystemAnnouncement', component: () => import('../components/admin/AdminSystemAnnouncement.vue'), meta: { requiresAuth: true, role: 'admin' } },
       { path: '/admin-account', name: 'AdminAccountManagement', component: () => import('../components/admin/AdminAccountManagement.vue'), meta: { requiresAuth: true, role: 'admin' } },
       { path: '/ranking', name: 'DoctorRanking', component: () => import('../components/admin/DoctorRanking.vue'), meta: { requiresAuth: true, role: 'admin' } },
       { path: '/verify-articles', name: 'VerifyArticles', component: () => import('../components/admin/ArticleList.vue'), meta: { requiresAuth: true, role: 'admin' } },

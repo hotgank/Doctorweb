@@ -32,10 +32,6 @@
             <el-icon><EditPen /></el-icon>
             <span>发布文章</span>
           </el-menu-item>
-          <el-menu-item index="/user-announcement">
-            <el-icon><Document /></el-icon>
-            <span>系统公告</span>
-          </el-menu-item>
           <el-menu-item index="/doctor-account">
             <el-icon><Setting /></el-icon>
             <span>账户管理</span>
@@ -81,10 +77,6 @@
           <el-menu-item v-if="isFirstAdmin" index="/admin-index">
             <el-icon><Coordinate /></el-icon>
             <span>管理员列表</span>
-          </el-menu-item>
-          <el-menu-item index="/admin-announcement">
-            <el-icon><Document /></el-icon>
-            <span>系统公告</span>
           </el-menu-item>
           <el-menu-item index="/admin-account">
             <el-icon><Setting /></el-icon>
@@ -182,7 +174,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useStore } from 'vuex'
 import { ElMessage, ElButton } from 'element-plus'
-import { HomeFilled, User, List, ChatDotRound, Reading, EditPen, Document, Setting, Avatar, Loading, Service,
+import { HomeFilled, User, List, ChatDotRound, Reading, EditPen, Setting, Avatar, Loading, Service,
   TrophyBase, Coordinate, Plus, ArrowLeft, OfficeBuilding, Open} from '@element-plus/icons-vue'
 
 const router = useRouter()

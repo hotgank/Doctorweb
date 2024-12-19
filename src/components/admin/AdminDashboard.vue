@@ -153,13 +153,6 @@ const stats = ref([
     icon: Loading,
     route: '/verify'
   },
-  {
-    title: '系统公告',
-    value: '0',
-    description: '',
-    icon: Document,
-    route: '/admin-announcement'
-  },
 ]);
 
 const activeTab = ref('pendingDoctors')
@@ -204,14 +197,6 @@ const fetchStats = async () => {
   } catch (error) {
     console.error('获取待审核医生数失败:', error);
     stats.value[2].value = '0';
-  }
-
-  try {
-    const systemInfoResponse = await axiosInstance.get('/api/getSystemInfo');
-    stats.value[3].value = systemInfoResponse.data.systemInfoCount || '0';
-  } catch (error) {
-    console.error('获取系统公告数失败:', error);
-    stats.value[3].value = '0';
   }
 };
 
