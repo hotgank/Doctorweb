@@ -199,8 +199,8 @@ const fetchStats = async () => {
   }
 
   try {
-    const unqualifiedDoctorCountResponse = await axiosInstance.get('/api/doctor/selectUnqualifiedDoctorCount');
-    stats.value[2].value = unqualifiedDoctorCountResponse.data.unqualifiedDoctorCount || '0';
+    const pendingCountResponse = await axiosInstance.get('/api/verifyDoctor/selectPendingCount');
+    stats.value[2].value = pendingCountResponse.data.pendingCount || '0';
   } catch (error) {
     console.error('获取待审核医生数失败:', error);
     stats.value[2].value = '0';
