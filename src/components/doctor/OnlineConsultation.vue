@@ -86,9 +86,7 @@
                         :auto-upload="true"
                         :show-file-list="false"
                     >
-                      <el-button type="primary" link>
-                        <el-icon><Paperclip /></el-icon>
-                      </el-button>
+
                     </el-upload>
                     <el-upload
                         class="upload-image"
@@ -582,9 +580,9 @@ const formatTime = (timestamp) => {
 
 onMounted(() => {
   fetchDoctorRelations()
-  //store.dispatch('fetchDoctorAvatar').then(() => {
-  //  doctorAvatar.value = store.state.avatar
-  //})
+  store.dispatch('fetchDoctorAvatar').then(() => {
+    doctorAvatar.value = store.state.avatar
+  })
 })
 
 onUnmounted(() => {
