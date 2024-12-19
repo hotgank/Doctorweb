@@ -1,4 +1,7 @@
 <template>
+  <div class="title-container">
+    <h2>儿童体态评估平台</h2>
+  </div>
   <div class="login-container">
     <el-card class="login-card">
       <h2 class="login-title">登录</h2>
@@ -185,5 +188,12 @@ const handleRoleChange = () => {
 .forgot-password-link:hover,
 .register-link:hover {
   color: #3b82f6;
+}
+
+.title-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50px; /* 可根据需要调整高度 */
 }
 </style>
