@@ -6,8 +6,8 @@
         <h1 class="article-title">{{ article.title }}</h1>
         <div class="article-meta">
           <div class="author-info">
-            <el-avatar :size="50" :src="doctorInfo.avatar"></el-avatar>
-            <span class="author-name">{{ doctorInfo.name }}</span>
+            <el-avatar :size="50" :src="article.avatarUrl"></el-avatar>
+            <span class="author-name">{{ article.name }}</span>
           </div>
           <div class="meta-details">
             <el-tag size="small" type="info">
@@ -47,31 +47,31 @@
       <div class="doctor-grid">
         <div class="info-item">
           <span class="label">姓名</span>
-          <span class="value">{{ doctorInfo.name }}</span>
+          <span class="value">{{ article.name }}</span>
         </div>
         <div class="info-item">
           <span class="label">用户名</span>
-          <span class="value">{{ doctorInfo.username }}</span>
+          <span class="value">{{ article.username }}</span>
         </div>
         <div class="info-item">
           <span class="label">性别</span>
-          <span class="value">{{ doctorInfo.gender }}</span>
+          <span class="value">{{ article.gender }}</span>
         </div>
         <div class="info-item">
           <span class="label">职位</span>
-          <span class="value">{{ doctorInfo.position || 'N/A' }}</span>
+          <span class="value">{{ article.position || 'N/A' }}</span>
         </div>
         <div class="info-item">
           <span class="label">工作单位</span>
-          <span class="value">{{ doctorInfo.workplace }}</span>
+          <span class="value">{{ article.workplace }}</span>
         </div>
         <div class="info-item">
           <span class="label">资格</span>
-          <span class="value">{{ doctorInfo.qualification || 'N/A' }}</span>
+          <span class="value">{{ article.qualification || 'N/A' }}</span>
         </div>
         <div class="info-item">
           <span class="label">经验</span>
-          <span class="value">{{ doctorInfo.experience }}</span>
+          <span class="value">{{ article.experience }}</span>
         </div>
       </div>
     </el-card>
@@ -83,11 +83,11 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useStore } from 'vuex'
 import axios from 'axios'
+import { Calendar, Collection, InfoFilled, User} from '@element-plus/icons-vue'
 
 const route = useRoute()
 const store = useStore()
 const article = ref(null)
-const doctorInfo = ref({})
 
 const fetchArticle = async () => {
   try {
@@ -101,30 +101,11 @@ const fetchArticle = async () => {
     )
     article.value = {
       ...response.data,
-      publishDate: new Date(response.data.publishDate).toLocaleString()
-    }
-    fetchDoctorInfo()
-  } catch (error) {
-    console.error('Failed to fetch article:', error)
-  }
-}
-
-const fetchDoctorInfo = async () => {
-  try {
-    const response = await axios.post('/api/api/healthArticle/getDoctorByArticleId', 
-      { articleId: route.params.id },
-      {
-        headers: {
-          Authorization: `Bearer ${store.state.token}`
-        }
-      }
-    )
-    doctorInfo.value = {
-      ...response.data,
+      publishDate: new Date(response.data.publishDate).toLocaleString(),
       birthdate: new Date(response.data.birthdate).toLocaleDateString()
     }
   } catch (error) {
-    console.error('Failed to fetch doctor info:', error)
+    console.error('Failed to fetch article:', error)
   }
 }
 

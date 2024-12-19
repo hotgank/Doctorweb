@@ -18,7 +18,7 @@
     <el-table :data="paginatedArticles" style="width: 100%">
       <el-table-column prop="displayId" label="ID" width="80" align="center"></el-table-column>
       <el-table-column prop="title" label="标题" width="250"></el-table-column>
-      <el-table-column prop="doctorName" label="作者" width="120"></el-table-column>
+      <el-table-column prop="name" label="作者" width="120"></el-table-column>
       <el-table-column prop="publishDate" label="发布日期" width="160"></el-table-column>
       <el-table-column prop="type" label="类型" width="100"></el-table-column>
       <el-table-column prop="status" label="状态" width="100"></el-table-column>
@@ -80,34 +80,9 @@ const fetchArticles = async () => {
     articles.value = response.data.map(article => ({
       ...article,
       publishDate: article.publishDate ? new Date(article.publishDate).toLocaleString() : 'N/A',
-      doctorName: 'Loading...'
     }))
-    fetchDoctorNames()
   } catch (error) {
     console.error('Failed to fetch articles:', error)
-  }
-}
-
-const fetchDoctorNames = async () => {
-  for (let article of articles.value) {
-    if (article.doctorId) {
-      try {
-        const response = await axios.post('/api/api/healthArticle/getDoctorByArticleId', 
-          { articleId: article.articleId },
-          {
-            headers: {
-              Authorization: `Bearer ${store.state.token}`
-            }
-          }
-        )
-        article.doctorName = response.data.name
-      } catch (error) {
-        console.error(`Failed to fetch doctor name for article ${article.articleId}:`, error)
-        article.doctorName = 'Unknown'
-      }
-    } else {
-      article.doctorName = 'N/A'
-    }
   }
 }
 
@@ -115,7 +90,7 @@ const filteredArticles = computed(() => {
   return articles.value.filter(article => 
     (selectedType.value === '' || article.type === selectedType.value) &&
     (article.title.toLowerCase().includes(search.value.toLowerCase()) ||
-     article.doctorName.toLowerCase().includes(search.value.toLowerCase()) ||
+     article.name.toLowerCase().includes(search.value.toLowerCase()) ||
      article.type.toLowerCase().includes(search.value.toLowerCase()))
   )
 })
