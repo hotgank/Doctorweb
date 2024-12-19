@@ -12,12 +12,8 @@
             <el-icon><HomeFilled /></el-icon>
             <span>主页</span>
           </el-menu-item>
-          <el-menu-item index="/profile">
-            <el-icon><User /></el-icon>
-            <span>个人资料</span>
-          </el-menu-item>
           <el-menu-item index="/patient-index">
-            <el-icon><List /></el-icon>
+            <el-icon><User /></el-icon>
             <span>家属列表</span>
           </el-menu-item>
           <el-menu-item index="/consultation">
@@ -31,6 +27,10 @@
           <el-menu-item index="/publish-article">
             <el-icon><EditPen /></el-icon>
             <span>发布文章</span>
+          </el-menu-item>
+          <el-menu-item index="/profile">
+            <el-icon><Memo /></el-icon>
+            <span>个人资料</span>
           </el-menu-item>
           <el-menu-item index="/doctor-account">
             <el-icon><Setting /></el-icon>
@@ -174,7 +174,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useStore } from 'vuex'
 import { ElMessage, ElButton } from 'element-plus'
-import { HomeFilled, User, List, ChatDotRound, Reading, EditPen, Setting, Avatar, Loading, Service,
+import { HomeFilled, User, Memo, ChatDotRound, Reading, EditPen, Setting, Avatar, Loading, Service,
   TrophyBase, Coordinate, Plus, ArrowLeft, OfficeBuilding, Open} from '@element-plus/icons-vue'
 
 const router = useRouter()

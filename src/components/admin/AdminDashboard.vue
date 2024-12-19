@@ -25,9 +25,10 @@
     <el-tabs v-model="activeTab" class="mt-4">
       <el-tab-pane label="待审核医生" name="pendingDoctors">
         <el-table :data="pendingDoctors" style="width: 100%">
-          <el-table-column prop="name" label="医生姓名" width="180" />
-          <el-table-column prop="gender" label="性别" width="180" />
-          <el-table-column prop="workplace" label="单位" width="180" />
+          <el-table-column prop="name" label="姓名" width="120"></el-table-column>
+          <el-table-column prop="gender" label="性别" width="80"></el-table-column>
+          <el-table-column prop="position" label="职位" width="120"></el-table-column>
+          <el-table-column prop="workplace" label="工作单位" min-width="200"></el-table-column>
           <el-table-column fixed="right" label="操作" width="240">
             <template #default="scope">
               <el-button link type="primary" size="small" @click="viewDoctorDetails(scope.row)">查看详情</el-button>
@@ -35,6 +36,24 @@
           </el-table-column>
           <template #empty>
             <el-empty description="没有待审核的医生"></el-empty>
+          </template>
+        </el-table>
+      </el-tab-pane>
+
+      <el-tab-pane label="待审核文章" name="pendingArticles">
+        <el-table :data="pendingArticles" style="width: 100%">
+          <el-table-column prop="title" label="标题" width="250"></el-table-column>
+          <el-table-column prop="name" label="作者" width="120"></el-table-column>
+          <el-table-column prop="publishDate" label="发布日期" width="160"></el-table-column>
+          <el-table-column prop="type" label="类型" width="100"></el-table-column>
+          <el-table-column prop="status" label="状态" width="100"></el-table-column>
+          <el-table-column label="操作">
+            <template #default="scope">
+              <el-button size="small" @click="viewArticle(scope.row.articleId)">查看详情</el-button>
+            </template>
+          </el-table-column>
+          <template #empty>
+            <el-empty description="没有科普文章"></el-empty>
           </template>
         </el-table>
       </el-tab-pane>
@@ -105,18 +124,6 @@
       </template>
     </el-dialog>
 
-    <!-- 活动详情对话框 -->
-    <el-dialog
-        v-model="activityDetailsVisible"
-        title="活动详情"
-        width="30%"
-    >
-      <div v-if="selectedActivity">
-        <p><strong>活动：</strong> {{ selectedActivity.action }}</p>
-        <p><strong>用户：</strong> {{ selectedActivity.user }}</p>
-        <p><strong>日期：</strong> {{ selectedActivity.date }}</p>
-      </div>
-    </el-dialog>
   </div>
 </template>
 
@@ -124,7 +131,7 @@
 import {ref, onMounted, computed} from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
-import { User, Document, Loading } from '@element-plus/icons-vue'
+import { User, Document, Loading, Service } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import axiosInstance from '../../axios/index'
 
@@ -143,7 +150,7 @@ const stats = ref([
     title: '总医生数',
     value: '0',
     description: '',
-    icon: Document,
+    icon: Service,
     route: '/doctor-index'
   },
   {
@@ -153,16 +160,22 @@ const stats = ref([
     icon: Loading,
     route: '/verify'
   },
+  {
+    title: '待审核文章',
+    value: '0',
+    description: '',
+    icon: Document,
+    route: '/verify-articles'
+  },
 ]);
 
 const activeTab = ref('pendingDoctors')
 
 const pendingDoctors = ref([])
 const doctorDetailsVisible = ref(false)
-const activityDetailsVisible = ref(false)
 const selectedDoctor = ref(null)
-const selectedActivity = ref(null)
 const doctorImage = ref(null)
+const pendingArticles = ref([]);
 const dialogVisible = ref(false)
 const rejectDialogVisible = ref(false)
 const rejectForm = ref({
@@ -192,11 +205,19 @@ const fetchStats = async () => {
   }
 
   try {
-    const pendingCountResponse = await axiosInstance.get('/api/verifyDoctor/selectPendingCount');
-    stats.value[2].value = pendingCountResponse.data.pendingCount || '0';
+    const pendingDoctorsCountResponse = await axiosInstance.get('/api/verifyDoctor/selectPendingCount');
+    stats.value[2].value = pendingDoctorsCountResponse.data.pendingCount || '0';
   } catch (error) {
     console.error('获取待审核医生数失败:', error);
     stats.value[2].value = '0';
+  }
+
+  try {
+    const pendingArticlesCountResponse = await axiosInstance.get('/api/healthArticle/getPendingCount');
+    stats.value[3].value = pendingArticlesCountResponse.data.pendingArticlesCount || '0';
+  } catch (error) {
+    console.error('获取待审核文章数失败:', error);
+    stats.value[3].value = '0';
   }
 };
 
@@ -211,9 +232,27 @@ const fetchPendingDoctors = async () => {
   }
 }
 
+const fetchPendingArticles = async () => {
+  try {
+    const response = await axiosInstance.get('/api/healthArticle/getRecentPending');
+    pendingArticles.value = response.data.map(article => ({
+      ...article,
+      publishDate: article.publishDate ? new Date(article.publishDate).toLocaleString() : 'N/A',
+    }));
+  } catch (error) {
+    console.error('获取待审核文章数据失败:', error);
+    pendingArticles.value = [];
+  }
+};
+
+const viewArticle = (id) => {
+  router.push(`/verify-articles/${id}`)
+}
+
 onMounted(() => {
   fetchStats()
   fetchPendingDoctors()
+  fetchPendingArticles()
 })
 
 const handleCardClick = (item) => {
@@ -250,11 +289,6 @@ const viewDoctorDetails = async (doctor) => {
     console.error('获取医生图片失败:', error);
     ElMessage.error('获取医生图片失败');
   }
-}
-
-const viewActivityDetails = (activity) => {
-  selectedActivity.value = activity
-  activityDetailsVisible.value = true
 }
 
 const approveDoctor = async () => {

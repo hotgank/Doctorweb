@@ -72,17 +72,17 @@ const articleTypes = [
 
 const fetchArticles = async () => {
   try {
-    const response = await axios.post('/api/api/healthArticle/getAll', {}, {
+    const response = await axios.get('/api/api/healthArticle/getAll', {
       headers: {
         Authorization: `Bearer ${store.state.token}`
       }
-    })
+    });
     articles.value = response.data.map(article => ({
       ...article,
       publishDate: article.publishDate ? new Date(article.publishDate).toLocaleString() : 'N/A',
-    }))
+    }));
   } catch (error) {
-    console.error('Failed to fetch articles:', error)
+    console.error('Failed to fetch articles:', error);
   }
 }
 

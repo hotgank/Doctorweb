@@ -87,18 +87,18 @@ const articleStatuses = [
 
 const fetchArticles = async () => {
   try {
-    const response = await axios.post('/api/api/healthArticle/getTotalAll', {}, {
+    const response = await axios.get('/api/api/healthArticle/getTotalAll', {
       headers: {
         Authorization: `Bearer ${store.state.token}`
       }
-    })
+    });
     articles.value = response.data.map(article => ({
       ...article,
       publishDate: article.publishDate ? new Date(article.publishDate).toLocaleString() : 'N/A',
       name: article.name || '未知'
-    }))
+    }));
   } catch (error) {
-    console.error('Failed to fetch articles:', error)
+    console.error('Failed to fetch articles:', error);
   }
 }
 
