@@ -19,7 +19,7 @@
           <el-avatar :size="40" :src="scope.row.user.avatarUrl" />
         </template>
       </el-table-column>
-      <el-table-column label="操作">
+      <el-table-column label="操作" min-width="180">
         <template #default="scope">
           <el-button size="small" @click="viewPatientDetails(scope.row)">查看详情</el-button>
           <el-button size="small" type="primary" @click="startConsultation(scope.row)">开始咨询</el-button>
