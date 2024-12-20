@@ -153,7 +153,6 @@ const passwordRules = {
   ],
   newPassword: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 10, max: 16, message: '密码长度应在10-16个字符之间', trigger: 'blur' },
     {
       pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{10,16}$/,
       message: '密码必须包含大小写字母和数字，长度为10-16位，不能包含特殊字符',
