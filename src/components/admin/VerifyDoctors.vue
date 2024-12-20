@@ -23,7 +23,7 @@
         </div>
       </div>
     </el-header>
-    
+
     <el-main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- 医生表格 -->
       <el-table 
@@ -47,7 +47,6 @@
           <el-empty description="没有待审核的医生"></el-empty>
         </template>
       </el-table>
-
     </el-main>
 
     <!-- 详情对话框 -->
@@ -62,16 +61,20 @@
           <el-descriptions-item label="医生ID">{{ selectedDoctor.doctorId }}</el-descriptions-item>
           <el-descriptions-item label="姓名">{{ selectedDoctor.name }}</el-descriptions-item>
           <el-descriptions-item label="性别">{{ selectedDoctor.gender }}</el-descriptions-item>
+          
+          <!-- 职位选择 -->
           <el-descriptions-item label="职位">
-            <el-input
-                v-model="selectedDoctor.position"
-                placeholder="请输入职位"
-                clearable>
-            </el-input>
+            <el-select v-model="selectedDoctor.positionCategory" placeholder="选择职位大类" @change="updatePositionOptions">
+              <el-option v-for="category in positionCategories" :key="category.value" :label="category.label" :value="category.value"></el-option>
+            </el-select>
+            <el-select v-model="selectedDoctor.position" placeholder="选择职位">
+              <el-option v-for="position in filteredPositions" :key="position" :label="position" :value="position"></el-option>
+            </el-select>
           </el-descriptions-item>
 
           <el-descriptions-item label="工作单位">{{ selectedDoctor.workplace }}</el-descriptions-item>
         </el-descriptions>
+
         <div class="cert-image mt-4">
           <h4 class="text-lg font-medium mb-2">医师资格证图片：</h4>
           <el-image
@@ -119,11 +122,12 @@
   </el-container>
 </template>
 
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import axiosInstance from '../../axios/index';
+import axiosInstance from '../../axios/index'
 
 const doctors = ref([])
 const displayedDoctors = ref([])
@@ -137,6 +141,33 @@ const rejectForm = ref({
   comment: ''
 })
 
+// 职位大类和小类
+const positionCategories = [
+  { label: '执业医师', value: 'licensedDoctor' },
+  { label: '助理执业医师', value: 'assistantDoctor' },
+  { label: '专科医生', value: 'specialistDoctor' },
+  { label: '中医执业医师', value: 'traditionalChineseDoctor' },
+]
+
+const positions = {
+  licensedDoctor: [
+    '内科医师', '外科医师', '儿科医师', '妇产科医师', '麻醉科医师',
+    '眼科医师', '口腔科医师', '急诊科医师', '肿瘤科医师', '皮肤科医师'
+  ],
+  assistantDoctor: [
+    '助理内科医师', '助理外科医师', '助理儿科医师', '助理妇产科医师'
+  ],
+  specialistDoctor: [
+    '心血管专科医师', '消化专科医师', '肾脏专科医师', '神经科专科医师'
+  ],
+  traditionalChineseDoctor: [
+    '中医内科医师', '中医外科医师', '中医针灸医师'
+  ],
+}
+
+const filteredPositions = ref([])
+
+// 获取医生列表数据
 const fetchDoctors = async () => {
   loading.value = true
   try {
@@ -144,7 +175,7 @@ const fetchDoctors = async () => {
     doctors.value = response.data.map((doctor, idx) => ({
       ...doctor,
       index: idx + 1 // 添加自定义行号
-    }));
+    }))
     displayedDoctors.value = [...doctors.value]
   } catch (error) {
     console.error('获取医生数据失败:', error)
@@ -156,6 +187,7 @@ const fetchDoctors = async () => {
 
 onMounted(fetchDoctors)
 
+// 搜索医生
 const onSearch = () => {
   const term = searchTerm.value.trim().toLowerCase()
   if (term === '') {
@@ -169,83 +201,73 @@ const onSearch = () => {
   }
 }
 
+// 清空搜索
 const clearSearch = () => {
   searchTerm.value = ''
   displayedDoctors.value = [...doctors.value]
 }
 
+// 更新职位小类选项
+const updatePositionOptions = (category) => {
+  filteredPositions.value = positions[category] || []
+}
+
+// 打开医生详情
 const openDetails = async (doctor) => {
   selectedDoctor.value = { ...doctor }
   dialogVisible.value = true
   doctorImage.value = null
 
-  try {
-  // 构建完整的 URL
-  const imageUrl = selectedDoctor.value.url;
-
-  // 发送请求
-  const response = await axiosInstance.get(`/api/url/getLicenseImage?url=${encodeURIComponent(imageUrl)}`, {
-    responseType: 'blob'  // 设置响应类型为 blob
-  });
-
-  if (response.data) {
-    // 将 Blob 数据转换为可展示的 URL
-    const blob = new Blob([response.data], { type: 'image/png' });
-    const imageUrl = URL.createObjectURL(blob);
-
-    // 将生成的 URL 赋值给 imageSrc 用于显示图片
-    doctorImage.value = imageUrl;
-    console.log('Image URL:', imageUrl);
-    ElMessage.success('获取医生图片成功');
+  // 设置职位类别默认值
+  if (selectedDoctor.value.positionCategory) {
+    updatePositionOptions(selectedDoctor.value.positionCategory)
   }
-} catch (error) {
-  console.error('获取医生图片失败:', error);
-  ElMessage.error('获取医生图片失败');
-}
-}
 
-
-const handleClose = () => {
-  dialogVisible.value = false
-  selectedDoctor.value = null
-  doctorImage.value = null
+  // 获取医生资格证图片
+  if (selectedDoctor.value.url) {
+    getDoctorImage(selectedDoctor.value.url)
+  }
 }
 
+// 审核通过
 const approveDoctor = async () => {
-  if (!selectedDoctor.value.position.trim()) {
-    ElMessage.warning('职位不能为空，请填写职位后再提交');
-    return;
+  // 在提交之前检查并确保 selectedDoctor.position 是正确的
+  if (!selectedDoctor.value.position || !selectedDoctor.value.position.trim()) {
+    ElMessage.warning('职位不能为空，请填写职位后再提交')
+    return
   }
 
   try {
     const data = {
       auditId: selectedDoctor.value.auditId,
-      position: selectedDoctor.value.position,
-    };
+      position: selectedDoctor.value.position, // 提交时确保使用 selectedDoctor.position
+    }
 
     await axiosInstance.post('/api/verifyDoctor/approve', JSON.stringify(data), {
       headers: {
         'Content-Type': 'application/json'
       }
-    });
+    })
 
     ElMessage({
       message: `已认证医生 ${selectedDoctor.value.name} 的资格`,
       type: 'success',
-    });
+    })
 
-    handleClose();
-    await fetchDoctors(); // 刷新医生列表
+    handleClose()
+    await fetchDoctors() // 刷新医生列表
   } catch (error) {
-    console.error('审核通过失败:', error);
-    ElMessage.error('审核通过失败，请稍后重试');
+    console.error('审核通过失败:', error)
+    ElMessage.error('审核通过失败，请稍后重试')
   }
-};
+}
 
+// 打开打回认证对话框
 const openRejectDialog = () => {
   rejectDialogVisible.value = true
 }
 
+// 打回认证
 const confirmReject = async () => {
   if (!rejectForm.value.comment || !rejectForm.value.comment.trim()) {
     ElMessage.warning('请输入打回原因')
@@ -270,10 +292,39 @@ const confirmReject = async () => {
   }
 }
 
+// 关闭详情对话框
+const handleClose = () => {
+  dialogVisible.value = false
+  selectedDoctor.value = null
+  doctorImage.value = null
+}
+
+// 获取医生资格证图片
+const getDoctorImage = async (url) => {
+  try {
+    const response = await axiosInstance.get(`/api/url/getLicenseImage?url=${encodeURIComponent(url)}`, {
+      responseType: 'blob'  // 设置响应类型为 blob
+    })
+
+    if (response.data) {
+      const blob = new Blob([response.data], { type: 'image/png' })
+      const imageUrl = URL.createObjectURL(blob)
+      doctorImage.value = imageUrl
+      ElMessage.success('获取医生图片成功')
+    }
+  } catch (error) {
+    console.error('获取医生图片失败:', error)
+    ElMessage.error('获取医生图片失败')
+  }
+}
+
+// 表格行样式
 const tableRowClassName = ({ rowIndex }) => {
   return rowIndex % 2 === 0 ? 'bg-gray-50' : ''
 }
 </script>
+
+
 
 <style scoped>
 .header-container {

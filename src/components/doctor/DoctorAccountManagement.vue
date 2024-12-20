@@ -68,6 +68,12 @@
               </template>
             </el-upload>
           </el-form-item>
+          
+          <!-- 添加本地图片 -->
+          <el-form-item label="认证图片示例">
+            <img src="/img/电子医师执照.png" alt="Logo" style="width: 80%; height: 80%; object-fit: cover;"/>
+          </el-form-item>
+          
         </el-form>
         <h4>历史记录</h4>
         <el-table :data="licenseStatus" style="width: 100%">
