@@ -109,8 +109,8 @@
       </el-descriptions>
     </el-dialog>
 
-    <!-- 导入用户对话框 -->
-    <el-dialog v-model="importDialogVisible" title="导入用户" width="30%">
+    <!-- 导入医生对话框 -->
+    <el-dialog v-model="importDialogVisible" title="导入医生" width="30%">
       <el-upload
           class="upload-demo"
           drag
@@ -119,15 +119,25 @@
           :on-change="handleFileChange"
           accept=".xlsx,.csv"
       >
-        <el-icon><upload /></el-icon>
+        <el-icon><Upload /></el-icon>
         <div class="el-upload__text">将文件拖拽到此处，或<em>点击上传</em></div>
         <div class="el-upload__tip" slot="tip">请上传小于 500KB 的 XLSX/CSV 文件</div>
+        <div class="el-upload__tip" slot="tip">文件格式请参考模板</div>
       </el-upload>
+
+      <!-- 下载模板按钮 -->
+      <div style="margin-top: 20px; text-align: center;">
+        <el-button type="success" round @click="downloadTemplate">
+          <el-icon><Download /></el-icon>
+          下载模板
+        </el-button>
+      </div>
+
       <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="importDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="importDoctorData">确定</el-button>
-        </span>
+    <span class="dialog-footer">
+      <el-button @click="importDialogVisible = false">取消</el-button>
+      <el-button type="primary" @click="importDoctorData">确定</el-button>
+    </span>
       </template>
     </el-dialog>
   </el-container>
@@ -135,7 +145,7 @@
 
 <script setup>
 import {ref, computed, onMounted, watch} from 'vue'
-import {Search, Upload} from '@element-plus/icons-vue'
+import {Download, Search, Upload} from '@element-plus/icons-vue'
 import {ElMessage} from 'element-plus'
 import axiosInstance from '../../axios/index';
 
@@ -273,7 +283,7 @@ const clearSearch = () => {
 }
 
 // 表格行的样式
-const tableRowClassName = ({row, rowIndex}) => {
+const tableRowClassName = ({rowIndex}) => {
   return rowIndex % 2 === 0 ? 'bg-gray-50' : ''
 }
 
@@ -313,6 +323,16 @@ const toggleDoctorStatus = async (doctor) => {
 const handleFileChange = (file) => {
   uploadedFile.value = file;
 };
+
+// 下载模板文件
+const downloadTemplate = () => {
+  const link = document.createElement('a')
+  link.href = '/importDoctors.xlsx' // 假设模板文件放在 public 目录下
+  link.download = '导入医生模板.xlsx'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
 
 const showImportDialog = () => {
   importDialogVisible.value = true;

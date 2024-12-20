@@ -125,7 +125,7 @@ const fetchArticle = async () => {
     )
     article.value = {
       ...response.data,
-      publishDate: new Date(response.data.publishDate).toLocaleString(),
+      publishDate: new Date(resfponse.data.publishDate).toLocaleString(),
       birthdate: new Date(response.data.birthdate).toLocaleDateString()
     }
   } catch (error) {
