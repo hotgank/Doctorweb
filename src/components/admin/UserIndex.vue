@@ -20,9 +20,6 @@
           <el-button @click="onSearch" type="primary" class="ml-2">
             搜索
           </el-button>
-          <el-button @click="showImportDialog" type="primary" class="ml-2">
-            导入
-          </el-button>
         </div>
       </div>
     </el-header>
@@ -101,40 +98,17 @@
       </el-descriptions>
     </el-dialog>
 
-    <!-- 导入用户对话框 -->
-    <el-dialog v-model="importDialogVisible" title="导入用户" width="30%">
-      <el-upload
-          class="upload-demo"
-          drag
-          action="#"
-          :auto-upload="false"
-          :on-change="handleFileChange"
-          accept=".xlsx,.csv"
-      >
-        <el-icon><upload /></el-icon>
-        <div class="el-upload__text">将文件拖拽到此处，或<em>点击上传</em></div>
-        <div class="el-upload__tip" slot="tip">请上传小于 500KB 的 XLSX/CSV 文件</div>
-      </el-upload>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="importDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="importUserData">确定</el-button>
-        </span>
-      </template>
-    </el-dialog>
   </el-container>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { Search, Upload } from '@element-plus/icons-vue'
+import { Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import axiosInstance from '../../axios/index'
 
 const allUsers = ref([])
 const loading = ref(false)
-const uploadedFile = ref(null);
-const importDialogVisible = ref(false);
 const filteredUsers = ref([])
 
 // 新增：数据库中总用户数量
@@ -262,7 +236,7 @@ const clearSearch = () => {
 }
 
 // 表格行的样式
-const tableRowClassName = ({ row, rowIndex }) => {
+const tableRowClassName = ({rowIndex }) => {
   if (rowIndex % 2 === 0) {
     return 'bg-gray-50'
   }
@@ -300,51 +274,6 @@ const toggleUserStatus = async (user) => {
     ElMessage.error('更新用户状态失败，请稍后重试');
   }
 }
-
-const handleFileChange = (file) => {
-  uploadedFile.value = file;
-};
-
-const showImportDialog = () => {
-  importDialogVisible.value = true;
-};
-
-const importUserData = async () => {
-  if (!uploadedFile.value) {
-    ElMessage.error('请先选择要上传的文件');
-    return;
-  }
-
-  const file = uploadedFile.value.raw;
-  const fileExtension = file.name.split('.').pop().toLowerCase();
-
-  if (fileExtension !== 'xlsx' && fileExtension !== 'csv') {
-    ElMessage.error('文件类型不符合要求，请上传 .xlsx 或 .csv 文件');
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('urlJson', JSON.stringify({ url: 'userList/' }));
-
-  try {
-    await axiosInstance.post('/api/import/user', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-    ElMessage.success('用户数据导入成功');
-    importDialogVisible.value = false;
-    uploadedFile.value = null;
-    // 刷新用户列表
-    await fetchTotalUsers();
-    await fetchUsers();
-  } catch (error) {
-    console.error('文件上传失败:', error);
-    ElMessage.error('文件上传失败，请稍后重试');
-  }
-};
-
 // 新增：监听搜索词变化，重置分页
 watch(searchTerm, () => {
   frontendCurrentPage.value = 1;
