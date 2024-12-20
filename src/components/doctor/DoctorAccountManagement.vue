@@ -4,7 +4,7 @@
     <el-tabs v-model="activeTab">
       <el-tab-pane label="修改密码" name="password">
         <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" label-width="120px">
-          <el-form-item label="当前密码" prop="currentPassword">
+          <el-form-item label="当前密码" prop="oldPassword">
             <el-input v-model="passwordForm.oldPassword" type="password"></el-input>
           </el-form-item>
           <el-form-item label="新密码" prop="newPassword">
@@ -14,7 +14,7 @@
             <el-input v-model="passwordForm.confirmPassword" type="password"></el-input>
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="changePassword">修改密码</el-button>
+            <el-button type="primary" @click="$refs.passwordFormRef.validate().then(valid => { if (valid) changePassword() })">修改密码</el-button>
           </el-form-item>
         </el-form>
       </el-tab-pane>
@@ -68,12 +68,6 @@
               </template>
             </el-upload>
           </el-form-item>
-          
-          <!-- 添加本地图片 -->
-          <el-form-item label="认证图片示例">
-            <img src="/img/电子医师执照.png" alt="Logo" style="width: 80%; height: 80%; object-fit: cover;"/>
-          </el-form-item>
-          
         </el-form>
         <h4>历史记录</h4>
         <el-table :data="licenseStatus" style="width: 100%">
@@ -154,12 +148,17 @@ const passwordForm = reactive({
 })
 
 const passwordRules = {
-  currentPassword: [
+  oldPassword: [
     { required: true, message: '请输入当前密码', trigger: 'blur' },
   ],
   newPassword: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, message: '密码长度至少为6个字符', trigger: 'blur' }
+    { min: 10, max: 16, message: '密码长度应在10-16个字符之间', trigger: 'blur' },
+    {
+      pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{10,16}$/,
+      message: '密码必须包含大小写字母和数字，长度为10-16位，不能包含特殊字符',
+      trigger: 'blur'
+    }
   ],
   confirmPassword: [
     { required: true, message: '请确认新密码', trigger: 'blur' },
@@ -219,6 +218,7 @@ const uploadHeaders = computed(() => ({
   Authorization: `Bearer ${store.state.token}`
 }))
 
+// 发送旧邮箱验证码
 const sendOldEmailCode = async () => {
   try {
     await axiosInstance.post('/api/doctor_manage/sendOldEmailCode', {}, {
@@ -228,10 +228,12 @@ const sendOldEmailCode = async () => {
     oldCodeSent.value = true
     startCountdown('oldCode')
   } catch (error) {
+    console.error(error)
     ElMessage.error('发送验证码失败')
   }
 }
 
+// 发送新邮箱验证码
 const sendNewEmailCode = async () => {
   if (!emailForm.newEmail) {
     ElMessage.error('请先填写新邮箱地址')
@@ -245,10 +247,12 @@ const sendNewEmailCode = async () => {
     newCodeSent.value = true
     startCountdown('newCode')
   } catch (error) {
+    console.error(error)
     ElMessage.error('发送验证码失败')
   }
 }
 
+// 开始倒计时
 const startCountdown = (type) => {
   let countdown = type === 'oldCode' ? oldCodeCountdown : type === 'newCode' ? newCodeCountdown : deleteCodeCountdown
   let interval = setInterval(() => {
@@ -262,40 +266,36 @@ const startCountdown = (type) => {
   }, 1000)
 }
 
+// 获取执照状态
 const getLicenseStatus = async () => {
   try {
     const response = await axiosInstance.get('/api/doctorLicense/myLicense', {
       headers: { Authorization: `Bearer ${store.state.token}` }
     })
-    /**
-     * if (response.data && response.data.length > 0) {
-     *       licenseStatus.value = response.data[0]
-     *     }
-     */
-    licenseStatus.value = response.data;
-    //遍历，把createdAt和updatedAt转换为日期格式，只要年月日
+    licenseStatus.value = response.data
+    // 格式化时间
     licenseStatus.value.forEach(item => {
-      item.createdAt = new Date(item.createdAt).toLocaleString();
-      item.updatedAt = new Date(item.updatedAt).toLocaleString();
+      item.createdAt = new Date(item.createdAt).toLocaleString()
+      item.updatedAt = new Date(item.updatedAt).toLocaleString()
     })
   } catch (error) {
+    console.error(error)
     ElMessage.error('获取执照状态失败')
   }
 }
 
-const getLicenseImageUrl = (url) => {
-  return `/api/api/url/getLicenseImage?url=${encodeURIComponent(url)}`
-}
-
+// 上传执照成功处理
 const handleUploadSuccess = (response, file, fileList) => {
   ElMessage.success('执照上传成功')
   getLicenseStatus()
 }
 
+// 上传执照失败处理
 const handleUploadError = (error, file, fileList) => {
   ElMessage.error('执照上传失败')
 }
 
+// 更改邮箱
 const changeEmail = async () => {
   try {
     await axiosInstance.post('/api/doctor_manage/changeEmail', emailForm, {
@@ -303,30 +303,73 @@ const changeEmail = async () => {
     })
     ElMessage.success('邮箱已成功更改')
   } catch (error) {
+    console.error(error)
     ElMessage.error('更改邮箱失败')
   }
 }
 
+// 更改密码
 const changePassword = async () => {
+  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+    ElMessage.error('两次输入的新密码不一致')
+    return
+  }
   try {
-    await axiosInstance.post('/api/doctor_manage/updatePassword', passwordForm, {
+    await axiosInstance.post('/api/doctor_manage/updatePassword', {
+      oldPassword: passwordForm.oldPassword,
+      newPassword: passwordForm.newPassword
+    }, {
       headers: { Authorization: `Bearer ${store.state.token}` }
     })
     ElMessage.success('密码修改成功')
+    passwordForm.oldPassword = ''
+    passwordForm.newPassword = ''
+    passwordForm.confirmPassword = ''
   } catch (error) {
+    console.error(error)
     ElMessage.error('修改密码失败')
   }
 }
 
-const deactivateAccount = async () => {
+// 发送注销验证码
+const sendDeleteCode = async () => {
   try {
-    await axiosInstance.post('/api/doctor_manage/deactivateAccount', deactivateForm, {
-      headers: { Authorization: `Bearer ${store.state.token}`}
+    const response = await axiosInstance.post('/api/doctor_manage/sendDeleteCode', {}, {
+      headers: { Authorization: `Bearer ${store.state.token}` }
     })
-    ElMessage.success('账户已注销')
-    store.dispatch('logout')
-    router.push('/login')
+    if (response.status === 200) {
+      ElMessage.success('注销验证码已发送到您的邮箱')
+      deleteCodeSent.value = true
+      startCountdown('deleteCode')
+    } else {
+      ElMessage.error(response.data)
+    }
   } catch (error) {
+    console.error(error)
+    ElMessage.error('发送注销验证码失败')
+  }
+}
+
+// 注销账户
+const deactivateAccount = async () => {
+  if (!deactivateForm.confirm) {
+    ElMessage.warning('请确认您要注销账户')
+    return
+  }
+
+  try {
+    const response = await axiosInstance.post('/api/doctor_manage/deleteDoctor', deactivateForm, {
+      headers: { Authorization: `Bearer ${store.state.token}` }
+    })
+    if (response.status === 200) {
+      ElMessage.success('账户已注销')
+      store.dispatch('logout')
+      router.push('/login')
+    } else {
+      ElMessage.error(response.data)
+    }
+  } catch (error) {
+    console.error(error)
     ElMessage.error('账户注销失败')
   }
 }
