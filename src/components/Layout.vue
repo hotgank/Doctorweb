@@ -1,6 +1,10 @@
 <template>
   <el-container class="layout-container">
-    <el-aside v-if="isAuthenticated" width="200px">
+    <el-aside
+        v-if="isAuthenticated"
+        :class="{ 'aside-hidden': !isSidebarVisible }"
+        :style="{ width: isSidebarVisible ? '140px' : '0' }"
+    >
       <el-menu
         :default-active="activeMenu"
         class="el-menu-vertical-demo"
@@ -85,6 +89,12 @@
         </template>
       </el-menu>
     </el-aside>
+
+    <!-- 小箭头控制 -->
+    <div class="toggle-button" @click="toggleSidebar">
+      <i :class="isSidebarVisible ? 'arrow-left' : 'arrow-right'"></i>
+    </div>
+
     <el-container>
       <el-header v-if="isAuthenticated">
         <div class="header-content">
@@ -186,6 +196,7 @@ const adminInfo = ref(null)
 const uploadedAvatarUrl = ref('')
 const avatarDialogVisible = ref(false)
 const newAvatarFile = ref(null)
+const isSidebarVisible = ref(true)
 
 const avatarUrl = computed(() => store.state.avatar)
 const isAuthenticated = computed(() => store.getters.isLoggedIn)
@@ -359,6 +370,10 @@ const handleCommand = (command) => {
     }
   }
 }
+
+const toggleSidebar = () => {
+  isSidebarVisible.value = !isSidebarVisible.value;
+}
 </script>
 
 <style scoped>
@@ -406,5 +421,49 @@ const handleCommand = (command) => {
   width: 178px;
   height: 178px;
   display: block;
+}
+
+/* 侧边栏动画 */
+.el-aside {
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+/* 隐藏侧边栏时的样式 */
+.aside-hidden {
+  width: 0 !important;
+  opacity: 0;
+}
+
+/* 小箭头按钮样式 */
+.toggle-button {
+  position: absolute;
+  top: 50%;
+  left: 140px; /* 初始箭头的位置，和侧边栏宽度一致 */
+  transform: translateY(-50%);
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  transition: left 0.3s ease;
+}
+
+.arrow-left::before {
+  content: '<';
+}
+
+.arrow-right::before {
+  content: '>';
+}
+
+/* 动态调整箭头位置 */
+.aside-hidden ~ .toggle-button {
+  left: 0; /* 隐藏时箭头移动到最左侧 */
 }
 </style>
