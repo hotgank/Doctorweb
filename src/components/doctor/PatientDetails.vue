@@ -147,6 +147,7 @@ const fetchPatientReports = async () => {
 const viewReport = (report) => {
   currentReport.value = { ...report }
   showReport.value = true
+  imageSrc.value = ''
   fetchReportImage(report.url) // 获取报告图片
 }
 
@@ -218,6 +219,7 @@ watch(() => props.patient, (newPatient) => {
     selectedName.value = ''
     uniqueNames.value = []
     filteredReports.value = []
+    imageSrc.value = ''
     // Then fetch new patient reports
     fetchPatientReports()
   }
@@ -233,6 +235,7 @@ onUnmounted(() => {
   // 清理收集的姓名
   uniqueNames.value = []
   selectedName.value = ''
+  imageSrc.value = ''
 })
 </script>
 
