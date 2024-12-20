@@ -80,20 +80,20 @@
     <div class="action-buttons">
       <el-button
           type="primary"
-          :icon="Check"
           @click="changeArticleStatus('已发布')"
           :disabled="article.status === '已发布'"
           size="large"
       >
+        <el-icon><Check /></el-icon>
         审核通过
       </el-button>
       <el-button
           type="danger"
-          :icon="Close"
           @click="changeArticleStatus('已打回')"
           :disabled="article.status === '已打回'"
           size="large"
       >
+        <el-icon><Close /></el-icon>
         打回
       </el-button>
     </div>
@@ -107,7 +107,7 @@ import { useRoute } from 'vue-router'
 import { useStore } from 'vuex'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
-import { Calendar, Collection, InfoFilled, User} from '@element-plus/icons-vue'
+import { Calendar, Collection, InfoFilled, User, Close, Check} from '@element-plus/icons-vue'
 
 const route = useRoute()
 const store = useStore()
