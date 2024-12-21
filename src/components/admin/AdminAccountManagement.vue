@@ -8,7 +8,7 @@
             <el-input v-model="accountInfo.username" disabled></el-input>
           </el-form-item>
           <el-form-item label="邮箱">
-            <el-input v-model="accountInfo.email"></el-input>
+            <el-input v-model="accountInfo.email" disabled></el-input>
           </el-form-item>
           <el-form-item label="手机号">
             <el-input v-model="accountInfo.phone"></el-input>
@@ -34,13 +34,44 @@
           </el-form-item>
         </el-form>
       </el-tab-pane>
+      <el-tab-pane label="更改邮箱" name="email">
+        <el-form :model="emailForm" :rules="emailRules" ref="emailFormRef" label-width="120px">
+          <el-form-item label="当前邮箱">
+            <el-input :value="profile.email || '未认证'" disabled></el-input>
+          </el-form-item>
+          <el-form-item label="新邮箱" prop="newEmail">
+            <el-input v-model="emailForm.newEmail"></el-input>
+          </el-form-item>
+          <el-form-item label="旧邮箱验证码" prop="oldCode">
+            <el-input v-model="emailForm.oldCode">
+              <template #append>
+                <el-button @click="sendOldEmailCode" :disabled="oldCodeSent">
+                  {{ oldCodeSent ? `重新发送 (${oldCodeCountdown}s)` : '发送验证码' }}
+                </el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+          <el-form-item label="新邮箱验证码" prop="newCode">
+            <el-input v-model="emailForm.newCode">
+              <template #append>
+                <el-button @click="sendNewEmailCode" :disabled="newCodeSent || !emailForm.newEmail">
+                  {{ newCodeSent ? `重新发送 (${newCodeCountdown}s)` : '发送验证码' }}
+                </el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="changeEmail">更改邮箱</el-button>
+          </el-form-item>
+        </el-form>
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import {ref, reactive, onMounted, computed} from 'vue'
+import { ElMessage } from 'element-plus'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import axiosInstance from "../../axios/index";
@@ -48,6 +79,10 @@ import axiosInstance from "../../axios/index";
 const store = useStore()
 const router = useRouter()
 
+const oldCodeSent = ref(false)
+const newCodeSent = ref(false)
+const oldCodeCountdown = ref(60)
+const newCodeCountdown = ref(60)
 const activeTab = ref('info')
 
 const accountInfo = reactive({
@@ -88,6 +123,27 @@ const passwordRules = {
     }
   ]
 }
+
+const emailForm = reactive({
+  newEmail: '',
+  oldCode: '',
+  newCode: ''
+})
+
+const emailRules = {
+  newEmail: [
+    { required: true, message: '请输入新邮箱地址', trigger: 'blur' },
+    { type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' }
+  ],
+  oldCode: [
+    { required: true, message: '请输入旧邮箱验证码', trigger: 'blur' }
+  ],
+  newCode: [
+    { required: true, message: '请输入新邮箱验证码', trigger: 'blur' }
+  ]
+}
+
+const profile = computed(() => store.state.admin || {})
 
 // 获取用户信息
 const fetchAccountInfo = async () => {
@@ -149,6 +205,66 @@ const changePassword = () => {
   });
 };
 
+// 发送旧邮箱验证码
+const sendOldEmailCode = async () => {
+  try {
+    await axiosInstance.post('/api/admin_manage/sendOldEmailCode', {}, {
+      headers: { Authorization: `Bearer ${store.state.token}` }
+    })
+    ElMessage.success('验证码已发送到您的旧邮箱')
+    oldCodeSent.value = true
+    startCountdown('oldCode')
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('发送验证码失败')
+  }
+}
+
+// 发送新邮箱验证码
+const sendNewEmailCode = async () => {
+  if (!emailForm.newEmail) {
+    ElMessage.error('请先填写新邮箱地址')
+    return
+  }
+  try {
+    await axiosInstance.post('/api/admin_manage/sendNewEmailCode', { newEmail: emailForm.newEmail }, {
+      headers: { Authorization: `Bearer ${store.state.token}` }
+    })
+    ElMessage.success('验证码已发送到您的新邮箱')
+    newCodeSent.value = true
+    startCountdown('newCode')
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('发送验证码失败')
+  }
+}
+
+// 更改邮箱
+const changeEmail = async () => {
+  try {
+    await axiosInstance.post('/api/admin_manage/changeEmail', emailForm, {
+      headers: { Authorization: `Bearer ${store.state.token}` }
+    })
+    ElMessage.success('邮箱已成功更改')
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('更改邮箱失败')
+  }
+}
+
+// 开始倒计时
+const startCountdown = (type) => {
+  let countdown = type === 'oldCode' ? oldCodeCountdown : type === 'newCode' ? newCodeCountdown : deleteCodeCountdown
+  let interval = setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0) {
+      clearInterval(interval)
+      if (type === 'oldCode') oldCodeSent.value = false
+      if (type === 'newCode') newCodeSent.value = false
+      if (type === 'deleteCode') deleteCodeSent.value = false
+    }
+  }, 1000)
+}
 
 // 在组件挂载时获取用户信息
 onMounted(() => {
