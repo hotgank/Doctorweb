@@ -362,8 +362,8 @@ const deactivateAccount = async () => {
     })
     if (response.status === 200) {
       ElMessage.success('账户已注销')
-      store.dispatch('logout')
-      router.push('/login')
+      await store.dispatch('logout')
+      await router.push('/login')
     } else {
       ElMessage.error(response.data)
     }
