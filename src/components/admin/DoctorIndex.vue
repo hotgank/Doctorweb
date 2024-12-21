@@ -42,8 +42,8 @@
         <el-table-column prop="position" label="职位" width="120"></el-table-column>
         <el-table-column prop="qualification" label="已认证" width="100" align="center">
           <template #default="scope">
-            <el-tag :type="scope.row.qualification != null ? 'success' : 'danger'" effect="dark">
-              {{ scope.row.qualification != null ? '是' : '否' }}
+            <el-tag :type="scope.row.qualification === '已认证' ? 'success' : 'danger'" effect="dark">
+              {{ scope.row.qualification === '已认证' ? '是' : '否' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -104,7 +104,7 @@
         <el-descriptions-item label="单位">{{ selectedDoctor.workplace }}</el-descriptions-item>
         <el-descriptions-item label="职位">{{ selectedDoctor.position }}</el-descriptions-item>
         <el-descriptions-item label="UID">{{ selectedDoctor.doctorId }}</el-descriptions-item>
-        <el-descriptions-item label="认证状态">{{ selectedDoctor.qualification != null ? '已认证' : '未认证' }}</el-descriptions-item>
+        <el-descriptions-item label="认证状态">{{ selectedDoctor.qualification }}</el-descriptions-item>
         <el-descriptions-item label="账号状态">{{ selectedDoctor.status === 'active' ? '活跃' : '停用' }}</el-descriptions-item>
       </el-descriptions>
     </el-dialog>
