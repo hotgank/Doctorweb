@@ -56,14 +56,6 @@
         <el-table-column label="操作" min-width="250" align="center">
           <template #default="scope">
             <el-button 
-              type="primary" 
-              size="small" 
-              @click="editAdmin(scope.row)"
-              :disabled="scope.row.role === 'super_admin' && scope.row.adminId !== currentAdmin.adminId"
-            >
-              编辑
-            </el-button>
-            <el-button 
               :type="scope.row.status === 'active' ? 'danger' : 'success'" 
               size="small" 
               @click="toggleAdminStatus(scope.row)"
@@ -276,7 +268,7 @@ const confirmDelete = async () => {
       ElMessage.success(`管理员 ${adminToDelete.value.username} 已删除`)
       deleteConfirmVisible.value = false
       adminToDelete.value = null
-      fetchAdmins()
+      await fetchAdmins()
     } catch (error) {
       console.error('删除失败:', error)
       ElMessage.error('删除失败，请稍后重试')

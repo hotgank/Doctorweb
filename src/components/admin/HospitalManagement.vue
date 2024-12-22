@@ -169,6 +169,21 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 删除确认对话框 -->
+    <el-dialog
+        v-model="deleteConfirmVisible"
+        title="确认删除"
+        width="30%"
+    >
+      <p>您确定要删除这个医院吗？此操作不可逆。</p>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="deleteConfirmVisible = false">取消</el-button>
+          <el-button type="danger" @click="confirmDelete">确定删除</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </el-container>
 </template>
 
@@ -191,6 +206,8 @@ const hospitalNumber = ref(0)
 const addDialogVisible = ref(false)
 const updateAddressDialogVisible = ref(false)
 const updateAdminDialogVisible = ref(false)
+const deleteConfirmVisible = ref(false)
+const hospitalToDelete = ref(null)
 const newHospital = ref({
   hospitalName: '',
   address: ''
@@ -350,16 +367,28 @@ const deleteAdmin = async (hospitalName) => {
   }
 }
 
-// 删除医院
-const deleteHospital = async (hospitalName) => {
-  try {
-    await axiosInstance.post('/api/hospital/deleteHospital', {hospitalName})
-    ElMessage.success('医院删除成功')
-    await fetchHospitalCount()
-    await fetchHospitals()
-  } catch (error) {
-    console.error('删除医院失败:', error)
-    ElMessage.error('删除医院失败，请稍后重试')
+const deleteHospital = (hospitalName) => {
+  hospitalToDelete.value = hospitalName
+  deleteConfirmVisible.value = true
+}
+
+const confirmDelete = async () => {
+  if (hospitalToDelete.value) {
+    try {
+      await axiosInstance.post('/api/hospital/deleteHospital', JSON.stringify({ hospitalName: hospitalToDelete.value}), {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      ElMessage.success('医院删除成功')
+      deleteConfirmVisible.value = false
+      hospitalToDelete.value = null
+      await fetchHospitalCount()
+      await fetchHospitals()
+    } catch (error) {
+      console.error('删除医院失败:', error)
+      ElMessage.error('删除医院失败，请稍后重试')
+    }
   }
 }
 
