@@ -73,11 +73,12 @@
           <el-descriptions-item label="性别">{{ selectedDoctor.gender }}</el-descriptions-item>
           <el-descriptions-item label="单位">{{ selectedDoctor.workplace }}</el-descriptions-item>
           <el-descriptions-item label="职位">
-            <el-input
-                v-model="selectedDoctor.position"
-                placeholder="请输入职位"
-                clearable>
-            </el-input>
+            <el-select v-model="selectedPositionCategory" placeholder="选择职位大类" @change="updatePositionOptions" style="width: 150px; margin-right: 10px;">
+              <el-option v-for="category in positionCategories" :key="category.value" :label="category.label" :value="category.value"></el-option>
+            </el-select>
+            <el-select v-model="selectedDoctor.position" placeholder="选择职位" style="width: 150px;">
+              <el-option v-for="position in filteredPositions" :key="position" :label="position" :value="position"></el-option>
+            </el-select>
           </el-descriptions-item>
         </el-descriptions>
         <div class="cert-image mt-4">
@@ -132,7 +133,7 @@ import {ref, onMounted, computed} from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { User, Document, Loading, Service } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElCascader, ElSelect, ElOption } from 'element-plus'
 import axiosInstance from '../../axios/index'
 
 const router = useRouter()
@@ -181,6 +182,29 @@ const rejectDialogVisible = ref(false)
 const rejectForm = ref({
   comment: ''
 })
+
+const positionCategories = [
+  { label: '执业医师', value: 'licensedDoctor' },
+  { label: '助理执业医师', value: 'assistantDoctor' },
+  { label: '专科医生', value: 'specialistDoctor' },
+  { label: '中医执业医师', value: 'traditionalChineseDoctor' },
+]
+
+const positions = {
+  licensedDoctor: [
+    '内科医师', '外科医师', '儿科医师', '妇产科医师', '麻醉科医师',
+    '眼科医师', '口腔科医师', '急诊科医师', '肿瘤科医师', '皮肤科医师'
+  ],
+  assistantDoctor: [
+    '助理内科医师', '助理外科医师', '助理儿科医师', '助理妇产科医师'
+  ],
+  specialistDoctor: [
+    '心血管专科医师', '消化专科医师', '肾脏专科医师', '神经科专科医师'
+  ],
+  traditionalChineseDoctor: [
+    '中医内科医师', '中医外科医师', '中医针灸医师'
+  ],
+}
 
 const isSecondAdmin = computed(() => store.state.user && store.state.user.adminType === 'second')
 const filteredStats = computed(() => {
@@ -261,10 +285,25 @@ const handleCardClick = (item) => {
   }
 }
 
+const selectedPositionCategory = ref('')
+const filteredPositions = ref([])
+
+const updatePositionOptions = (category) => {
+  selectedPositionCategory.value = category
+  filteredPositions.value = positions[category] || []
+}
+
 const viewDoctorDetails = async (doctor) => {
-  selectedDoctor.value = doctor
+  selectedDoctor.value = { ...doctor }
   doctorDetailsVisible.value = true
   doctorImage.value = null
+
+  // 初始化职位类别
+  const category = positionCategories.find(cat => positions[cat.value].includes(doctor.position))
+  if (category) {
+    selectedPositionCategory.value = category.value
+    updatePositionOptions(category.value)
+  }
 
   try {
     // 构建完整的 URL
@@ -292,8 +331,8 @@ const viewDoctorDetails = async (doctor) => {
 }
 
 const approveDoctor = async () => {
-  if (!selectedDoctor.value.position.trim()) {
-    ElMessage.warning('职位不能为空，请填写职位后再提交');
+  if (!selectedDoctor.value.position) {
+    ElMessage.warning('职位不能为空，请选择职位后再提交');
     return;
   }
 
@@ -315,7 +354,7 @@ const approveDoctor = async () => {
     });
 
     handleClose();
-    await fetchPendingDoctors(); // 刷新医生列表
+    await fetchPendingDoctors();
   } catch (error) {
     console.error('审核通过失败:', error);
     ElMessage.error('审核通过失败，请稍后重试');
