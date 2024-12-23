@@ -1,9 +1,9 @@
 <template>
   <div class="consultation">
-    <el-row :gutter="10" class="full-height">
+    <el-row :gutter="10">
       <!-- 左侧家属列表部分 -->
-      <el-col :span="6" class="full-height">
-        <el-card class="box-card full-height">
+      <el-col :span="6">
+        <el-card class="box-card">
           <template #header>
             <div class="card-header">
               <span>家属列表</span>
@@ -25,55 +25,87 @@
         </el-card>
       </el-col>
       <!-- 右侧聊天区域 -->
-      <el-col :span="18" class="full-height">
-        <el-tabs v-model="activeTab" class="full-height">
+      <el-col :span="18">
+        <el-tabs v-model="activeTab">
           <el-tab-pane label="在线咨询" name="chat">
-            <el-card v-if="selectedRelation" class="box-card full-height">
-              <template #header>
-                <div class="card-header">
-                  <span>与 {{ selectedRelation.user.username }} 的对话</span>
-                </div>
-              </template>
+            <el-card v-if="selectedRelation" class="box-card">
               <div class="chat-container">
                 <!-- 聊天消息区域 -->
-                <div class="chat-messages" ref="chatMessagesRef" @scroll="handleScroll">
-                  <div v-for="msg in messages" :key="msg.messageSeq" :class="['message', msg.senderType === 'doctor'? 'message-right' : 'message-left']">
-                    <el-avatar :size="30" :src="msg.senderType === 'doctor'? doctorAvatar : (selectedRelation.user.avatarUrl || '/default-avatar.png')" />
-                    <div class="message-content">
-                      <!-- 文本消息 -->
-                      <div v-if="!msg.url">{{ msg.messageText }}</div>
-                      <!-- 图片消息 -->
-                      <div v-else-if="msg.messageType === 'image'">
-                        <el-image
-                            v-if="msg.imageUrl"
-                            :src="msg.imageUrl"
-                            fit="cover"
-                            class="message-image"
-                        />
-                        <el-skeleton v-else :rows="3" animated />
-                        <span>{{ msg.messageText }}</span>
-                      </div>
-                      <!-- 其他类型附件 -->
-                      <div v-else class="attachment-container">
-                        <div class="attachment-info">
-                          <el-icon><Document /></el-icon>
-                          <span>{{ msg.messageText }}</span>
+                <el-row>
+                  <div class="chat-messages" ref="chatMessagesRef" @scroll="handleScroll">
+                    <el-row v-for="msg in messages" :key="msg.messageSeq">
+                      <div v-if="msg.senderType !== 'doctor'" class="message message-left">
+                        <el-avatar :size="30" class="message-avatar message-avatar-left" :src="msg.senderType === 'doctor'? doctorAvatar : (selectedRelation.user.avatarUrl || '/default-avatar.png')" />
+                        <div class="message-content message-left">
+                          <!-- 文本消息 -->
+                          <div v-if="!msg.url">{{ msg.messageText }}</div>
+                          <!-- 图片消息 -->
+                          <div v-else-if="msg.messageType === 'image'">
+                            <el-image
+                                v-if="msg.imageUrl"
+                                :src="msg.imageUrl"
+                                fit="cover"
+                                class="message-image"
+                            />
+                            <el-skeleton v-else :rows="3" animated />
+                            <span>{{ msg.messageText }}</span>
+                          </div>
+                          <!-- 其他类型附件 -->
+                          <div v-else class="attachment-container">
+                            <div class="attachment-info">
+                              <el-icon><Document /></el-icon>
+                              <span>{{ msg.messageText }}</span>
+                            </div>
+                            <el-button
+                                type="primary"
+                                link
+                                @click="downloadAttachment(msg.url)"
+                            >
+                              下载附件
+                            </el-button>
+                          </div>
                         </div>
-                        <el-button
-                            type="primary"
-                            link
-                            @click="downloadAttachment(msg.url)"
-                        >
-                          下载附件
-                        </el-button>
+                        <span class="message-time message-left">{{ formatTime(msg.timestamp) }}</span>
                       </div>
-                    </div>
-                    <span class="message-time">{{ formatTime(msg.timestamp) }}</span>
+                      <div v-else class="message message-right">
+                        <span class="message-time message-right">{{ formatTime(msg.timestamp) }}</span>
+                        <div class="message-content message-right">
+                          <!-- 文本消息 -->
+                          <div v-if="!msg.url">{{ msg.messageText }}</div>
+                          <!-- 图片消息 -->
+                          <div v-else-if="msg.messageType === 'image'">
+                            <el-image
+                                v-if="msg.imageUrl"
+                                :src="msg.imageUrl"
+                                fit="cover"
+                                class="message-image"
+                            />
+                            <el-skeleton v-else :rows="3" animated />
+                            <span>{{ msg.messageText }}</span>
+                          </div>
+                          <!-- 其他类型附件 -->
+                          <div v-else class="attachment-container">
+                            <div class="attachment-info">
+                              <el-icon><Document /></el-icon>
+                              <span>{{ msg.messageText }}</span>
+                            </div>
+                            <el-button
+                                type="primary"
+                                link
+                                @click="downloadAttachment(msg.url)"
+                            >
+                              下载附件
+                            </el-button>
+                            </div>
+                        </div>
+                        <el-avatar :size="30" c :src="msg.senderType === 'doctor'? doctorAvatar : (selectedRelation.user.avatarUrl || '/default-avatar.png')" />
+                      </div>
+                    </el-row>
                   </div>
-                </div>
+                </el-row>
 
                 <!-- 输入区域 -->
-                <div class="chat-input">
+                <el-row :align="'bottom'" :gutter="10">
                   <div class="input-container">
                     <el-upload
                         class="upload-attachment"
@@ -114,7 +146,7 @@
                       </template>
                     </el-input>
                   </div>
-                </div>
+                </el-row>
               </div>
             </el-card>
             <el-empty v-else description="请选择一个家属开始对话"></el-empty>
@@ -123,7 +155,7 @@
           <!-- 家属详情标签页 -->
           <el-tab-pane label="家属详情" name="details">
             <el-scrollbar class="details-scrollbar">
-              <el-card v-if="selectedRelation" class="box-card full-height">
+              <el-card v-if="selectedRelation" class="box-card">
                 <template #header>
                   <div class="card-header">
                     <span>家属详细信息</span>
@@ -811,30 +843,47 @@ onUnmounted(() => {
 
 <style scoped>
 .consultation {
-  height: calc(100vh - 60px);
+  height: calc(100% - 60px);
+  resize: vertical; /* 允许垂直调整大小 */
+  min-height: 20%; /* 设置最小高度 */
+  max-height: 70%; /* 设置最大高度 */
+}
+
+.box-card {
+  border: 1px solid #ebeef5;
+  background-color: #fff;
+  color: #303133;
+  transition: .3s;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  height: 100%;
+}
+
+.card-header {
+  box-sizing: border-box;
 }
 
 .full-height {
-  height: 100%;
+  height: calc(50% - 100px);
 }
 
 .chat-container {
   display: flex;
   flex-direction: column;
-  height: calc(100% - 40px);
+  overflow: hidden;
+  height: 100%;
 }
 
 .chat-messages {
   flex-grow: 1;
+  max-height: 1200px; /* 默认高度 */
   overflow-y: auto;
-  padding: 20px;
-  height: 400px;
 }
 
 .message {
   display: flex;
   margin-bottom: 10px;
-  align-items: flex-start;
 }
 
 .upload-image {
@@ -846,12 +895,52 @@ onUnmounted(() => {
   max-width: 70%;
   padding: 10px;
   border-radius: 10px;
-  background-color: #f0f2f5;
   margin: 0 10px;
 }
 
+.message-left {
+  text-align: left;
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.message-right {
+  text-align: right;
+  margin-left: auto;
+  margin-right: 0;
+}
+
+.message-left .message-content {
+  background-color: #f0f2f5;
+  margin-left: 5px;
+}
+
 .message-right .message-content {
+  text-align: left; /* 内容保持左对齐 */
+  margin-right: 5px;
   background-color: #95ec69;
+}
+
+/* 右侧对齐的消息时间样式 */
+.message-right .message-time {
+  float: right;
+  margin-right: 10px;
+}
+
+/* 右侧对齐的消息头像样式 */
+.message-right .message-avatar {
+  float: right;
+  margin-right: 5px;
+}
+
+/* 左侧对齐的消息时间样式 */
+.message-left .message-time {
+  margin-left: 10px;
+}
+
+/* 左侧对齐的消息头像样式 */
+.message-left .message-avatar {
+  margin-left: 5px;
 }
 
 .message-time {
@@ -864,6 +953,17 @@ onUnmounted(() => {
   max-width: 200px;
   max-height: 200px;
   border-radius: 5px;
+}
+
+.input-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.upload-attachment {
+  flex-shrink: 0;
 }
 
 .attachment-container {
@@ -879,85 +979,13 @@ onUnmounted(() => {
   height: calc(100vh - 60px);
 }
 
-.full-height {
-  height: 100%;
-}
-
-.chat-container {
-  display: flex;
-  flex-direction: column;
-  height: calc(100% - 40px);
-}
-
-.chat-messages {
-  flex-grow: 1;
-  overflow-y: auto;
-  padding: 20px;
-  height: 400px; /* 固定高度 */
-}
-
-.message {
-  display: flex;
-  margin-bottom: 10px;
-  align-items: flex-start;
-}
-
-.upload-image {
-  flex-shrink: 0;
-  margin-right: 10px;
-}
-
-.message-content {
-  max-width: 70%;
-  padding: 10px;
-  border-radius: 10px;
-  background-color: #f0f2f5;
-  margin: 0 10px;
-}
-
-.message-right .message-content {
-  background-color: #95ec69;
-}
-
-.message-time {
-  font-size: 0.7em;
-  color: #909399;
-  margin-top: 5px;
-}
-
-.message-image {
-  max-width: 200px;
-  max-height: 200px;
-  border-radius: 5px;
-}
-
-.attachment-container {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.attachment-info {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.input-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 20px;
-}
-
-.upload-attachment {
-  flex-shrink: 0;
-}
-
 .patient-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  overflow-y: auto; /* 添加垂直滑动条 */
+  height: calc(100% - 60px); /* 确保有足够的高度来显示垂直滑动条 */
+  max-height: 1200px; /* 默认高度 */
 }
 
 .patient-item {
@@ -967,6 +995,7 @@ onUnmounted(() => {
   padding: 5px;
   border-radius: 5px;
   transition: background-color 0.3s;
+  width: 95%;
 }
 
 .patient-item:hover {
@@ -977,6 +1006,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   margin-left: 10px;
+  white-space: nowrap;
 }
 
 .patient-name {
@@ -1133,4 +1163,77 @@ onUnmounted(() => {
   border-left: none;
   border-top: none;
 }
+
+@media (max-height: 1500px) {
+  .chat-messages {
+    max-height: 1200px; /* 在屏幕高度小于1500px时调整高度 */
+  }
+  .patient-list {
+    max-height: 1200px;
+  }
+}
+
+@media (max-height: 1200px) {
+  .chat-messages {
+    max-height: 900px; /* 在屏幕高度小于1200px时调整高度 */
+  }
+  .patient-list {
+    max-height:900px;
+  }
+}
+
+@media (max-height: 1000px) {
+  .chat-messages {
+    max-height: 700px; /* 在屏幕高度小于1000px时调整高度 */
+  }
+  .patient-list {
+    max-height: 700px;
+  }
+}
+
+@media (max-height: 900px) {
+  .chat-messages {
+    max-height: 600px; /* 在屏幕高度小于900px时调整高度 */
+  }
+  .patient-list {
+    max-height: 600px;
+  }
+}
+
+@media (max-height: 800px) {
+  .chat-messages {
+    max-height: 500px; /* 在屏幕高度小于1200px时调整高度 */
+  }
+  .patient-list {
+    max-height: 500px;
+  }
+}
+
+@media (max-height: 700px) {
+  .chat-messages {
+    max-height: 400px; /* 在屏幕高度小于700px时调整高度 */
+  }
+  .patient-list {
+    max-height: 400px;
+  }
+}
+
+@media (max-height: 600px) {
+  .chat-messages {
+    max-height: 300px; /* 在屏幕高度小于600px时调整高度 */
+  }
+  .patient-list {
+    max-height: 300px;
+  }
+}
+
+@media (max-height: 500px) {
+  .chat-messages {
+    max-height: 200px; /* 在屏幕高度小于500px时调整高度 */
+  }
+  .patient-list {
+    max-height: 200px;
+  }
+}
+
 </style>
