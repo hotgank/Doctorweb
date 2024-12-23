@@ -38,7 +38,7 @@
                         <el-avatar :size="30" class="message-avatar message-avatar-left" :src="msg.senderType === 'doctor'? doctorAvatar : (selectedRelation.user.avatarUrl || '/default-avatar.png')" />
                         <div class="message-content message-left">
                           <!-- 文本消息 -->
-                          <div v-if="!msg.url">{{ msg.messageText }}</div>
+                          <div v-if="!msg.url" class="message-text">{{ msg.messageText }}</div>
                           <!-- 图片消息 -->
                           <div v-else-if="msg.messageType === 'image'">
                             <el-image
@@ -71,7 +71,7 @@
                         <span class="message-time message-right">{{ formatTime(msg.timestamp) }}</span>
                         <div class="message-content message-right">
                           <!-- 文本消息 -->
-                          <div v-if="!msg.url">{{ msg.messageText }}</div>
+                          <div v-if="!msg.url" class="message-text">{{ msg.messageText }}</div>
                           <!-- 图片消息 -->
                           <div v-else-if="msg.messageType === 'image'">
                             <el-image
@@ -896,6 +896,7 @@ onUnmounted(() => {
   padding: 10px;
   border-radius: 10px;
   margin: 0 10px;
+  white-space: normal;
 }
 
 .message-left {
@@ -919,6 +920,11 @@ onUnmounted(() => {
   text-align: left; /* 内容保持左对齐 */
   margin-right: 5px;
   background-color: #95ec69;
+}
+
+.message-text {
+  word-break: break-all;
+  white-space: pre-wrap;
 }
 
 /* 右侧对齐的消息时间样式 */
