@@ -3,14 +3,14 @@
     <h1 class="mb-4">账户管理</h1>
     <el-tabs v-model="activeTab">
       <el-tab-pane label="账户信息" name="info">
-        <el-form :model="accountInfo" label-width="120px">
+        <el-form :model="accountInfo" label-width="120px" :rules="phoneRules">
           <el-form-item label="用户名">
             <el-input v-model="accountInfo.username" disabled></el-input>
           </el-form-item>
           <el-form-item label="邮箱">
             <el-input v-model="accountInfo.email" disabled></el-input>
           </el-form-item>
-          <el-form-item label="手机号">
+          <el-form-item label="手机号" prop="phone">
             <el-input v-model="accountInfo.phone"></el-input>
           </el-form-item>
           <el-form-item>
@@ -90,6 +90,13 @@ const accountInfo = reactive({
   email: '',
   phone: ''
 })
+
+const phoneRules = {
+  phone: [
+    { required: true, message: '请输入电话号码', trigger: 'blur' },
+    { pattern: /^\d{1,11}$/, message: '电话号码为不超过11位的数字', trigger: 'blur' }
+  ]
+}
 
 const passwordForm = reactive({
   currentPassword: '',
