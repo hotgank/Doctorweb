@@ -169,6 +169,14 @@ const fetchAccountInfo = async () => {
 
 // 更新用户信息
 const updateAccountInfo = async () => {
+  //检验手机号是否合法
+  if (!/^1[3456789]\d{9}$/.test(accountInfo.phone)) {
+    ElMessage({
+      message: '手机号不合法',
+      type: 'error'
+    })
+    return
+  }
   try {
     await axiosInstance.post('/api/admin/updateMyEmailAndPhone', {
       email: accountInfo.email,
