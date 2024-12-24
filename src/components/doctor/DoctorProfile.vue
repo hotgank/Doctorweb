@@ -71,7 +71,7 @@ const rules = {
   ],
   phone: [
     { required: true, message: '请输入电话号码', trigger: 'blur' },
-    { pattern: /^\d{1,11}$/, message: '电话号码不能超过11位数字', trigger: 'blur' }
+    { pattern: /^\d{1,11}$/, message: '电话号码为不超过11位的数字', trigger: 'blur' }
   ],
   birthdate: [
     { required: true, message: '请选择出生日期', trigger: 'change' }
