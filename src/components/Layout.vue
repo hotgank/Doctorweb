@@ -4,12 +4,13 @@
         v-if="isAuthenticated"
         :class="{ 'aside-hidden': !isSidebarVisible }"
         :style="{ width: isSidebarVisible ? '140px' : '0' }"
+        class="custom-aside"
     >
       <el-menu
-        :default-active="activeMenu"
-        class="el-menu-vertical-demo"
-        @select="handleSelect"
-        router
+          :default-active="activeMenu"
+          class="el-menu-vertical-demo"
+          @select="handleSelect"
+          router
       >
         <template v-if="userRole === 'doctor'">
           <el-menu-item index="/doctor-dashboard">
@@ -92,11 +93,11 @@
 
     <!-- 小箭头控制 -->
     <div class="toggle-button" @click="toggleSidebar">
-      <i :class="isSidebarVisible ? 'arrow-left' : 'arrow-right'"></i>
+      <font-awesome-icon :icon="isSidebarVisible ? ['fas', 'arrow-left'] : ['fas', 'arrow-right']" />
     </div>
 
     <el-container>
-      <el-header v-if="isAuthenticated">
+      <el-header v-if="isAuthenticated" class="custom-header">
         <div class="header-content">
           <el-button @click="goBack">
             <el-icon style="margin-right: 10px"><ArrowLeft /></el-icon>
@@ -105,10 +106,10 @@
             <el-icon style="margin-right: 10px"><HomeFilled /></el-icon>
             主页</el-button>
           <el-popover
-            placement="bottom-end"
-            width="200"
-            trigger="hover"
-            v-if="userRole === 'doctor'"
+              placement="bottom-end"
+              width="200"
+              trigger="hover"
+              v-if="userRole === 'doctor'"
           >
             <template #reference>
               <div class="user-info">
@@ -127,10 +128,10 @@
           </el-popover>
 
           <el-popover
-            placement="bottom-end"
-            width="200"
-            trigger="hover"
-            v-if="userRole === 'admin'"
+              placement="bottom-end"
+              width="200"
+              trigger="hover"
+              v-if="userRole === 'admin'"
           >
             <template #reference>
               <div class="user-info">
@@ -153,9 +154,9 @@
       </el-main>
     </el-container>
     <el-dialog
-      v-model="avatarDialogVisible"
-      title="更改头像"
-      width="30%"
+        v-model="avatarDialogVisible"
+        title="更改头像"
+        width="30%"
     >
       <el-upload
           class="avatar-uploader"
@@ -186,6 +187,7 @@ import { useStore } from 'vuex'
 import { ElMessage, ElButton } from 'element-plus'
 import { HomeFilled, User, Memo, ChatDotRound, Reading, EditPen, Setting, Avatar, Loading, Service,
   TrophyBase, Coordinate, Plus, ArrowLeft, OfficeBuilding, Open} from '@element-plus/icons-vue'
+import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
 
 const router = useRouter()
 const store = useStore()
@@ -377,6 +379,7 @@ const toggleSidebar = () => {
 </script>
 
 <style scoped>
+
 .layout-container {
   height: 100vh;
 }
@@ -427,43 +430,80 @@ const toggleSidebar = () => {
 .el-aside {
   overflow: hidden;
   transition: all 0.3s ease;
+  background-color: #f0f2f5;
 }
 
 /* 隐藏侧边栏时的样式 */
 .aside-hidden {
-  width: 0 !important;
+  width: 0!important;
   opacity: 0;
+  box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1);
 }
 
 /* 小箭头按钮样式 */
 .toggle-button {
   position: absolute;
   top: 50%;
-  left: 140px; /* 初始箭头的位置，和侧边栏宽度一致 */
+  left: 140px;
   transform: translateY(-50%);
   cursor: pointer;
   background: #fff;
   border: 1px solid #ddd;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
+  border-radius: 4px;
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
   transition: left 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.arrow-left::before {
-  content: '<';
+.toggle-button.arrow-left::before {
+  content: '\f060'; /* Font Awesome的左箭头图标代码 */
+  font-family: 'Font Awesome 5 Free', sans-serif;
+  font-weight: 900;
+  color: #333333;
 }
 
-.arrow-right::before {
-  content: '>';
+.toggle-button.arrow-right::before {
+  content: '\f061'; /* Font Awesome的右箭头图标代码 */
+  font-family: 'Font Awesome 5 Free', sans-serif;
+  font-weight: 900;
+  color: #333333;
 }
 
 /* 动态调整箭头位置 */
 .aside-hidden ~ .toggle-button {
   left: 0; /* 隐藏时箭头移动到最左侧 */
 }
+
+.el-header {
+  background: linear-gradient(to bottom, #ffffff, #f5f5f5);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.el-menu {
+  background-color: transparent;
+}
+
+.el-menu-item {
+  transition: all 0.2s ease;
+}
+
+.el-menu-item.el-icon {
+  font-size: 18px;
+  color: #333333;
+}
+
+.el-menu-item:hover {
+  transform: scale(1.05);
+}
+
+.el-menu-item:hover,.el-menu-item.is-active {
+  background-color: #e6e8eb;
+  font-weight: 500;
+}
 </style>
+

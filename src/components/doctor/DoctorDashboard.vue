@@ -357,8 +357,17 @@ onMounted(() => {
 }
 
 .box-card {
+  height: 170px; /* 固定高度 */
+  overflow: hidden;
   margin-bottom: 20px;
   position: relative;
+}
+
+.card-header {
+  height: 20px; /* 固定高度 */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .clickable-card {
