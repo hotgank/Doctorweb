@@ -55,11 +55,19 @@
         </el-table-column>
         <el-table-column label="操作" min-width="250" align="center">
           <template #default="scope">
+            <el-button
+                type="primary"
+                size="small"
+                @click="editAdmin(scope.row)"
+                :disabled="scope.row.adminId === rootAdmin.adminId"
+            >
+              编辑
+            </el-button>
             <el-button 
               :type="scope.row.status === 'active' ? 'danger' : 'success'" 
               size="small" 
               @click="toggleAdminStatus(scope.row)"
-              :disabled="scope.row.role === 'super_admin'"
+              :disabled="scope.row.adminType === 'super' || scope.row.username === rootAdmin.username"
             >
               {{ scope.row.status === 'active' ? '停用' : '启用' }}
             </el-button>
@@ -67,7 +75,7 @@
               type="danger" 
               size="small" 
               @click="deleteAdmin(scope.row)"
-              :disabled="scope.row.role === 'super_admin' || scope.row.adminId === currentAdmin.adminId"
+              :disabled="scope.row.adminType === 'super' || scope.row.username === rootAdmin.username"
             >
               删除
             </el-button>
@@ -136,7 +144,7 @@ import axiosInstance from '../../axios/index'
 
 const allAdmins = ref([])
 const filteredAdmins = ref([])
-const currentAdmin = ref({ adminId: 1, username: 'superadmin', role: 'super_admin' })
+const rootAdmin = ref({ username: 'superadmin', adminType: 'super' })
 const loading = ref(false)
 const dialogVisible = ref(false)
 const isEditing = ref(false)
@@ -191,7 +199,7 @@ const submitAdminForm = async () => {
     return
   }
 
-// 密码校验：长度为10-16位，包含大小写字母和数字
+  // 密码校验：长度为10-16位，包含大小写字母和数字
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{10,16}$/;
   if (!isEditing.value && !passwordRegex.test(adminForm.value.password)) {
     ElMessage.error('密码长度为10-16位，必须包含大小写字母和数字')
@@ -205,11 +213,26 @@ const submitAdminForm = async () => {
     return
   }
 
-// adminType 校验：必须为“超级管理员”、“管理员”或“二级管理员”
+  // adminType 校验：必须为“超级管理员”、“管理员”或“二级管理员”
   const validAdminTypes = ['first', 'super', 'second'];
   if (!validAdminTypes.includes(adminForm.value.adminType)) {
     ElMessage.error('adminType 必须为超级管理员、管理员或二级管理员之一')
     return
+  }
+
+  // 添加逻辑限制adminType的修改
+  if (isEditing.value) {
+    const originalAdmin = allAdmins.value.find(admin => admin.adminId === adminForm.value.adminId);
+    if (originalAdmin) {
+      if (originalAdmin.adminType === 'second' && adminForm.value.adminType !== 'second') {
+        ElMessage.error('不能将二级管理员修改为其他角色')
+        return
+      }
+      if ((originalAdmin.adminType === 'first' || originalAdmin.adminType === 'super') && adminForm.value.adminType === 'second') {
+        ElMessage.error('不能将此管理员修改为二级管理员')
+        return
+      }
+    }
   }
 
   try {
@@ -229,7 +252,7 @@ const submitAdminForm = async () => {
       ElMessage.success('新管理员已创建')
     }
     dialogVisible.value = false
-    fetchAdmins()
+    await fetchAdmins()
   } catch (error) {
     console.error('操作失败:', error)
     ElMessage.error('操作失败，请稍后重试')
