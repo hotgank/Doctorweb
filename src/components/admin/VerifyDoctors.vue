@@ -225,7 +225,7 @@ const openDetails = async (doctor) => {
 
   // 获取医生资格证图片
   if (selectedDoctor.value.url) {
-    getDoctorImage(selectedDoctor.value.url)
+    await getDoctorImage(selectedDoctor.value.url)
   }
 }
 

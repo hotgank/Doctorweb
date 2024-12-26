@@ -153,7 +153,7 @@
             newPassword: form.newPassword
           })
           ElMessage.success('密码重置成功！')
-          router.push('/login')
+          await router.push('/login')
         } catch (error) {
           if (error.response) {
             switch (error.response.status) {

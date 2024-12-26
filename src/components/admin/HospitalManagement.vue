@@ -191,7 +191,6 @@
 import {ref, onMounted, computed} from 'vue'
 import {Search} from '@element-plus/icons-vue'
 import {ElMessage} from 'element-plus'
-import axios from 'axios'
 import axiosInstance from '../../axios/index';
 
 // 状态变量

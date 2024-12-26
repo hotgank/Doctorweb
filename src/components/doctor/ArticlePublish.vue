@@ -164,7 +164,7 @@ const handleSubmit = async () => {
         type: 'success',
       })
       resetForm()
-      fetchMyArticles()
+      await fetchMyArticles()
     } else {
       throw new Error('Failed to publish/update article')
     }
