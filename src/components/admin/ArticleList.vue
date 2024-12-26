@@ -15,7 +15,7 @@
         :value="type"
       ></el-option>
     </el-select>
-    <el-select v-model="selectedStatus" placeholder="选择文章状态" class="mb-4" style="width: 200px; margin-top: 20px;">
+    <el-select v-model="selectedStatus" placeholder="选择文章状态" class="mb-4" style="width: 200px; margin-top: 10px; margin-left:5px; margin-bottom:10px;">
       <el-option label="全部" value=""></el-option>
       <el-option
         v-for="status in articleStatuses"
