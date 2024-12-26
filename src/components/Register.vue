@@ -5,8 +5,8 @@
       <h1 class="system-title">
         <span class="title-line">儿童</span>
         <span class="title-line">体态</span>
-        <span class="title-line">管理</span>
-        <span class="title-line">系统</span>
+        <span class="title-line">评估</span>
+        <span class="title-line">平台</span>
       </h1>
     </div>
 
