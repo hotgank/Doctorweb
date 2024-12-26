@@ -1,111 +1,123 @@
 <template>
   <div class="account-management">
-    <h1 class="mb-4">账户管理</h1>
-    <el-tabs v-model="activeTab">
-      <el-tab-pane label="修改密码" name="password">
-        <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" label-width="120px">
-          <el-form-item label="当前密码" prop="oldPassword">
-            <el-input v-model="passwordForm.oldPassword" type="password"></el-input>
-          </el-form-item>
-          <el-form-item label="新密码" prop="newPassword">
-            <el-input v-model="passwordForm.newPassword" type="password"></el-input>
-          </el-form-item>
-          <el-form-item label="确认新密码" prop="confirmPassword">
-            <el-input v-model="passwordForm.confirmPassword" type="password"></el-input>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="$refs.passwordFormRef.validate().then(valid => { if (valid) changePassword() })">修改密码</el-button>
-          </el-form-item>
-        </el-form>
-      </el-tab-pane>
-      <el-tab-pane label="更改邮箱" name="email">
-        <el-form :model="emailForm" :rules="emailRules" ref="emailFormRef" label-width="120px">
-          <el-form-item label="当前邮箱">
-            <el-input :value="profile.email || '未认证'" disabled></el-input>
-          </el-form-item>
-          <el-form-item label="新邮箱" prop="newEmail">
-            <el-input v-model="emailForm.newEmail"></el-input>
-          </el-form-item>
-          <el-form-item label="旧邮箱验证码" prop="oldCode">
-            <el-input v-model="emailForm.oldCode">
-              <template #append>
-                <el-button @click="sendOldEmailCode" :disabled="oldCodeSent">
-                  {{ oldCodeSent ? `重新发送 (${oldCodeCountdown}s)` : '发送验证码' }}
-                </el-button>
-              </template>
-            </el-input>
-          </el-form-item>
-          <el-form-item label="新邮箱验证码" prop="newCode">
-            <el-input v-model="emailForm.newCode">
-              <template #append>
-                <el-button @click="sendNewEmailCode" :disabled="newCodeSent || !emailForm.newEmail">
-                  {{ newCodeSent ? `重新发送 (${newCodeCountdown}s)` : '发送验证码' }}
-                </el-button>
-              </template>
-            </el-input>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="changeEmail">更改邮箱</el-button>
-          </el-form-item>
-        </el-form>
-      </el-tab-pane>
-      <el-tab-pane label="账户认证" name="verification">
-        <el-form :model="verificationForm" label-width="120px">
-          <el-form-item label="电子医生执照">
-            <el-upload
-                class="upload-demo"
-                action="/api/api/doctorLicense/insert"
-                :headers="uploadHeaders"
-                :on-success="handleUploadSuccess"
-                :on-error="handleUploadError"
-                :before-upload="beforeUpload"
-                :file-list="fileList"
-                name="multipartFile"
-            >
-              <el-button size="small" type="primary">上传电子医生执照</el-button>
-              <template #tip>
-                <div class="el-upload__tip">请上传您的电子医生执照（仅支持jpg/png格式，不超过5MB）</div>
-              </template>
-            </el-upload>
-          </el-form-item>
-        </el-form>
-        <h4>历史记录</h4>
-        <el-table :data="licenseStatus" style="width: 100%">
-          <el-table-column prop="status" label="状态" width="100"></el-table-column>
-          <el-table-column prop="createdAt" label="创建时间" width="120"></el-table-column>
-          <el-table-column prop="updatedAt" label="更新时间" width="120"></el-table-column>
-          <el-table-column prop="comment" label="管理员留言" width="300"></el-table-column>
-        </el-table>
-      </el-tab-pane>
-      <el-tab-pane label="注销账户" name="deactivate">
-        <el-alert
-            title="警告：注销账户将永久删除您的所有数据，此操作不可逆！"
-            type="warning"
-            :closable="false"
-        >
-        </el-alert>
-        <el-form :model="deactivateForm" :rules="deactivateRules" ref="deactivateFormRef" label-width="120px" class="mt-4">
-          <el-form-item label="密码" prop="password">
-            <el-input v-model="deactivateForm.password" type="password"></el-input>
-          </el-form-item>
-          <el-form-item label="验证码" prop="deleteCode">
-            <el-input v-model="deactivateForm.deleteCode">
-              <template #append>
-                <el-button @click="sendDeleteCode" :disabled="deleteCodeSent">
-                  {{ deleteCodeSent ? `重新发送 (${deleteCodeCountdown}s)` : '发送验证码' }}
-                </el-button>
-              </template>
-            </el-input>
-          </el-form-item>
-          <el-form-item label="确认注销" prop="confirm">
-            <el-checkbox v-model="deactivateForm.confirm">我确认要注销我的账户</el-checkbox>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="danger" @click="deactivateAccount">注销账户</el-button>
-          </el-form-item>
-        </el-form>
-      </el-tab-pane>
-    </el-tabs>
+    <div class="header-section">
+      <h1 class="page-title">账户管理</h1>
+      <p class="page-subtitle">管理您的个人账户信息和安全设置</p>
+    </div>
+
+    <el-card class="main-card">
+      <el-tabs v-model="activeTab" class="custom-tabs">
+        <el-tab-pane label="修改密码" name="password">
+          <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" label-width="120px" class="custom-form">
+            <el-form-item label="当前密码" prop="oldPassword">
+              <el-input v-model="passwordForm.oldPassword" type="password" show-password></el-input>
+            </el-form-item>
+            <el-form-item label="新密码" prop="newPassword">
+              <el-input v-model="passwordForm.newPassword" type="password" show-password></el-input>
+            </el-form-item>
+            <el-form-item label="确认新密码" prop="confirmPassword">
+              <el-input v-model="passwordForm.confirmPassword" type="password" show-password></el-input>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="$refs.passwordFormRef.validate().then(valid => { if (valid) changePassword() })">修改密码</el-button>
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
+
+        <el-tab-pane label="更改邮箱" name="email">
+          <el-form :model="emailForm" :rules="emailRules" ref="emailFormRef" label-width="120px" class="custom-form">
+            <el-form-item label="当前邮箱">
+              <el-input :value="profile.email || '未认证'" disabled></el-input>
+            </el-form-item>
+            <el-form-item label="新邮箱" prop="newEmail">
+              <el-input v-model="emailForm.newEmail"></el-input>
+            </el-form-item>
+            <el-form-item label="旧邮箱验证码" prop="oldCode">
+              <el-input v-model="emailForm.oldCode">
+                <template #append>
+                  <el-button @click="sendOldEmailCode" :disabled="oldCodeSent" class="code-button">
+                    {{ oldCodeSent ? `重新发送 (${oldCodeCountdown}s)` : '发送验证码' }}
+                  </el-button>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item label="新邮箱验证码" prop="newCode">
+              <el-input v-model="emailForm.newCode">
+                <template #append>
+                  <el-button @click="sendNewEmailCode" :disabled="newCodeSent || !emailForm.newEmail" class="code-button">
+                    {{ newCodeSent ? `重新发送 (${newCodeCountdown}s)` : '发送验证码' }}
+                  </el-button>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="changeEmail">更改邮箱</el-button>
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
+
+        <el-tab-pane label="账户认证" name="verification">
+          <el-form :model="verificationForm" label-width="120px" class="custom-form">
+            <el-form-item label="电子医生执照">
+              <el-upload
+                  class="upload-demo"
+                  action="/api/api/doctorLicense/insert"
+                  :headers="uploadHeaders"
+                  :on-success="handleUploadSuccess"
+                  :on-error="handleUploadError"
+                  :before-upload="beforeUpload"
+                  :file-list="fileList"
+                  name="multipartFile"
+              >
+                <el-button size="small" type="primary">上传电子医生执照</el-button>
+                <template #tip>
+                  <div class="el-upload__tip">请上传您的电子医生执照（仅支持jpg/png格式，不超过5MB）</div>
+                </template>
+              </el-upload>
+            </el-form-item>
+          </el-form>
+          <div class="license-history">
+            <h4 class="section-title">历史记录</h4>
+            <el-table :data="licenseStatus" style="width: 100%" class="custom-table">
+              <el-table-column prop="status" label="状态" width="100"></el-table-column>
+              <el-table-column prop="createdAt" label="创建时间" width="180"></el-table-column>
+              <el-table-column prop="updatedAt" label="更新时间" width="180"></el-table-column>
+              <el-table-column prop="comment" label="管理员留言"></el-table-column>
+            </el-table>
+          </div>
+        </el-tab-pane>
+
+        <el-tab-pane label="注销账户" name="deactivate">
+          <el-alert
+              title="警告：注销账户将永久删除您的所有数据，此操作不可逆！"
+              type="warning"
+              :closable="false"
+              class="deactivate-alert"
+          >
+          </el-alert>
+          <el-form :model="deactivateForm" :rules="deactivateRules" ref="deactivateFormRef" label-width="120px" class="custom-form mt-4">
+            <el-form-item label="密码" prop="password">
+              <el-input v-model="deactivateForm.password" type="password" show-password></el-input>
+            </el-form-item>
+            <el-form-item label="验证码" prop="deleteCode">
+              <el-input v-model="deactivateForm.deleteCode">
+                <template #append>
+                  <el-button @click="sendDeleteCode" :disabled="deleteCodeSent" class="code-button">
+                    {{ deleteCodeSent ? `重新发送 (${deleteCodeCountdown}s)` : '发送验证码' }}
+                  </el-button>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item label="确认注销" prop="confirm">
+              <el-checkbox v-model="deactivateForm.confirm">我确认要注销我的账户</el-checkbox>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="danger" @click="deactivateAccount">注销账户</el-button>
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
+      </el-tabs>
+    </el-card>
   </div>
 </template>
 
@@ -380,44 +392,84 @@ onMounted(() => {
 
 <style scoped>
 .account-management {
-  max-width: 700px;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.header-section {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.page-subtitle {
+  font-size: 16px;
+  color: #64748b;
+}
+
+.main-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.custom-tabs {
+  padding: 20px;
+}
+
+.custom-form {
+  max-width: 500px;
   margin: 0 auto;
 }
 
+.code-button {
+  width: 120px;
+}
 
-:deep(.el-table th) {
-  font-weight: bold;
+.license-history {
+  margin-top: 24px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 16px;
+}
+
+.custom-table {
+  margin-top: 16px;
+}
+
+.deactivate-alert {
+  margin-bottom: 24px;
+}
+
+/* Element Plus 样式覆盖 */
+:deep(.el-tabs__item) {
   font-size: 16px;
-  color: #111827;
-  background: linear-gradient(to bottom, #f3f4f6, #e5e7eb);
+  padding: 0 20px;
 }
 
-:deep(.el-table tbody tr:hover) {
-  background-color: #f9fafb;
-  cursor: pointer;
+:deep(.el-tabs__item.is-active) {
+  color: #3b82f6;
 }
 
-:deep(.el-dialog__footer button) {
-  padding: 10px 20px;
-  transition: all 0.2s ease;
-}
-:deep(.el-dialog__footer button:hover) {
-  transform: scale(1.05);
+:deep(.el-tabs__active-bar) {
+  background-color: #3b82f6;
 }
 
-:deep(.el-input__inner::-webkit-input-placeholder) {
-  color: #a1a1aa;
-}
-:deep(.el-input__inner:focus::-webkit-input-placeholder) {
-  color: transparent;
-}
-:deep(.el-button--primary.create-button) {
-  background-color: #10b981;
-  border-color: #10b981;
-  shape-outside: circle();
+:deep(.el-form-item__label) {
+  font-weight: 500;
 }
 
-/* 自定义 Element Plus 样式 */
 :deep(.el-button--primary) {
   background-color: #3b82f6;
   border-color: #3b82f6;
@@ -428,11 +480,55 @@ onMounted(() => {
   border-color: #2563eb;
 }
 
-:deep(.el-tabs__item.is-active) {
-  color: #3b82f6;
+:deep(.el-table th) {
+  background-color: #f8fafc;
+  color: #1e293b;
+  font-weight: 600;
 }
 
-:deep(.el-tabs__active-bar) {
-  background-color: #3b82f6;
+:deep(.el-table--enable-row-hover .el-table__body tr:hover > td) {
+  background-color: #f1f5f9;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .account-management {
+    padding: 16px;
+  }
+
+  .custom-form {
+    padding: 0 16px;
+  }
+
+  :deep(.el-form-item__label) {
+    float: none;
+    display: block;
+    text-align: left;
+    padding: 0 0 8px;
+  }
+
+  :deep(.el-form-item__content) {
+    margin-left: 0 !important;
+  }
+}
+
+/* 动画效果 */
+.custom-tabs {
+  transition: all 0.3s ease;
+}
+
+:deep(.el-tab-pane) {
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>
