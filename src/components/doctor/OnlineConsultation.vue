@@ -1,12 +1,12 @@
 <template>
   <div class="consultation">
     <el-row :gutter="10">
-      <!-- 左侧家属列表部分 -->
+      <!-- 左侧家长列表部分 -->
       <el-col :span="6">
         <el-card class="box-card">
           <template #header>
             <div class="card-header">
-              <span>家属列表</span>
+              <span>家长列表</span>
             </div>
           </template>
           <div class="patient-list">
@@ -149,16 +149,16 @@
                 </el-row>
               </div>
             </el-card>
-            <el-empty v-else description="请选择一个家属开始对话"></el-empty>
+            <el-empty v-else description="请选择一个家长开始对话"></el-empty>
           </el-tab-pane>
 
-          <!-- 家属详情标签页 -->
-          <el-tab-pane label="家属详情" name="details">
+          <!-- 家长详情标签页 -->
+          <el-tab-pane label="家长详情" name="details">
             <el-scrollbar class="details-scrollbar">
               <el-card v-if="selectedRelation" class="box-card">
                 <template #header>
                   <div class="card-header">
-                    <span>家属详细信息</span>
+                    <span>家长详细信息</span>
                   </div>
                 </template>
                 <div class="patient-details">
@@ -196,7 +196,7 @@
                   </div>
                 </div>
               </el-card>
-              <el-empty v-else description="请选择一个家属查看详情"></el-empty>
+              <el-empty v-else description="请选择一个家长查看详情"></el-empty>
             </el-scrollbar>
           </el-tab-pane>
         </el-tabs>
