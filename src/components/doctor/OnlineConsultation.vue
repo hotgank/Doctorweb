@@ -877,6 +877,7 @@ onUnmounted(() => {
 
 .chat-messages {
   flex-grow: 1;
+  min-height: 1200px;
   max-height: 1200px; /* 默认高度 */
   overflow-y: auto;
 }
@@ -1206,6 +1207,7 @@ onUnmounted(() => {
 
 @media (max-height: 1500px) {
   .chat-messages {
+    min-height: 1200px;
     max-height: 1200px; /* 在屏幕高度小于1500px时调整高度 */
   }
   .patient-list {
@@ -1215,6 +1217,7 @@ onUnmounted(() => {
 
 @media (max-height: 1200px) {
   .chat-messages {
+    min-height: 900px;
     max-height: 900px; /* 在屏幕高度小于1200px时调整高度 */
   }
   .patient-list {
@@ -1224,6 +1227,7 @@ onUnmounted(() => {
 
 @media (max-height: 1000px) {
   .chat-messages {
+    min-height: 700px;
     max-height: 700px; /* 在屏幕高度小于1000px时调整高度 */
   }
   .patient-list {
@@ -1233,6 +1237,7 @@ onUnmounted(() => {
 
 @media (max-height: 900px) {
   .chat-messages {
+    min-height: 600px;
     max-height: 600px; /* 在屏幕高度小于900px时调整高度 */
   }
   .patient-list {
@@ -1242,6 +1247,7 @@ onUnmounted(() => {
 
 @media (max-height: 800px) {
   .chat-messages {
+    min-height: 500px;
     max-height: 500px; /* 在屏幕高度小于1200px时调整高度 */
   }
   .patient-list {
@@ -1251,6 +1257,7 @@ onUnmounted(() => {
 
 @media (max-height: 700px) {
   .chat-messages {
+    min-height: 400px;
     max-height: 400px; /* 在屏幕高度小于700px时调整高度 */
   }
   .patient-list {
@@ -1260,6 +1267,7 @@ onUnmounted(() => {
 
 @media (max-height: 600px) {
   .chat-messages {
+    min-height: 300px;
     max-height: 300px; /* 在屏幕高度小于600px时调整高度 */
   }
   .patient-list {
@@ -1269,6 +1277,7 @@ onUnmounted(() => {
 
 @media (max-height: 500px) {
   .chat-messages {
+    min-height: 200px;
     max-height: 200px; /* 在屏幕高度小于500px时调整高度 */
   }
   .patient-list {
