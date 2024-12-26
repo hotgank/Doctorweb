@@ -403,10 +403,19 @@ const openRejectDialog = () => {
   margin-top: -20px;
 }
 .card-header {
+  height: 20px; /* 固定高度 */
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
+
+.box-card {
+  height: 170px; /* 固定高度 */
+  overflow: hidden;
+  margin-bottom: 20px;
+  position: relative;
+}
+
 .clickable-card {
   cursor: pointer;
   transition: box-shadow 0.3s;

@@ -1,46 +1,145 @@
 <template>
-  <div class="register">
-    <h1>医生注册</h1>
-    <el-form :model="form" :rules="rules" ref="registerForm" label-width="120px">
-      <el-form-item label="邮箱" prop="email">
-        <el-input v-model="form.email"></el-input>
-      </el-form-item>
-      <el-form-item label="密码" prop="password">
-        <el-input type="password" v-model="form.password"></el-input>
-      </el-form-item>
-      <el-form-item label="确认密码" prop="confirmPassword">
-        <el-input type="password" v-model="form.confirmPassword"></el-input>
-      </el-form-item>
-      <el-form-item label="用户名" prop="username">
-        <el-input v-model="form.username"></el-input>
-      </el-form-item>
-      <el-form-item label="姓名" prop="name">
-        <el-input v-model="form.name"></el-input>
-      </el-form-item>
-      <el-form-item label="验证码" prop="verificationCode">
-        <el-input v-model="form.verificationCode" class="w-3/5"></el-input>
-        <el-button type="primary" class="ml-2" @click="sendVerificationCode" :disabled="isCodeSent">
-          {{ codeBtnText }}
-        </el-button>
-      </el-form-item>
-      <el-form-item label="医院" prop="hospital">
-        <el-select v-model="form.hospital" placeholder="请选择医院" @change="handleHospitalChange">
-          <el-option
-            v-for="hospital in hospitals"
-            :key="hospital.hospitalName"
-            :label="hospital.hospitalName"
-            :value="hospital.hospitalName"
-          ></el-option>
-        </el-select>
-        <div v-if="selectedHospitalAddress" class="text-sm text-gray-500 mt-1">
-          {{ selectedHospitalAddress }}
+  <div class="register-container">
+    <!-- 左侧艺术字体标题 -->
+    <div class="left-section">
+      <h1 class="system-title">
+        <span class="title-line">儿童</span>
+        <span class="title-line">体态</span>
+        <span class="title-line">评估</span>
+        <span class="title-line">平台</span>
+      </h1>
+    </div>
+
+    <!-- 中间注册卡片 -->
+    <el-card class="register-card">
+      <div class="card-header">
+        <img src="/img/logo.webp" alt="系统图标" class="logo-icon" />
+        <h2 class="page-title">医生注册</h2>
+        <p class="subtitle">请填写以下信息完成注册</p>
+      </div>
+
+      <el-form
+          :model="form"
+          :rules="rules"
+          ref="registerForm"
+          label-position="top"
+          class="register-form"
+      >
+        <el-form-item label="用户名" prop="username">
+          <el-input
+              v-model="form.username"
+              placeholder="请输入用户名"
+              class="custom-input"
+              :prefix-icon="User"
+          ></el-input>
+        </el-form-item>
+
+        <el-form-item label="姓名" prop="name">
+          <el-input
+              v-model="form.name"
+              placeholder="请输入姓名"
+              class="custom-input"
+              :prefix-icon="UserFilled"
+          ></el-input>
+        </el-form-item>
+
+        <el-form-item label="密码" prop="password">
+          <el-input
+              type="password"
+              v-model="form.password"
+              placeholder="请输入密码"
+              class="custom-input"
+              :prefix-icon="Lock"
+          ></el-input>
+        </el-form-item>
+
+        <el-form-item label="确认密码" prop="confirmPassword">
+          <el-input
+              type="password"
+              v-model="form.confirmPassword"
+              placeholder="请确认密码"
+              class="custom-input"
+              :prefix-icon="Lock"
+          ></el-input>
+        </el-form-item>
+
+
+        <el-form-item label="邮箱" prop="email">
+          <el-input
+              v-model="form.email"
+              placeholder="请输入邮箱"
+              class="custom-input"
+              :prefix-icon="Message"
+          ></el-input>
+        </el-form-item>
+
+        <el-form-item label="验证码" prop="verificationCode">
+          <div class="verification-code-group">
+            <el-input
+                v-model="form.verificationCode"
+                placeholder="请输入验证码"
+                class="custom-input code-input"
+                :prefix-icon="Key"
+            ></el-input>
+            <el-button
+                type="primary"
+                class="send-code-button"
+                @click="sendVerificationCode"
+                :disabled="isCodeSent"
+            >
+              {{ codeBtnText }}
+            </el-button>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="医院" prop="hospital">
+          <el-select
+              v-model="form.hospital"
+              placeholder="请选择医院"
+              @change="handleHospitalChange"
+              class="custom-select"
+              :prefix-icon="OfficeBuilding"
+          >
+            <el-option
+                v-for="hospital in hospitals"
+                :key="hospital.hospitalName"
+                :label="hospital.hospitalName"
+                :value="hospital.hospitalName"
+            ></el-option>
+          </el-select>
+          <div v-if="selectedHospitalAddress" class="hospital-address">
+            <el-icon><Location /></el-icon>
+            {{ selectedHospitalAddress }}
+          </div>
+        </el-form-item>
+
+        <div class="form-footer">
+          <el-button
+              type="primary"
+              class="submit-button"
+              @click="submitForm"
+          >
+            注册
+          </el-button>
+          <el-button
+              class="reset-button"
+              @click="resetForm"
+          >
+            重置
+          </el-button>
+
+          <router-link to="/login" class="back-link">
+            <el-icon><ArrowLeft /></el-icon>
+            返回登录
+          </router-link>
         </div>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="submitForm">注册</el-button>
-        <el-button @click="resetForm">重置</el-button>
-      </el-form-item>
-    </el-form>
+      </el-form>
+    </el-card>
+
+    <!-- 右侧背景图装饰 -->
+    <div class="right-section">
+      <div class="decoration-image"></div>
+    </div>
   </div>
 </template>
 
@@ -49,6 +148,16 @@ import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
+import {
+  Message,
+  Lock,
+  User,
+  UserFilled,
+  Key,
+  Location,
+  OfficeBuilding,
+  ArrowLeft
+} from '@element-plus/icons-vue'
 
 const router = useRouter()
 
@@ -56,6 +165,7 @@ const form = reactive({
   email: '',
   password: '',
   confirmPassword: '',
+  username: '',
   name: '',
   verificationCode: '',
   hospital: '',
@@ -105,12 +215,12 @@ const rules = {
   confirmPassword: [
     { required: true, message: '请确认密码', trigger: 'blur' },
     { validator: (rule, value, callback) => {
-      if (value !== form.password) {
-        callback(new Error('两次输入密码不一致!'))
-      } else {
-        callback()
-      }
-    }, trigger: 'blur' }
+        if (value !== form.password) {
+          callback(new Error('两次输入密码不一致!'))
+        } else {
+          callback()
+        }
+      }, trigger: 'blur' }
   ],
   name: [
     { required: true, message: '请输入姓名', trigger: 'blur' },
@@ -252,25 +362,298 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.register {
-  max-width: 500px;
-  margin: 40px auto;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+.register-container {
+  display: grid;
+  grid-template-columns: 25% 50% 25%;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%);
+  position: relative;
+  overflow: hidden;
 }
 
-h1 {
+/* 左侧标题样式 */
+.left-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.system-title {
+  display: flex;
+  flex-direction: column;
+  font-size: 3.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #2c3e50;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.title-line {
+  position: relative;
+  margin-bottom: 0.5rem;
+  padding-left: 1rem;
+  transform: translateX(0);
+  transition: transform 0.3s ease;
+}
+
+.title-line:hover {
+  transform: translateX(20px);
+  color: #3498db;
+}
+
+.title-line::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 0;
+  background-color: #3498db;
+  transition: height 0.3s ease, top 0.3s ease;
+}
+
+.title-line:hover::before {
+  height: 100%;
+  top: 0;
+}
+
+/* 注册卡片样式 */
+.register-card {
+  width: 90%;
+  max-width: 480px;
+  margin: auto;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.card-header {
   text-align: center;
-  color: #409EFF;
-  margin-bottom: 30px;
+  margin-bottom: 2rem;
 }
 
-.el-form-item {
-  margin-bottom: 25px;
+.logo-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 1rem;
 }
 
-.el-button {
+.page-title {
+  font-size: 1.8rem;
+  color: #2c3e50;
+  margin: 0;
+  font-weight: 600;
+}
+
+.subtitle {
+  color: #64748b;
+  margin-top: 0.5rem;
+}
+
+/* 表单样式 */
+.register-form {
+  margin-top: 2rem;
+}
+
+.custom-input :deep(.el-input__wrapper) {
+  padding: 12px;
+  border-radius: 8px;
+  background: #f8fafc;
+  box-shadow: none;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.custom-input :deep(.el-input__wrapper:hover) {
+  border-color: #e2e8f0;
+}
+
+.custom-input :deep(.el-input__wrapper.is-focus) {
+  border-color: #3498db;
+  background: #fff;
+}
+
+.custom-select {
   width: 100%;
 }
+
+.custom-select :deep(.el-input__wrapper) {
+  padding: 12px;
+  border-radius: 8px;
+  background: #f8fafc;
+  box-shadow: none;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.verification-code-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.code-input {
+  flex: 1;
+}
+
+.send-code-button {
+  width: 120px;
+  border-radius: 8px;
+  background: #3498db;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.send-code-button:hover:not(:disabled) {
+  background: #2980b9;
+  transform: translateY(-1px);
+}
+
+.send-code-button:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+.hospital-address {
+  margin-top: 0.5rem;
+  color: #64748b;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 按钮和链接样式 */
+.form-footer {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.submit-button {
+  width: 100%;
+  padding: 12px;
+  font-size: 1.1rem;
+  border-radius: 8px;
+  background: #3498db;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.submit-button:hover {
+  background: #2980b9;
+  transform: translateY(-1px);
+}
+
+.reset-button {
+  width: 100%;
+  padding: 12px;
+  font-size: 1.1rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  color: #64748b;
+  transition: all 0.3s ease;
+}
+
+.reset-button:hover {
+  background: #e2e8f0;
+  transform: translateY(-1px);
+}
+
+.back-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #64748b;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+}
+
+.back-link:hover {
+  color: #3498db;
+}
+
+/* 右侧背景装饰 */
+.right-section {
+  position: relative;
+  overflow: hidden;
+}
+
+.decoration-image {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  background-image: url('/img/loginPage.webp?height=800&width=600');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.8;
+  filter: blur(1px);
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .register-container {
+    grid-template-columns: 30% 70%;
+  }
+
+  .right-section {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .register-container {
+    grid-template-columns: 100%;
+    padding: 1rem;
+  }
+
+  .left-section {
+    display: none;
+  }
+
+  .register-card {
+    width: 95%;
+    margin: 1rem auto;
+    padding: 1rem;
+  }
+
+  .system-title {
+    font-size: 2rem;
+  }
+
+  .verification-code-group {
+    flex-direction: column;
+  }
+
+  .send-code-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .register-card {
+    width: 98%;
+    padding: 0.8rem;
+  }
+
+  .card-header {
+    margin-bottom: 1rem;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+}
 </style>
+

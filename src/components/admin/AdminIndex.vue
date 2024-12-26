@@ -162,8 +162,37 @@ const getTagName = (adminType) => {
   align-items: center;
 }
 
-.el-table {
-  margin-top: 20px;
+
+:deep(.el-table th) {
+  font-weight: bold;
+  font-size: 16px;
+  color: #111827;
+  background: linear-gradient(to bottom, #f3f4f6, #e5e7eb);
+}
+
+:deep(.el-table tbody tr:hover) {
+  background-color: #f9fafb;
+  cursor: pointer;
+}
+
+:deep(.el-dialog__footer button) {
+  padding: 10px 20px;
+  transition: all 0.2s ease;
+}
+:deep(.el-dialog__footer button:hover) {
+  transform: scale(1.05);
+}
+
+:deep(.el-input__inner::-webkit-input-placeholder) {
+  color: #a1a1aa;
+}
+:deep(.el-input__inner:focus::-webkit-input-placeholder) {
+  color: transparent;
+}
+:deep(.el-button--primary.create-button) {
+  background-color: #10b981;
+  border-color: #10b981;
+  shape-outside: circle();
 }
 
 /* 自定义 Element Plus 样式 */
