@@ -850,14 +850,12 @@ onUnmounted(() => {
 }
 
 .box-card {
-  border: 1px solid #ebeef5;
-  background-color: #fff;
-  color: #303133;
-  transition: .3s;
-  border-radius: 4px;
-  overflow: hidden;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: white;
   height: 100%;
+  transition: all 0.3s ease;
 }
 
 .card-header {
@@ -871,8 +869,10 @@ onUnmounted(() => {
 .chat-container {
   display: flex;
   flex-direction: column;
+  height: calc(100vh - 140px);
+  background: white;
+  border-radius: 12px;
   overflow: hidden;
-  height: 100%;
 }
 
 .chat-messages {
@@ -887,9 +887,10 @@ onUnmounted(() => {
   margin-bottom: 10px;
 }
 
+.upload-attachment,
 .upload-image {
-  flex-shrink: 0;
-  margin-right: 10px;
+  display: flex;
+  align-items: center;
 }
 
 .message-content {
@@ -965,8 +966,10 @@ onUnmounted(() => {
 .input-container {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 12px;
+  padding: 16px;
+  background: white;
+  border-top: 1px solid #e2e8f0;
 }
 
 .upload-attachment {
@@ -1077,6 +1080,26 @@ onUnmounted(() => {
   width: 100% !important;
 }
 
+:deep(.el-tabs__nav-wrap) {
+  padding: 0 16px;
+}
+
+:deep(.el-tabs__item) {
+  font-size: 15px;
+  padding: 0 24px;
+  height: 48px;
+  line-height: 48px;
+  transition: all 0.3s ease;
+}
+
+:deep(.el-tabs__item:hover) {
+  color: #10b981;
+}
+
+:deep(.el-tabs__active-bar) {
+  background-color: #10b981;
+  height: 3px;
+}
 
 :deep(.el-table th) {
   font-weight: bold;
@@ -1090,12 +1113,41 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
+:deep(.el-dialog) {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+:deep(.el-dialog__header) {
+  padding: 20px 24px;
+  margin: 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+:deep(.el-dialog__body) {
+  padding: 24px;
+}
+
+:deep(.el-dialog__footer) {
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
 :deep(.el-dialog__footer button) {
   padding: 10px 20px;
   transition: all 0.2s ease;
 }
 :deep(.el-dialog__footer button:hover) {
   transform: scale(1.05);
+}
+
+:deep(.el-empty) {
+  padding: 40px 0;
+}
+
+:deep(.el-empty__description) {
+  margin-top: 16px;
+  color: #64748b;
 }
 
 :deep(.el-input__inner::-webkit-input-placeholder) {
@@ -1110,40 +1162,47 @@ onUnmounted(() => {
   shape-outside: circle();
 }
 
+.chat-messages::-webkit-scrollbar,
+.patient-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb,
+.patient-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.chat-messages::-webkit-scrollbar-track,
+.patient-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 .report-container {
-  position: relative;
-  border: 2px solid #1989fa;
-  border-radius: 10px;
-  padding: 20px;
-  background-color: #f5f7fa;
-  overflow: hidden;
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .report-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-  border-bottom: 1px solid #1989fa;
-  padding-bottom: 10px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.report-body {
+  margin-bottom: 24px;
+}
+
+.report-footer {
+  text-align: right;
+  color: #64748b;
+  font-size: 14px;
 }
 
 .report-logo {
   width: 100px;
   height: auto;
-}
-
-.report-body {
-  position: relative;
-  z-index: 1;
-}
-
-.report-footer {
-  margin-top: 20px;
-  border-top: 1px solid #1989fa;
-  padding-top: 10px;
-  text-align: right;
-  font-style: italic;
 }
 
 .report-watermark {
@@ -1179,6 +1238,16 @@ onUnmounted(() => {
 
 .el-form-item__content {
   color: #333;
+}
+
+.loading-enter-active,
+.loading-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.loading-enter-from,
+.loading-leave-to {
+  opacity: 0;
 }
 
 /* 添加一些装饰元素 */
