@@ -48,13 +48,11 @@
                                 class="message-image"
                             />
                             <el-skeleton v-else :rows="3" animated />
-                            <span>{{ msg.messageText }}</span>
                           </div>
                           <!-- 其他类型附件 -->
                           <div v-else class="attachment-container">
                             <div class="attachment-info">
                               <el-icon><Document /></el-icon>
-                              <span>{{ msg.messageText }}</span>
                             </div>
                             <el-button
                                 type="primary"
@@ -81,13 +79,11 @@
                                 class="message-image"
                             />
                             <el-skeleton v-else :rows="3" animated />
-                            <span>{{ msg.messageText }}</span>
                           </div>
                           <!-- 其他类型附件 -->
                           <div v-else class="attachment-container">
                             <div class="attachment-info">
                               <el-icon><Document /></el-icon>
-                              <span>{{ msg.messageText }}</span>
                             </div>
                             <el-button
                                 type="primary"
