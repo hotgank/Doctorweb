@@ -15,6 +15,10 @@
             <el-icon><Timer /></el-icon>
             恢复草稿
           </el-button>
+          <el-button type="info" plain class="action-btn" @click="showPreview = true">
+            <el-icon><View /></el-icon>
+            预览
+          </el-button>
         </div>
       </div>
     </div>
@@ -203,6 +207,10 @@
                     <el-icon><Edit /></el-icon>
                     编辑
                   </el-button>
+                  <el-button size="small" type="info" plain @click="viewArticle(row.articleId)">
+                    <el-icon><View /></el-icon>
+                    查看详情
+                  </el-button>
                 </el-button-group>
               </template>
             </el-table-column>
@@ -221,10 +229,15 @@
         </el-card>
       </el-tab-pane>
     </el-tabs>
+
+    <!-- 预览对话框 -->
+    <el-dialog v-model="showPreview" title="文章预览" width="80%">
+      <ArticlePreview :article="article" />
+    </el-dialog>
   </div>
 </template>
 
-<script setup>import { ref, reactive, computed, onMounted } from 'vue'
+<script setup>import {ref, reactive, computed, onMounted, watch} from 'vue'
 import { ElMessage } from 'element-plus'
 import { useStore } from 'vuex'
 import {
@@ -232,18 +245,37 @@ import {
   Collection, DocumentAdd
 } from '@element-plus/icons-vue'
 import axios from "axios";
+import ArticlePreview from './ArticlePreview.vue'
+import {useRouter} from "vue-router";
 
 const store = useStore()
+const router = useRouter()
 const activeTab = ref('write')
 const articleForm = ref(null)
 const isEditing = ref(false)
+const showPreview = ref(false)
 
 // 表单数据
-const article = reactive({
-  title: '',
-  content: '',
-  type: ''
-})
+const initializeArticleData = () => {
+  const doctor = store.state.doctor || {};
+  return reactive({
+    title: '',
+    content: '',
+    type: '',
+    name: doctor.name || '',
+    username: doctor.username || '',
+    gender: doctor.gender || '',
+    position: doctor.position || '',
+    workplace: doctor.workplace || '',
+    qualification: doctor.qualification || '',
+    experience: doctor.experience || '',
+    avatarUrl: doctor.avatarUrl || '',
+    publishDate: new Date().toLocaleString(),
+    status: '未审核'
+  });
+}
+
+const article = initializeArticleData();
 
 // 表单验证规则
 const rules = {
@@ -359,6 +391,10 @@ const editArticle = (row) => {
   isEditing.value = true; // 设置编辑标志
 }
 
+const viewArticle = (id) => {
+  router.push(`/article/${id}`)
+}
+
 const resetForm = () => {
   if (articleForm.value) {
     articleForm.value.resetFields()
@@ -379,6 +415,7 @@ const restoreDraft = () => {
   const savedDraft = localStorage.getItem('draftArticle');
   if (savedDraft) {
     Object.assign(article, JSON.parse(savedDraft));
+    isEditing.value = false;
     ElMessage({
       message: '已恢复之前的草稿',
       type: 'info'
@@ -391,9 +428,18 @@ const restoreDraft = () => {
   }
 }
 
+const fetchDoctorInfo = async () => {
+  try {
+    await store.dispatch('fetchDoctorInfo')
+  } catch (error) {
+    ElMessage.error('获取医生信息失败')
+  }
+}
+
 // 生命周期
 onMounted(() => {
   fetchMyArticles();
+  fetchDoctorInfo();
   const savedDraft = localStorage.getItem('draftArticle');
   if (savedDraft) {
     Object.assign(article, JSON.parse(savedDraft));
@@ -403,6 +449,22 @@ onMounted(() => {
     });
   }
 })
+
+watch(() => store.state.doctor, (newDoctor) => {
+  if (newDoctor) {
+    Object.assign(article, {
+      name: newDoctor.name || '',
+      username: newDoctor.username || '',
+      gender: newDoctor.gender || '',
+      position: newDoctor.position || '',
+      workplace: newDoctor.workplace || '',
+      qualification: newDoctor.qualification || '',
+      experience: newDoctor.experience || '',
+      avatarUrl: newDoctor.avatarUrl || ''
+    });
+  }
+}, { immediate: true });
+
 </script>
 
 <style scoped>
