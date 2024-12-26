@@ -19,7 +19,7 @@
           </el-menu-item>
           <el-menu-item index="/patient-index">
             <el-icon><User /></el-icon>
-            <span>家属列表</span>
+            <span>家长列表</span>
           </el-menu-item>
           <el-menu-item index="/consultation">
             <el-icon><ChatDotRound /></el-icon>
