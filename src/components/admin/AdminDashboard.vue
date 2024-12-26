@@ -29,7 +29,7 @@
           <el-table-column prop="gender" label="性别" width="80"></el-table-column>
           <el-table-column prop="position" label="职位" width="120"></el-table-column>
           <el-table-column prop="workplace" label="工作单位" min-width="200"></el-table-column>
-          <el-table-column fixed="right" label="操作" width="240">
+          <el-table-column fixed="right" label="操作" width="100">
             <template #default="scope">
               <el-button link type="primary" size="small" @click="viewDoctorDetails(scope.row)">查看详情</el-button>
             </template>
@@ -47,7 +47,7 @@
           <el-table-column prop="publishDate" label="发布日期" width="160"></el-table-column>
           <el-table-column prop="type" label="类型" width="100"></el-table-column>
           <el-table-column prop="status" label="状态" width="100"></el-table-column>
-          <el-table-column label="操作">
+          <el-table-column label="操作" min-width="100">
             <template #default="scope">
               <el-button size="small" @click="viewArticle(scope.row.articleId)">查看详情</el-button>
             </template>

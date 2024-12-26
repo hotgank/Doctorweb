@@ -39,7 +39,7 @@
         <el-table-column prop="hospitalName" label="医院名称" width="200"></el-table-column>
         <el-table-column prop="address" label="地址" width="250"></el-table-column>
         <el-table-column prop="adminUsername" label="管理员用户名" width="150"></el-table-column>
-        <el-table-column label="操作" min-width="350" align="center">
+        <el-table-column label="操作" min-width="400" align="center">
           <template #default="scope">
             <el-button
                 type="primary"

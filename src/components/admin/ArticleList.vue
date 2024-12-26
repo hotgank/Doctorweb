@@ -30,7 +30,7 @@
       <el-table-column prop="publishDate" label="发布日期" width="180"></el-table-column>
       <el-table-column prop="type" label="类型" width="100"></el-table-column>
       <el-table-column prop="status" label="状态" width="100"></el-table-column>
-      <el-table-column label="操作">
+      <el-table-column label="操作" min-width="100">
         <template #default="scope">
           <el-button size="small" @click="viewArticle(scope.row.articleId)">查看详情</el-button>
         </template>

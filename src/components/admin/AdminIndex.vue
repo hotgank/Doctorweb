@@ -35,7 +35,7 @@
       >
         <el-table-column prop="displayId" label="ID" width="80" align="center"></el-table-column>
         <el-table-column prop="username" label="姓名" width="120"></el-table-column>
-        <el-table-column prop="email" label="邮箱" width="170"></el-table-column>
+        <el-table-column prop="email" label="邮箱" min-width="200"></el-table-column>
         <el-table-column prop="phone" label="电话" width="150"></el-table-column>
         <el-table-column prop="role" label="角色" width="120">
           <template #default="scope">
