@@ -287,16 +287,16 @@
         <div class="dialog-footer">
           <el-button
               type="success"
-              :icon="Check"
               @click="approveDoctor"
           >
+            <el-icon><Check /></el-icon>
             通过审核
           </el-button>
           <el-button
               type="danger"
-              :icon="Close"
               @click="openRejectDialog"
           >
+            <el-icon><Close /></el-icon>
             打回申请
           </el-button>
         </div>
@@ -354,7 +354,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Search, Service, UserFilled, OfficeBuilding, View, User, Briefcase, Medal, Document, PictureRounded } from '@element-plus/icons-vue'
+import { Search, Service, UserFilled, OfficeBuilding, View, User, Briefcase, Medal, Document, PictureRounded, Check, Close, Picture } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import axiosInstance from '../../axios/index'
 
