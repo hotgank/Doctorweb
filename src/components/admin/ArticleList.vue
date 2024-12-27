@@ -149,7 +149,7 @@
         </el-table-column>
 
         <!-- 操作列 -->
-        <el-table-column label="操作" width="120" fixed="right" align="center">
+        <el-table-column label="操作" width="60" fixed="right" align="center">
           <template #default="scope">
             <el-tooltip content="查看详情" placement="top">
               <el-button

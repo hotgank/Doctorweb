@@ -120,7 +120,7 @@
           <!-- 操作列 -->
           <el-table-column
               label="操作"
-              width="120"
+              width="60"
               align="center"
               fixed="right"
           >

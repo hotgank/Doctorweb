@@ -69,7 +69,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="250" fixed="right" align="center" header-align="center">
+        <el-table-column label="操作" width="220" fixed="right" align="center" header-align="center">
           <template #default="scope">
             <div class="action-buttons">
               <el-button

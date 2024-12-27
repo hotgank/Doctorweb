@@ -200,7 +200,7 @@
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="200" fixed="right">
+            <el-table-column label="操作" width="170" fixed="right">
               <template #default="{ row }">
                 <el-button-group>
                   <el-button size="small" type="primary" plain @click="editArticle(row)">

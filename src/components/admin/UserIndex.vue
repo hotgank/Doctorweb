@@ -110,7 +110,7 @@
           <!-- 操作列 -->
           <el-table-column
               label="操作"
-              width="200"
+              width="110"
               align="center"
               fixed="right"
           >
