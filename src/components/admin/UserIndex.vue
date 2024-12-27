@@ -1,109 +1,255 @@
 <template>
-  <el-container class="min-h-screen bg-gray-100">
-    <el-header class="bg-white shadow-md">
-      <div class="header-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <h3 class="text-2xl font-bold text-gray-900">用户管理</h3>
-        <!-- 搜索栏 -->
-        <div class="search-bar">
+  <div class="user-management">
+    <!-- 页面头部 -->
+    <header class="page-header">
+      <div class="header-content">
+        <div class="title-section">
+          <el-icon class="header-icon"><UserFilled /></el-icon>
+          <h1 class="page-title">用户管理</h1>
+          <el-tag type="info" class="user-count">
+            共 {{ userNumber }} 位用户
+          </el-tag>
+        </div>
+
+        <div class="search-section">
           <el-input
               v-model="searchTerm"
               placeholder="搜索用户UID或账号"
               clearable
               @clear="clearSearch"
-              class="w-64 sm:w-80"
+              class="search-input"
           >
             <template #prefix>
-              <el-icon class="el-input__icon"><Search /></el-icon>
+              <el-icon><Search /></el-icon>
             </template>
           </el-input>
-          <!-- 搜索按钮 -->
-          <el-button @click="onSearch" type="primary" class="ml-2">
+
+          <el-button
+              type="primary"
+              @click="onSearch"
+              class="search-button"
+          >
+            <el-icon><Search /></el-icon>
             搜索
           </el-button>
         </div>
       </div>
-    </el-header>
+    </header>
 
-    <el-main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- 用户表格 -->
-      <el-table
-          :data="paginatedUsers"
-          style="width: 100%"
-          :header-cell-style="{ background: '#f3f4f6', color: '#374151' }"
-          :row-class-name="tableRowClassName"
-          v-loading="loading"
-      >
-        <el-table-column prop="displayId" label="ID" width="80" align="center"></el-table-column>
-        <el-table-column prop="username" label="用户名" width="200"></el-table-column>
-        <!-- 修改后 -->
-        <el-table-column prop="lastLogin" label="上次登录时间" width="160">
-          <template #default="scope">
-            {{ formatDate2(scope.row.lastLogin) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" label="状态" width="100" align="center">
-          <template #default="scope">
-            <el-tag :type="scope.row.status === 'active' ? 'success' : 'danger'" effect="dark">
-              {{ scope.row.status === 'active' ? '活跃' : '停用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" min-width="160" align="center">
-          <template #default="scope">
-            <el-button
-                type="primary"
-                size="small"
-                @click="viewUserDetails(scope.row)"
-            >
-              查看详情
-            </el-button>
-            <el-button
-                :type="scope.row.status === 'active' ? 'danger' : 'success'"
-                size="small"
-                @click="toggleUserStatus(scope.row)"
-            >
-              {{ scope.row.status === 'active' ? '停用' : '启用' }}
-            </el-button>
-          </template>
-        </el-table-column>
-        <template #empty>
-          <el-empty description="没有用户数据"></el-empty>
-        </template>
-      </el-table>
+    <!-- 主要内容区域 -->
+    <main class="main-content">
+      <div class="table-container">
+        <!-- 用户表格 -->
+        <el-table
+            :data="paginatedUsers"
+            style="width: 100%"
+            :header-cell-style="tableHeaderStyle"
+            :row-class-name="tableRowClassName"
+            v-loading="loading"
+        >
+          <!-- ID列 -->
+          <el-table-column
+              prop="displayId"
+              label="ID"
+              width="80"
+              align="center"
+          >
+            <template #default="scope">
+              <span class="id-badge">{{ scope.row.displayId }}</span>
+            </template>
+          </el-table-column>
 
-      <!-- 分页组件 -->
-      <div class="pagination-container">
-        <el-pagination
-            v-model:current-page="frontendCurrentPage"
-            :page-size="frontendPageSize"
-            :total="parseInt(userNumber, 10)"
-            @current-change="handleFrontendPageChange"
-            :pager-count="5"
-            layout="prev, pager, next"
-        />
+          <!-- 用户名列 -->
+          <el-table-column
+              prop="username"
+              label="用户名"
+              min-width="200"
+          >
+            <template #default="scope">
+              <div class="user-info">
+                <span class="username">{{ scope.row.username }}</span>
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- 上次登录时间列 -->
+          <el-table-column
+              prop="lastLogin"
+              label="上次登录时间"
+              min-width="180"
+          >
+            <template #default="scope">
+              <div class="time-info">
+                <el-icon><Timer /></el-icon>
+                <span>{{ formatDate2(scope.row.lastLogin) }}</span>
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- 状态列 -->
+          <el-table-column
+              prop="status"
+              label="状态"
+              width="120"
+              align="center"
+          >
+            <template #default="scope">
+              <el-tag
+                  :type="scope.row.status === 'active' ? 'success' : 'danger'"
+                  class="status-tag"
+                  effect="light"
+              >
+                <el-icon>
+                  <component :is="scope.row.status === 'active' ? CircleCheck : CircleClose" />
+                </el-icon>
+                {{ scope.row.status === 'active' ? '活跃' : '停用' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+
+          <!-- 操作列 -->
+          <el-table-column
+              label="操作"
+              width="200"
+              align="center"
+              fixed="right"
+          >
+            <template #default="scope">
+              <div class="action-buttons">
+                <el-tooltip
+                    content="查看详情"
+                    placement="top"
+                >
+                  <el-button
+                      type="primary"
+                      circle
+                      @click="viewUserDetails(scope.row)"
+                  >
+                    <el-icon><View /></el-icon>
+                  </el-button>
+                </el-tooltip>
+
+                <el-tooltip
+                    :content="scope.row.status === 'active' ? '停用账号' : '启用账号'"
+                    placement="top"
+                >
+                  <el-button
+                      :type="scope.row.status === 'active' ? 'danger' : 'success'"
+                      circle
+                      @click="toggleUserStatus(scope.row)"
+                  >
+                    <el-icon>
+                      <component :is="scope.row.status === 'active' ? Lock : Unlock" />
+                    </el-icon>
+                  </el-button>
+                </el-tooltip>
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- 空状态 -->
+          <template #empty>
+            <el-empty
+                description="暂无用户数据"
+                :image-size="200"
+            >
+              <template #description>
+                <p class="empty-text">暂无用户数据</p>
+                <p class="empty-hint">您可以尝试清除搜索条件</p>
+              </template>
+            </el-empty>
+          </template>
+        </el-table>
+
+        <!-- 分页器 -->
+        <div class="pagination-wrapper">
+          <el-pagination
+              v-model:current-page="frontendCurrentPage"
+              :page-size="frontendPageSize"
+              :total="parseInt(userNumber, 10)"
+              @current-change="handleFrontendPageChange"
+              :pager-count="5"
+              layout="total, prev, pager, next, jumper"
+              background
+          />
+        </div>
       </div>
-    </el-main>
+    </main>
 
     <!-- 用户详情对话框 -->
     <el-dialog
         v-model="detailsDialogVisible"
-        title="用户详情"
-        width="50%"
+        title="用户详细信息"
+        width="600px"
+        class="user-dialog"
+        destroy-on-close
     >
-      <el-descriptions :column="1" border>
-        <el-descriptions-item label="用户名">{{ selectedUser.username }}</el-descriptions-item>
-        <el-descriptions-item label="UID">{{ selectedUser.userId }}</el-descriptions-item>
-        <el-descriptions-item label="账号状态">{{ selectedUser.status === 'active' ? '活跃' : '停用' }}</el-descriptions-item>
-        <el-descriptions-item label="注册时间">{{ formatDate2(selectedUser.registrationDate) }}</el-descriptions-item>
-      </el-descriptions>
-    </el-dialog>
+      <div class="user-details">
+        <div class="user-header">
+          <el-avatar
+              :size="64"
+              class="user-large-avatar"
+              :src="selectedUser?.avatarUrl"
+          >
+          </el-avatar>
+          <h2 class="user-title">{{ selectedUser?.username }}</h2>
+        </div>
 
-  </el-container>
+        <el-descriptions
+            :column="1"
+            border
+            class="details-content"
+        >
+          <el-descriptions-item label="用户ID">
+            <div class="details-item">
+              <el-icon><Key /></el-icon>
+              {{ selectedUser?.userId }}
+            </div>
+          </el-descriptions-item>
+
+          <el-descriptions-item label="账号状态">
+            <el-tag
+                :type="selectedUser?.status === 'active' ? 'success' : 'danger'"
+                class="details-tag"
+            >
+              {{ selectedUser?.status === 'active' ? '活跃' : '停用' }}
+            </el-tag>
+          </el-descriptions-item>
+
+          <el-descriptions-item label="注册时间">
+            <div class="details-item">
+              <el-icon><Calendar /></el-icon>
+              {{ formatDate2(selectedUser?.registrationDate) }}
+            </div>
+          </el-descriptions-item>
+
+          <el-descriptions-item label="上次登录">
+            <div class="details-item">
+              <el-icon><Timer /></el-icon>
+              {{ formatDate2(selectedUser?.lastLogin) }}
+            </div>
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <div class="dialog-footer">
+          <el-button
+              :type="selectedUser?.status === 'active' ? 'danger' : 'success'"
+              @click="toggleUserStatus(selectedUser)"
+          >
+            <el-icon>
+              <component :is="selectedUser?.status === 'active' ? Lock : Unlock" />
+            </el-icon>
+            {{ selectedUser?.status === 'active' ? '停用账号' : '启用账号' }}
+          </el-button>
+        </div>
+      </div>
+    </el-dialog>
+  </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { Search } from '@element-plus/icons-vue'
+import { Search, UserFilled, Timer, View, Key, Calendar, Lock, Unlock, CircleCheck, CircleClose } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import axiosInstance from '../../axios/index'
 
@@ -294,82 +440,239 @@ const formatDate2 = (timestamp) => {
 </script>
 
 <style scoped>
-.header-container {
+/* 页面容器 */
+.user-management {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+/* 页面头部 */
+.page-header {
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 20px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%;
 }
 
-.search-bar {
+.title-section {
   display: flex;
   align-items: center;
+  gap: 12px;
 }
 
-
-:deep(.el-table th) {
-  font-weight: bold;
-  font-size: 16px;
-  color: #111827;
-  background: linear-gradient(to bottom, #f3f4f6, #e5e7eb);
+.header-icon {
+  font-size: 24px;
+  color: var(--el-color-primary);
 }
 
-:deep(.el-table tbody tr:hover) {
-  background-color: #f9fafb;
-  cursor: pointer;
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
 }
 
-:deep(.el-dialog__footer button) {
-  padding: 10px 20px;
-  transition: all 0.2s ease;
-}
-:deep(.el-dialog__footer button:hover) {
-  transform: scale(1.05);
+.user-count {
+  padding: 4px 8px;
+  font-size: 14px;
 }
 
-:deep(.el-input__inner::-webkit-input-placeholder) {
-  color: #a1a1aa;
-}
-:deep(.el-input__inner:focus::-webkit-input-placeholder) {
-  color: transparent;
-}
-:deep(.el-button--primary.create-button) {
-  background-color: #10b981;
-  border-color: #10b981;
-  shape-outside: circle();
+.search-section {
+  display: flex;
+  gap: 12px;
 }
 
-/* 自定义 Element Plus 样式 */
-:deep(.el-button--primary) {
-  background-color: #3b82f6;
-  border-color: #3b82f6;
+.search-input {
+  width: 300px;
 }
 
-:deep(.el-button--primary:hover) {
-  background-color: #2563eb;
-  border-color: #2563eb;
+/* 主要内容区域 */
+.main-content {
+  max-width: 1400px;
+  margin: 24px auto;
+  padding: 0 24px;
 }
 
-:deep(.el-input__wrapper) {
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+.table-container {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* 自定义对话框底部按钮对齐 */
+/* 表格样式 */
+.id-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background-color: var(--el-color-primary-light-8);
+  color: var(--el-color-primary);
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar {
+  background: var(--el-color-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.username {
+  font-weight: 500;
+}
+
+.time-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #606266;
+}
+
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* 分页器样式 */
+.pagination-wrapper {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 0;
+}
+
+/* 用户详情对话框 */
+.user-details {
+  padding: 20px;
+}
+
+.user-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.user-large-avatar {
+  margin-bottom: 16px;
+  font-size: 24px;
+  background: var(--el-color-primary);
+  color: #fff;
+}
+
+.user-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  color: #2c3e50;
+}
+
+.details-content {
+  margin-top: 24px;
+}
+
+.details-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.details-tag {
+  min-width: 80px;
+  text-align: center;
+}
+
 .dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  width: 100%;
+  margin-top: 24px;
+  text-align: right;
 }
 
-.dialog-footer .el-button + .el-button {
-  margin-left: 10px;
+/* 空状态 */
+.empty-text {
+  font-size: 16px;
+  color: #909399;
+  margin: 8px 0;
 }
 
-/* 分页容器样式 */
-.pagination-container {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
+.empty-hint {
+  font-size: 14px;
+  color: #c0c4cc;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .header-content,
+  .main-content {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .search-section {
+    width: 100%;
+  }
+
+  .search-input {
+    flex: 1;
+  }
+
+  .table-container {
+    padding: 12px;
+  }
+
+  .action-buttons {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header {
+    padding: 16px 0;
+  }
+
+  .header-content {
+    padding: 0 16px;
+  }
+
+  .title-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .page-title {
+    font-size: 20px;
+  }
+
+  .user-details {
+    padding: 12px;
+  }
 }
 </style>
-
