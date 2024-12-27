@@ -237,6 +237,12 @@
     >
       <div class="doctor-details">
         <div class="doctor-header">
+          <el-avatar
+              :size="64"
+              class="doctor-large-avatar"
+              :src="selectedDoctor.avatarUrl"
+          >
+          </el-avatar>
           <h2 class="doctor-title">{{ selectedDoctor.name }}</h2>
           <p class="doctor-subtitle">{{ selectedDoctor.position }} @ {{ selectedDoctor.workplace }}</p>
         </div>
