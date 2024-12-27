@@ -1,151 +1,358 @@
 <template>
-  <el-container class="min-h-screen bg-gray-100">
-    <el-header class="bg-white shadow-md">
-      <div class="header-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <h3 class="text-2xl font-bold text-gray-900">医生列表</h3>
-        <!-- 搜索栏 -->
-        <div class="search-bar">
-          <el-input
-              v-model="searchTerm"
-              placeholder="搜索医生UID或姓名"
-              clearable
-              @clear="clearSearch"
-              class="w-64 sm:w-80"
+  <div class="doctor-management">
+    <!-- 页面头部区域 -->
+    <header class="page-header">
+      <div class="header-content">
+        <div class="title-section">
+          <el-icon class="header-icon"><Service /></el-icon>
+          <h1 class="page-title">医生列表</h1>
+          <el-tag type="info" class="doctor-count">
+            共 {{ DoctorNumber }} 位医生
+          </el-tag>
+        </div>
+
+        <div class="header-actions">
+          <div class="search-section">
+            <el-input
+                v-model="searchTerm"
+                placeholder="搜索医生UID或姓名"
+                clearable
+                @clear="clearSearch"
+                class="search-input"
+            >
+              <template #prefix>
+                <el-icon><Search /></el-icon>
+              </template>
+            </el-input>
+
+            <el-button
+                @click="onSearch"
+                type="primary"
+                class="search-button"
+            >
+              <el-icon><Search /></el-icon>
+              搜索
+            </el-button>
+          </div>
+
+          <el-button
+              @click="showImportDialog"
+              type="success"
+              class="import-button"
           >
-            <template #prefix>
-              <el-icon class="el-input__icon"><Search /></el-icon>
-            </template>
-          </el-input>
-          <!-- 搜索按钮 -->
-          <el-button @click="onSearch" type="primary" class="ml-2">
-            搜索
-          </el-button>
-          <el-button @click="showImportDialog" type="primary" class="ml-2">
-            导入
+            <el-icon><Upload /></el-icon>
+            批量导入
           </el-button>
         </div>
       </div>
-    </el-header>
+    </header>
 
-    <el-main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- 医生表格 -->
-      <el-table
-          :data="paginatedDoctors"
-          style="width: 100%"
-          :header-cell-style="{ background: '#f3f4f6', color: '#374151' }"
-          :row-class-name="tableRowClassName"
-          v-loading="loading"
-      >
-        <el-table-column prop="index" label="ID" width="80" align="center"></el-table-column>
-        <el-table-column prop="name" label="姓名" width="120"></el-table-column>
-        <el-table-column prop="workplace" label="单位" width="150"></el-table-column>
-        <el-table-column prop="position" label="职位" width="120"></el-table-column>
-        <el-table-column prop="qualification" label="已认证" width="100" align="center">
-          <template #default="scope">
-            <el-tag :type="scope.row.qualification === '已认证' ? 'success' : 'danger'" effect="dark">
-              {{ scope.row.qualification === '已认证' ? '是' : '否' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" label="状态" width="100" align="center">
-          <template #default="scope">
-            <el-tag :type="scope.row.status === 'active' ? 'success' : 'danger'" effect="dark">
-              {{ scope.row.status === 'active' ? '活跃' : '停用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" min-width="200" align="center">
-          <template #default="scope">
-            <el-button
-                type="primary"
-                size="small"
-                @click="viewDoctorDetails(scope.row)"
+    <!-- 主要内容区域 -->
+    <main class="main-content">
+      <div class="table-container">
+        <!-- 数据表格 -->
+        <el-table
+            :data="paginatedDoctors"
+            style="width: 100%"
+            :header-cell-style="tableHeaderStyle"
+            :row-class-name="tableRowClassName"
+            v-loading="loading"
+            border
+        >
+          <!-- ID列 -->
+          <el-table-column
+              prop="index"
+              label="ID"
+              width="80"
+              align="center"
+          >
+            <template #default="scope">
+              <span class="id-badge">{{ scope.row.index }}</span>
+            </template>
+          </el-table-column>
+
+          <!-- 姓名列 -->
+          <el-table-column
+              prop="name"
+              label="姓名"
+              min-width="120"
+          >
+            <template #default="scope">
+              <div class="doctor-info">
+                <span class="doctor-name">{{ scope.row.name }}</span>
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- 单位列 -->
+          <el-table-column
+              prop="workplace"
+              label="单位"
+              min-width="200"
+          >
+            <template #default="scope">
+              <div class="workplace-info">
+                <el-icon><OfficeBuilding /></el-icon>
+                <span>{{ scope.row.workplace }}</span>
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- 职位列 -->
+          <el-table-column
+              prop="position"
+              label="职位"
+              min-width="150"
+          >
+            <template #default="scope">
+              <div class="position-info">
+                <el-icon><UserFilled /></el-icon>
+                <span>{{ scope.row.position }}</span>
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- 认证状态列 -->
+          <el-table-column
+              prop="qualification"
+              label="认证状态"
+              width="120"
+              align="center"
+          >
+            <template #default="scope">
+              <el-tag
+                  :type="scope.row.qualification === '已认证' ? 'success' : 'warning'"
+                  class="status-tag"
+              >
+                <el-icon>
+                  <component :is="scope.row.qualification === '已认证' ? CircleCheck : Warning" />
+                </el-icon>
+                {{ scope.row.qualification === '已认证' ? '已认证' : '未认证' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+
+          <!-- 账号状态列 -->
+          <el-table-column
+              prop="status"
+              label="状态"
+              width="120"
+              align="center"
+          >
+            <template #default="scope">
+              <el-tag
+                  :type="scope.row.status === 'active' ? 'success' : 'danger'"
+                  class="status-tag"
+              >
+                <el-icon>
+                  <component :is="scope.row.status === 'active' ? CircleCheck : CircleClose" />
+                </el-icon>
+                {{ scope.row.status === 'active' ? '活跃' : '停用' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+
+          <!-- 操作列 -->
+          <el-table-column
+              label="操作"
+              width="130"
+              align="center"
+              fixed="right"
+          >
+            <template #default="scope">
+              <div class="action-buttons">
+                <el-tooltip
+                    content="查看详情"
+                    placement="top"
+                >
+                  <el-button
+                      type="primary"
+                      circle
+                      @click="viewDoctorDetails(scope.row)"
+                  >
+                    <el-icon><View /></el-icon>
+                  </el-button>
+                </el-tooltip>
+
+                <el-tooltip
+                    :content="scope.row.status === 'active' ? '停用账号' : '启用账号'"
+                    placement="top"
+                >
+                  <el-button
+                      :type="scope.row.status === 'active' ? 'danger' : 'success'"
+                      circle
+                      @click="toggleDoctorStatus(scope.row)"
+                  >
+                    <el-icon>
+                      <component :is="scope.row.status === 'active' ? VideoPause : VideoPlay" />
+                    </el-icon>
+                  </el-button>
+                </el-tooltip>
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- 空状态 -->
+          <template #empty>
+            <el-empty
+                description="暂无医生数据"
+                :image-size="200"
             >
-              查看详情
-            </el-button>
-            <el-button
-                :type="scope.row.status === 'active' ? 'danger' : 'success'"
-                size="small"
-                @click="toggleDoctorStatus(scope.row)"
-            >
-              {{ scope.row.status === 'active' ? '停用' : '启用' }}
-            </el-button>
+              <template #description>
+                <p class="empty-text">暂无医生数据</p>
+                <p class="empty-hint">您可以通过搜索或导入添加医生信息</p>
+              </template>
+              <el-button
+                  type="primary"
+                  @click="showImportDialog"
+              >
+                立即导入
+              </el-button>
+            </el-empty>
           </template>
-        </el-table-column>
-        <template #empty>
-          <el-empty description="没有医生数据"></el-empty>
-        </template>
-      </el-table>
+        </el-table>
 
-
-      <!-- 分页组件 -->
-      <div class="pagination-container">
-        <el-pagination
-            v-model:current-page="frontendCurrentPage"
-            :page-size="frontendPageSize"
-            :total="parseInt(DoctorNumber,10)"
-            @current-change="handleFrontendPageChange"
-            :pager-count="5"
-            layout="prev, pager, next"
-        />
+        <!-- 分页器 -->
+        <div class="pagination-wrapper">
+          <el-pagination
+              v-model:current-page="frontendCurrentPage"
+              :page-size="frontendPageSize"
+              :total="parseInt(DoctorNumber,10)"
+              @current-change="handleFrontendPageChange"
+              :pager-count="5"
+              layout="total, prev, pager, next, jumper"
+              background
+          />
+        </div>
       </div>
-    </el-main>
+    </main>
 
     <!-- 医生详情对话框 -->
     <el-dialog
         v-model="detailsDialogVisible"
-        title="医生详情"
-        width="50%"
+        title="医生详细信息"
+        width="600px"
+        class="doctor-details-dialog"
+        destroy-on-close
     >
-      <el-descriptions :column="1" border>
-        <el-descriptions-item label="姓名">{{ selectedDoctor.name }}</el-descriptions-item>
-        <el-descriptions-item label="邮箱">{{ selectedDoctor.email }}</el-descriptions-item>
-        <el-descriptions-item label="电话号码">{{ selectedDoctor.phone }}</el-descriptions-item>
-        <el-descriptions-item label="单位">{{ selectedDoctor.workplace }}</el-descriptions-item>
-        <el-descriptions-item label="职位">{{ selectedDoctor.position }}</el-descriptions-item>
-        <el-descriptions-item label="UID">{{ selectedDoctor.doctorId }}</el-descriptions-item>
-        <el-descriptions-item label="认证状态">{{ selectedDoctor.qualification }}</el-descriptions-item>
-        <el-descriptions-item label="账号状态">{{ selectedDoctor.status === 'active' ? '活跃' : '停用' }}</el-descriptions-item>
-      </el-descriptions>
+      <div class="doctor-details">
+        <div class="doctor-header">
+          <h2 class="doctor-title">{{ selectedDoctor.name }}</h2>
+          <p class="doctor-subtitle">{{ selectedDoctor.position }} @ {{ selectedDoctor.workplace }}</p>
+        </div>
+
+        <el-descriptions
+            :column="1"
+            border
+            class="details-content"
+        >
+          <el-descriptions-item label="邮箱">
+            <div class="details-item">
+              <el-icon><Message /></el-icon>
+              {{ selectedDoctor.email }}
+            </div>
+          </el-descriptions-item>
+
+          <el-descriptions-item label="电话号码">
+            <div class="details-item">
+              <el-icon><Phone /></el-icon>
+              {{ selectedDoctor.phone }}
+            </div>
+          </el-descriptions-item>
+
+          <el-descriptions-item label="UID">
+            <div class="details-item">
+              <el-icon><Key /></el-icon>
+              {{ selectedDoctor.doctorId }}
+            </div>
+          </el-descriptions-item>
+
+          <el-descriptions-item label="认证状态">
+            <el-tag
+                :type="selectedDoctor.qualification === '已认证' ? 'success' : 'warning'"
+                class="details-tag"
+            >
+              {{ selectedDoctor.qualification }}
+            </el-tag>
+          </el-descriptions-item>
+
+          <el-descriptions-item label="账号状态">
+            <el-tag
+                :type="selectedDoctor.status === 'active' ? 'success' : 'danger'"
+                class="details-tag"
+            >
+              {{ selectedDoctor.status === 'active' ? '活跃' : '停用' }}
+            </el-tag>
+          </el-descriptions-item>
+        </el-descriptions>
+      </div>
     </el-dialog>
 
     <!-- 导入医生对话框 -->
-    <el-dialog v-model="importDialogVisible" title="导入医生" width="30%">
-      <el-upload
-          class="upload-demo"
-          drag
-          action="#"
-          :auto-upload="false"
-          :on-change="handleFileChange"
-          accept=".xlsx,.csv"
-      >
-        <el-icon><Upload /></el-icon>
-        <div class="el-upload__text">将文件拖拽到此处，或<em>点击上传</em></div>
-        <div class="el-upload__tip" slot="tip">请上传小于 500KB 的 XLSX/CSV 文件</div>
-        <div class="el-upload__tip" slot="tip">文件格式请参考模板</div>
-      </el-upload>
+    <el-dialog
+        v-model="importDialogVisible"
+        title="批量导入医生"
+        width="500px"
+        class="import-dialog"
+    >
+      <div class="import-content">
+        <el-upload
+            class="upload-area"
+            drag
+            action="#"
+            :auto-upload="false"
+            :on-change="handleFileChange"
+            accept=".xlsx,.csv"
+        >
+          <el-icon class="upload-icon"><Upload /></el-icon>
+          <div class="upload-text">
+            <h3>将文件拖拽到此处，或<em>点击上传</em></h3>
+            <p class="upload-hint">支持 .xlsx, .csv 格式文件</p>
+          </div>
+        </el-upload>
 
-      <!-- 下载模板按钮 -->
-      <div style="margin-top: 20px; text-align: center;">
-        <el-button type="success" round @click="downloadTemplate">
-          <el-icon><Download /></el-icon>
-          下载模板
-        </el-button>
+        <div class="import-info">
+          <div class="info-header">
+            <el-icon><InfoFilled /></el-icon>
+            <span>导入说明</span>
+          </div>
+          <ul class="info-list">
+            <li>文件大小不超过 500KB</li>
+            <li>请严格按照模板格式填写数据</li>
+            <li>支持批量导入多条记录</li>
+          </ul>
+        </div>
+
+        <div class="template-download">
+          <el-button
+              type="success"
+              @click="downloadTemplate"
+              class="download-button"
+          >
+            <el-icon><Download /></el-icon>
+            下载导入模板
+          </el-button>
+        </div>
       </div>
 
       <template #footer>
-    <span class="dialog-footer">
-      <el-button @click="importDialogVisible = false">取消</el-button>
-      <el-button type="primary" @click="importDoctorData">确定</el-button>
-    </span>
+        <div class="dialog-footer">
+          <el-button @click="importDialogVisible = false">取消</el-button>
+          <el-button
+              type="primary"
+              @click="importDoctorData"
+          >
+            确认导入
+          </el-button>
+        </div>
       </template>
     </el-dialog>
-  </el-container>
+  </div>
 </template>
 
 <script setup>
 import {ref, computed, onMounted, watch} from 'vue'
-import {Download, Search, Upload} from '@element-plus/icons-vue'
+import {Download, Search, Upload, Service, OfficeBuilding, UserFilled, View, Message, Phone, Key, InfoFilled, CircleCheck, CircleClose, Warning, VideoPause, VideoPlay } from '@element-plus/icons-vue'
 import {ElMessage} from 'element-plus'
 import axiosInstance from '../../axios/index';
 
@@ -381,81 +588,301 @@ watch(searchTerm, () => {
 </script>
 
 <style scoped>
-.header-container {
+/* 页面容器 */
+.doctor-management {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+/* 页面头部 */
+.page-header {
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 16px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%;
 }
 
-.search-bar {
+.title-section {
   display: flex;
   align-items: center;
+  gap: 12px;
 }
 
-
-:deep(.el-table th) {
-  font-weight: bold;
-  font-size: 16px;
-  color: #111827;
-  background: linear-gradient(to bottom, #f3f4f6, #e5e7eb);
+.header-icon {
+  font-size: 24px;
+  color: var(--el-color-primary);
 }
 
-:deep(.el-table tbody tr:hover) {
-  background-color: #f9fafb;
-  cursor: pointer;
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
 }
 
-:deep(.el-dialog__footer button) {
-  padding: 10px 20px;
-  transition: all 0.2s ease;
-}
-:deep(.el-dialog__footer button:hover) {
-  transform: scale(1.05);
+.doctor-count {
+  font-size: 14px;
+  padding: 4px 8px;
 }
 
-:deep(.el-input__inner::-webkit-input-placeholder) {
-  color: #a1a1aa;
-}
-:deep(.el-input__inner:focus::-webkit-input-placeholder) {
-  color: transparent;
-}
-:deep(.el-button--primary.create-button) {
-  background-color: #10b981;
-  border-color: #10b981;
-  shape-outside: circle();
-}
-/* 自定义 Element Plus 样式 */
-:deep(.el-button--primary) {
-  background-color: #3b82f6;
-  border-color: #3b82f6;
-}
-
-:deep(.el-button--primary:hover) {
-  background-color: #2563eb;
-  border-color: #2563eb;
-}
-
-:deep(.el-input__wrapper) {
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-/* 自定义对话框底部按钮对齐 */
-.dialog-footer {
+.header-actions {
   display: flex;
-  justify-content: flex-end;
-  width: 100%;
+  align-items: center;
+  gap: 16px;
 }
 
-.dialog-footer .el-button + .el-button {
-  margin-left: 10px;
+.search-section {
+  display: flex;
+  gap: 8px;
 }
 
-/* 分页容器样式 */
-.pagination-container {
+.search-input {
+  width: 300px;
+}
+
+/* 主要内容区域 */
+.main-content {
+  max-width: 1400px;
+  margin: 24px auto;
+  padding: 0 24px;
+}
+
+.table-container {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 表格样式 */
+.id-badge {
+  background: var(--el-color-primary-light-8);
+  color: var(--el-color-primary);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.doctor-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.doctor-avatar {
+  background: var(--el-color-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.doctor-name {
+  font-weight: 500;
+}
+
+.workplace-info,
+.position-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #606266;
+}
+
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* 分页器样式 */
+.pagination-wrapper {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+  padding: 16px 0;
+}
+
+/* 医生详情对话框 */
+.doctor-details {
+  padding: 20px;
+}
+
+.doctor-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.doctor-large-avatar {
+  margin-bottom: 16px;
+}
+
+.doctor-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.doctor-subtitle {
+  color: #909399;
+  margin: 0;
+}
+
+.details-content {
+  margin-top: 24px;
+}
+
+.details-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.details-tag {
+  min-width: 80px;
+  text-align: center;
+}
+
+/* 导入对话框 */
+.import-content {
+  padding: 20px;
+}
+
+.upload-area {
+  border: 2px dashed var(--el-border-color);
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  transition: all 0.3s;
+}
+
+.upload-area:hover {
+  border-color: var(--el-color-primary);
+}
+
+.upload-icon {
+  font-size: 48px;
+  color: #909399;
+  margin-bottom: 16px;
+}
+
+.upload-text h3 {
+  font-size: 16px;
+  color: #606266;
+  margin: 0 0 8px;
+}
+
+.upload-hint {
+  font-size: 14px;
+  color: #909399;
+  margin: 0;
+}
+
+.import-info {
+  margin-top: 24px;
+  padding: 16px;
+  background: var(--el-color-primary-light-9);
+  border-radius: 8px;
+}
+
+.info-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--el-color-primary);
+  margin-bottom: 12px;
+}
+
+.info-list {
+  margin: 0;
+  padding-left: 24px;
+  color: #606266;
+}
+
+.info-list li {
+  margin-bottom: 8px;
+}
+
+.template-download {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.download-button {
+  width: 100%;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .header-content,
+  .main-content {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .header-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .search-section {
+    width: 100%;
+  }
+
+  .search-input {
+    width: 100%;
+  }
+
+  .import-button {
+    width: 100%;
+  }
+
+  .table-container {
+    padding: 12px;
+  }
+
+  .action-buttons {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header {
+    position: static;
+  }
+
+  .header-content {
+    padding: 12px;
+  }
+
+  .main-content {
+    padding: 12px;
+  }
+
+  .doctor-details {
+    padding: 12px;
+  }
 }
 </style>
-
