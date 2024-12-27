@@ -278,7 +278,7 @@
                 :type="selectedDoctor.qualification === '已认证' ? 'success' : 'warning'"
                 class="details-tag"
             >
-              {{ selectedDoctor.qualification }}
+              {{ selectedDoctor.qualification === '已认证' ? '已认证' : '未认证' }}
             </el-tag>
           </el-descriptions-item>
 
