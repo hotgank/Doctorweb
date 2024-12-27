@@ -1,131 +1,360 @@
 <template>
-  <el-container class="min-h-screen bg-gray-100">
-    <el-header class="bg-white shadow-md">
-      <div class="header-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <h3 class="text-2xl font-bold text-gray-900">检验医生资格</h3>
-        <!-- 搜索栏 -->
-        <div class="search-bar">
+  <div class="verify-doctors">
+    <!-- 页面头部 -->
+    <header class="page-header">
+      <div class="header-content">
+        <div class="title-section">
+          <el-icon class="header-icon"><Service /></el-icon>
+          <h1 class="page-title">医生资格审核</h1>
+          <el-tag type="info" class="doctor-count">
+            待审核：{{ displayedDoctors.length }}
+          </el-tag>
+        </div>
+
+        <div class="search-section">
           <el-input
-            v-model="searchTerm"
-            placeholder="搜索医生ID或姓名"
-            clearable
-            @clear="clearSearch"
-            class="w-64 sm:w-80"
+              v-model="searchTerm"
+              placeholder="搜索医生ID或姓名"
+              clearable
+              @clear="clearSearch"
+              class="search-input"
           >
             <template #prefix>
-              <el-icon class="el-input__icon"><Search /></el-icon>
+              <el-icon><Search /></el-icon>
             </template>
           </el-input>
-          <!-- 搜索按钮 -->
-          <el-button @click="onSearch" type="primary" class="ml-2">
+
+          <el-button
+              type="primary"
+              @click="onSearch"
+              class="search-button"
+          >
+            <el-icon><Search /></el-icon>
             搜索
           </el-button>
         </div>
       </div>
-    </el-header>
+    </header>
 
-    <el-main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- 医生表格 -->
-      <el-table 
-        :data="displayedDoctors" 
-        style="width: 100%"
-        :header-cell-style="{ background: '#f3f4f6', color: '#374151' }"
-        :row-class-name="tableRowClassName"
-        v-loading="loading"
-      >
-        <el-table-column prop="index" label="ID" width="80" align="center"></el-table-column>
-        <el-table-column prop="name" label="姓名" width="120"></el-table-column>
-        <el-table-column prop="gender" label="性别" width="80"></el-table-column>
-        <el-table-column prop="position" label="职位" width="120"></el-table-column>
-        <el-table-column prop="workplace" label="工作单位" min-width="200"></el-table-column>
-        <el-table-column label="详情" width="120" align="center">
-          <template #default="scope">
-            <el-button type="primary" size="small" @click="openDetails(scope.row)">查看详情</el-button>
+    <!-- 主要内容区域 -->
+    <main class="main-content">
+      <div class="table-container">
+        <el-table
+            :data="displayedDoctors"
+            style="width: 100%"
+            :header-cell-style="tableHeaderStyle"
+            :row-class-name="tableRowClassName"
+            v-loading="loading"
+        >
+          <!-- 序号列 -->
+          <el-table-column
+              type="index"
+              label="序号"
+              width="80"
+              align="center"
+          >
+            <template #default="scope">
+              <span class="index-badge">{{ scope.$index + 1 }}</span>
+            </template>
+          </el-table-column>
+
+          <!-- 姓名列 -->
+          <el-table-column
+              prop="name"
+              label="姓名"
+              width="120"
+          >
+            <template #default="scope">
+              <div class="doctor-info">
+                <span class="doctor-name">{{ scope.row.name }}</span>
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- 性别列 -->
+          <el-table-column
+              prop="gender"
+              label="性别"
+              width="80"
+              align="center"
+          >
+            <template #default="scope">
+              <el-tag
+                  :type="scope.row.gender === '男' ? 'info' : 'danger'"
+                  effect="plain"
+                  size="small"
+              >
+                {{ scope.row.gender }}
+              </el-tag>
+            </template>
+          </el-table-column>
+
+          <!-- 职位列 -->
+          <el-table-column
+              prop="position"
+              label="职位"
+              width="150"
+          >
+            <template #default="scope">
+              <div class="position-info">
+                <el-icon><UserFilled /></el-icon>
+                <span>{{ scope.row.position || '待定' }}</span>
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- 工作单位列 -->
+          <el-table-column
+              prop="workplace"
+              label="工作单位"
+              min-width="200"
+          >
+            <template #default="scope">
+              <div class="workplace-info">
+                <el-icon><OfficeBuilding /></el-icon>
+                <span>{{ scope.row.workplace }}</span>
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- 操作列 -->
+          <el-table-column
+              label="操作"
+              width="120"
+              align="center"
+              fixed="right"
+          >
+            <template #default="scope">
+              <el-tooltip
+                  content="查看详情"
+                  placement="top"
+              >
+                <el-button
+                    type="primary"
+                    circle
+                    @click="openDetails(scope.row)"
+                >
+                  <el-icon><View /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </template>
+          </el-table-column>
+
+          <!-- 空状态 -->
+          <template #empty>
+            <el-empty
+                description="暂无待审核的医生"
+                :image-size="200"
+            >
+              <template #description>
+                <p class="empty-text">暂无待审核的医生申请</p>
+                <p class="empty-hint">新的申请将在这里显示</p>
+              </template>
+            </el-empty>
           </template>
-        </el-table-column>
-        <template #empty>
-          <el-empty description="没有待审核的医生"></el-empty>
-        </template>
-      </el-table>
-    </el-main>
+        </el-table>
+      </div>
+    </main>
 
-    <!-- 详情对话框 -->
+    <!-- 医生详情对话框 -->
     <el-dialog
-      v-model="dialogVisible"
-      title="医生详情"
-      width="50%"
-      :before-close="handleClose"
+        v-model="dialogVisible"
+        title="医生资格审核"
+        width="700px"
+        class="doctor-dialog"
+        :before-close="handleClose"
+        destroy-on-close
     >
-      <div v-if="selectedDoctor">
-        <el-descriptions :column="1" border>
-          <el-descriptions-item label="医生ID">{{ selectedDoctor.doctorId }}</el-descriptions-item>
-          <el-descriptions-item label="姓名">{{ selectedDoctor.name }}</el-descriptions-item>
-          <el-descriptions-item label="性别">{{ selectedDoctor.gender }}</el-descriptions-item>
-          
-          <!-- 职位选择 -->
-          <el-descriptions-item label="职位">
-            <el-select v-model="selectedDoctor.positionCategory" placeholder="选择职位大类" @change="updatePositionOptions">
-              <el-option v-for="category in positionCategories" :key="category.value" :label="category.label" :value="category.value"></el-option>
-            </el-select>
-            <el-select v-model="selectedDoctor.position" placeholder="选择职位">
-              <el-option v-for="position in filteredPositions" :key="position" :label="position" :value="position"></el-option>
-            </el-select>
-          </el-descriptions-item>
+      <div v-if="selectedDoctor" class="doctor-details">
+        <!-- 基本信息部分 -->
+        <div class="details-section">
+          <h3 class="section-title">
+            <el-icon><User /></el-icon>
+            基本信息
+          </h3>
 
-          <el-descriptions-item label="工作单位">{{ selectedDoctor.workplace }}</el-descriptions-item>
-        </el-descriptions>
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="医生ID">
+              <span class="info-text">{{ selectedDoctor.doctorId }}</span>
+            </el-descriptions-item>
 
-        <div class="cert-image mt-4">
-          <h4 class="text-lg font-medium mb-2">医师资格证图片：</h4>
-          <el-image
-            v-if="doctorImage"
-            :src="doctorImage"
-            fit="cover"
-            class="w-48 h-48 object-cover rounded"
-          />
-          <div v-else class="w-48 h-48 bg-gray-200 rounded flex items-center justify-center text-gray-500">
-            图片加载错误或不存在
+            <el-descriptions-item label="姓名">
+              <span class="info-text">{{ selectedDoctor.name }}</span>
+            </el-descriptions-item>
+
+            <el-descriptions-item label="性别">
+              <el-tag
+                  :type="selectedDoctor.gender === '男' ? 'info' : 'danger'"
+                  effect="plain"
+              >
+                {{ selectedDoctor.gender }}
+              </el-tag>
+            </el-descriptions-item>
+
+            <el-descriptions-item label="工作单位">
+              <span class="info-text">{{ selectedDoctor.workplace }}</span>
+            </el-descriptions-item>
+          </el-descriptions>
+        </div>
+
+        <!-- 职位选择部分 -->
+        <div class="details-section">
+          <h3 class="section-title">
+            <el-icon><Briefcase /></el-icon>
+            职位信息
+          </h3>
+
+          <div class="position-selection">
+            <el-form :model="selectedDoctor" label-width="100px">
+              <el-form-item label="职位类别">
+                <el-select
+                    v-model="selectedDoctor.positionCategory"
+                    placeholder="选择职位大类"
+                    class="category-select"
+                    @change="updatePositionOptions"
+                >
+                  <el-option
+                      v-for="category in positionCategories"
+                      :key="category.value"
+                      :label="category.label"
+                      :value="category.value"
+                  >
+                    <div class="select-option">
+                      <el-icon><UserFilled /></el-icon>
+                      <span>{{ category.label }}</span>
+                    </div>
+                  </el-option>
+                </el-select>
+              </el-form-item>
+
+              <el-form-item label="具体职位">
+                <el-select
+                    v-model="selectedDoctor.position"
+                    placeholder="选择具体职位"
+                    class="position-select"
+                >
+                  <el-option
+                      v-for="position in filteredPositions"
+                      :key="position"
+                      :label="position"
+                      :value="position"
+                  >
+                    <div class="select-option">
+                      <el-icon><Medal /></el-icon>
+                      <span>{{ position }}</span>
+                    </div>
+                  </el-option>
+                </el-select>
+              </el-form-item>
+            </el-form>
+          </div>
+        </div>
+
+        <!-- 资格证书部分 -->
+        <div class="details-section">
+          <h3 class="section-title">
+            <el-icon><Document /></el-icon>
+            资格证书
+          </h3>
+
+          <div class="certificate-preview">
+            <el-image
+                v-if="doctorImage"
+                :src="doctorImage"
+                fit="contain"
+                :preview-src-list="[doctorImage]"
+                class="cert-image"
+            >
+              <template #placeholder>
+                <div class="image-placeholder">
+                  <el-icon><Picture /></el-icon>
+                  <span>加载中...</span>
+                </div>
+              </template>
+              <template #error>
+                <div class="image-error">
+                  <el-icon><PictureRounded /></el-icon>
+                  <span>图片加载失败</span>
+                </div>
+              </template>
+            </el-image>
           </div>
         </div>
       </div>
+
+      <!-- 对话框底部按钮 -->
       <template #footer>
-        <span class="dialog-footer">
-          <el-button type="success" @click="approveDoctor">认证成功</el-button>
-          <el-button type="danger" @click="openRejectDialog">打回认证</el-button>
-        </span>
+        <div class="dialog-footer">
+          <el-button
+              type="success"
+              :icon="Check"
+              @click="approveDoctor"
+          >
+            通过审核
+          </el-button>
+          <el-button
+              type="danger"
+              :icon="Close"
+              @click="openRejectDialog"
+          >
+            打回申请
+          </el-button>
+        </div>
       </template>
     </el-dialog>
 
-    <!-- 打回认证对话框 -->
+    <!-- 打回原因对话框 -->
     <el-dialog
-      v-model="rejectDialogVisible"
-      title="打回认证"
-      width="30%"
+        v-model="rejectDialogVisible"
+        title="打回申请"
+        width="500px"
+        class="reject-dialog"
+        append-to-body
     >
-      <el-form :model="rejectForm">
-        <el-form-item label="打回原因">
-          <el-input
-            v-model="rejectForm.comment"
-            type="textarea"
-            :rows="4"
-            placeholder="请输入打回原因"
-          ></el-input>
-        </el-form-item>
-      </el-form>
+      <div class="reject-content">
+        <el-alert
+            title="请填写打回原因"
+            type="warning"
+            description="详细说明打回原因，帮助申请人了解需要改进的地方。"
+            show-icon
+            :closable="false"
+            class="reject-alert"
+        />
+
+        <el-form
+            :model="rejectForm"
+            class="reject-form"
+        >
+          <el-form-item>
+            <el-input
+                v-model="rejectForm.comment"
+                type="textarea"
+                :rows="4"
+                placeholder="请输入打回原因..."
+                resize="none"
+            />
+          </el-form-item>
+        </el-form>
+      </div>
+
       <template #footer>
-        <span class="dialog-footer">
+        <div class="dialog-footer">
           <el-button @click="rejectDialogVisible = false">取消</el-button>
-          <el-button type="danger" @click="confirmReject">确认打回</el-button>
-        </span>
+          <el-button
+              type="danger"
+              @click="confirmReject"
+          >
+            确认打回
+          </el-button>
+        </div>
       </template>
     </el-dialog>
-  </el-container>
+  </div>
 </template>
-
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Search } from '@element-plus/icons-vue'
+import { Search, Service, UserFilled, OfficeBuilding, View, User, Briefcase, Medal, Document, PictureRounded } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import axiosInstance from '../../axios/index'
 
@@ -324,47 +553,257 @@ const tableRowClassName = ({ rowIndex }) => {
 }
 </script>
 
-
-
 <style scoped>
-.header-container {
+/* 页面容器 */
+.verify-doctors {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+/* 页面头部 */
+.page-header {
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 20px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.title-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-icon {
+  font-size: 24px;
+  color: var(--el-color-primary);
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.doctor-count {
+  padding: 4px 8px;
+  font-size: 14px;
+}
+
+.search-section {
+  display: flex;
+  gap: 12px;
+}
+
+.search-input {
+  width: 300px;
+}
+
+/* 主要内容区域 */
+.main-content {
+  max-width: 1400px;
+  margin: 24px auto;
+  padding: 0 24px;
+}
+
+.table-container {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 表格样式 */
+.index-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background-color: var(--el-color-primary-light-8);
+  color: var(--el-color-primary);
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.id-text {
+  font-family: monospace;
+  color: #606266;
+}
+
+.doctor-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.doctor-avatar {
+  background: var(--el-color-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.doctor-name {
+  font-weight: 500;
+}
+
+.position-info,
+.workplace-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #606266;
+}
+
+/* 医生详情对话框 */
+.doctor-details {
+  padding: 0 20px;
+}
+
+.details-section {
+  margin-bottom: 24px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 16px;
+}
+
+.info-text {
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.position-selection {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.category-select,
+.position-select {
   width: 100%;
 }
 
-.search-bar {
+.select-option {
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 
-.el-table {
+.certificate-preview {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+}
+
+.cert-image {
+  max-width: 100%;
+  max-height: 400px;
+  border-radius: 4px;
+}
+
+.image-placeholder,
+.image-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  color: #94a3b8;
+  gap: 8px;
+}
+
+/* 打回原因对话框 */
+.reject-content {
+  padding: 0 20px;
+}
+
+.reject-alert {
+  margin-bottom: 20px;
+}
+
+.reject-form {
   margin-top: 20px;
 }
 
+/* 对话框底部 */
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
-  margin-top: 20px;
+  gap: 12px;
+  padding-top: 20px;
 }
 
-.dialog-footer .el-button {
-  margin-left: 10px;
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .header-content,
+  .main-content {
+    max-width: 100%;
+  }
 }
 
-/* 自定义 Element Plus 样式 */
-:deep(.el-button--primary) {
-  background-color: #3b82f6;
-  border-color: #3b82f6;
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .search-section {
+    width: 100%;
+  }
+
+  .search-input {
+    flex: 1;
+  }
+
+  .table-container {
+    padding: 12px;
+  }
+
+  .doctor-dialog {
+    width: 90% !important;
+  }
 }
 
-:deep(.el-button--primary:hover) {
-  background-color: #2563eb;
-  border-color: #2563eb;
-}
+@media (max-width: 480px) {
+  .page-header {
+    padding: 16px 0;
+  }
 
-:deep(.el-input__wrapper) {
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  .header-content {
+    padding: 0 16px;
+  }
+
+  .title-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .page-title {
+    font-size: 20px;
+  }
+
+  .doctor-details {
+    padding: 0 12px;
+  }
 }
 </style>
