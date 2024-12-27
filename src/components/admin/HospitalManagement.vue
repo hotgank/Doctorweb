@@ -1,195 +1,505 @@
 <template>
-  <el-container class="min-h-screen bg-gray-100">
-    <el-header class="bg-white shadow-md">
-      <div class="header-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <h3 class="text-2xl font-bold text-gray-900">医院列表</h3>
-        <!-- 搜索栏 -->
-        <div class="search-bar">
-          <el-input
-              v-model="searchTerm"
-              placeholder="搜索医院名称"
-              clearable
-              @clear="clearSearch"
-              class="w-64 sm:w-80"
+  <div class="hospital-management">
+    <!-- 页面头部 -->
+    <header class="page-header">
+      <div class="header-content">
+        <div class="title-section">
+          <el-icon class="header-icon"><OfficeBuilding /></el-icon>
+          <h1 class="page-title">医院管理</h1>
+          <el-tag type="info" class="hospital-count">
+            共 {{ hospitalNumber }} 家医院
+          </el-tag>
+        </div>
+
+        <div class="header-actions">
+          <div class="search-section">
+            <el-input
+                v-model="searchTerm"
+                placeholder="搜索医院名称"
+                clearable
+                @clear="clearSearch"
+                class="search-input"
+            >
+              <template #prefix>
+                <el-icon><Search /></el-icon>
+              </template>
+            </el-input>
+
+            <el-button
+                type="primary"
+                @click="onSearch"
+                class="search-button"
+            >
+              <el-icon><Search /></el-icon>
+              搜索
+            </el-button>
+          </div>
+
+          <el-button
+              type="success"
+              @click="showAddDialog"
+              class="add-button"
           >
-            <template #prefix>
-              <el-icon class="el-input__icon"><Search /></el-icon>
-            </template>
-          </el-input>
-          <!-- 搜索按钮 -->
-          <el-button @click="onSearch" type="primary" class="ml-2">
-            搜索
-          </el-button>
-          <el-button @click="showAddDialog" type="primary" class="ml-2">
+            <el-icon><Plus /></el-icon>
             添加医院
           </el-button>
         </div>
       </div>
-    </el-header>
+    </header>
 
-    <el-main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- 医院表格 -->
-      <el-table
-          :data="currentPageHospitals"    style="width: 100%"
-          :header-cell-style="{ background: '#f3f4f6', color: '#374151' }"
-          :row-class-name="tableRowClassName"
-          v-loading="loading"
-      >
-        <el-table-column prop="displayId" label="ID" width="80" align="center"></el-table-column>
-        <el-table-column prop="hospitalName" label="医院名称" width="200"></el-table-column>
-        <el-table-column prop="address" label="地址" width="250"></el-table-column>
-        <el-table-column prop="adminUsername" label="管理员用户名" width="150"></el-table-column>
-        <el-table-column label="操作" min-width="400" align="center">
-          <template #default="scope">
-            <el-button
-                type="primary"
-                size="small"
-                @click="showUpdateAddressDialog(scope.row)"
+    <!-- 主要内容区域 -->
+    <main class="main-content">
+      <div class="table-container">
+        <!-- 医院列表表格 -->
+        <el-table
+            :data="currentPageHospitals"
+            style="width: 100%"
+            :header-cell-style="tableHeaderStyle"
+            :row-class-name="tableRowClassName"
+            v-loading="loading"
+        >
+          <!-- ID列 -->
+          <el-table-column
+              prop="displayId"
+              label="ID"
+              width="80"
+              align="center"
+          >
+            <template #default="scope">
+              <span class="id-badge">{{ scope.row.displayId }}</span>
+            </template>
+          </el-table-column>
+
+          <!-- 医院名称列 -->
+          <el-table-column
+              prop="hospitalName"
+              label="医院名称"
+              min-width="200"
+          >
+            <template #default="scope">
+              <div class="hospital-info">
+                <el-icon class="hospital-icon"><School /></el-icon>
+                <span class="hospital-name">{{ scope.row.hospitalName }}</span>
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- 地址列 -->
+          <el-table-column
+              prop="address"
+              label="地址"
+              min-width="250"
+          >
+            <template #default="scope">
+              <div class="address-info">
+                <el-icon><Location /></el-icon>
+                <span>{{ scope.row.address }}</span>
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- 管理员列 -->
+          <el-table-column
+              prop="adminUsername"
+              label="管理员"
+              min-width="150"
+          >
+            <template #default="scope">
+              <div class="admin-info">
+                <span>{{ scope.row.adminUsername || '暂无管理员' }}</span>
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- 操作列 -->
+          <el-table-column
+              label="操作"
+              width="220"
+              fixed="right"
+              align="center"
+          >
+            <template #default="scope">
+              <div class="action-buttons">
+                <el-tooltip
+                    content="更新地址"
+                    placement="top"
+                >
+                  <el-button
+                      type="primary"
+                      circle
+                      @click="showUpdateAddressDialog(scope.row)"
+                  >
+                    <el-icon><Edit /></el-icon>
+                  </el-button>
+                </el-tooltip>
+
+                <el-tooltip
+                    content="更换管理员"
+                    placement="top"
+                >
+                  <el-button
+                      type="warning"
+                      circle
+                      @click="showUpdateAdminDialog(scope.row)"
+                  >
+                    <el-icon><User /></el-icon>
+                  </el-button>
+                </el-tooltip>
+
+                <el-tooltip
+                    content="取消管理员"
+                    placement="top"
+                >
+                  <el-button
+                      type="info"
+                      circle
+                      @click="deleteAdmin(scope.row.hospitalName)"
+                      :disabled="!scope.row.adminUsername"
+                  >
+                    <el-icon><Remove /></el-icon>
+                  </el-button>
+                </el-tooltip>
+
+                <el-tooltip
+                    content="删除医院"
+                    placement="top"
+                >
+                  <el-button
+                      type="danger"
+                      circle
+                      @click="deleteHospital(scope.row.hospitalName)"
+                  >
+                    <el-icon><Delete /></el-icon>
+                  </el-button>
+                </el-tooltip>
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- 空状态 -->
+          <template #empty>
+            <el-empty
+                description="暂无医院数据"
+                :image-size="200"
             >
-              更新地址
-            </el-button>
-            <el-button
-                type="warning"
-                size="small"
-                @click="showUpdateAdminDialog(scope.row)"
-            >
-              更新管理员
-            </el-button>
-            <el-button
-                type="info"
-                size="small"
-                @click="deleteAdmin(scope.row.hospitalName)"
-            >
-              取消管理员
-            </el-button>
-            <el-button
-                type="danger"
-                size="small"
-                @click="deleteHospital(scope.row.hospitalName)"
-            >
-              删除
-            </el-button>
+              <template #description>
+                <p class="empty-text">暂无医院数据</p>
+                <p class="empty-hint">您可以点击"添加医院"来创建</p>
+              </template>
+              <el-button
+                  type="primary"
+                  @click="showAddDialog"
+              >
+                添加医院
+              </el-button>
+            </el-empty>
           </template>
-        </el-table-column>
-        <template #empty>
-          <el-empty description="没有医院数据"></el-empty>
-        </template>
-      </el-table>
+        </el-table>
 
-      <!-- 分页组件 -->
-      <div class="pagination-container">
-        <el-pagination
-            v-model:current-page="currentPage"
-            :page-size="pageSize"
-            :total="parseInt(hospitalNumber,10)"
-            @current-change="handlePageChange"
-            :pager-count="5"
-            layout="prev, pager, next"
-        />
+        <!-- 分页器 -->
+        <div class="pagination-wrapper">
+          <el-pagination
+              v-model:current-page="currentPage"
+              :page-size="pageSize"
+              :total="parseInt(hospitalNumber,10)"
+              @current-change="handlePageChange"
+              :pager-count="5"
+              layout="total, prev, pager, next, jumper"
+              background
+          />
+        </div>
       </div>
-    </el-main>
+    </main>
 
     <!-- 添加医院对话框 -->
-    <el-dialog v-model="addDialogVisible" title="添加医院" width="30%">
-      <el-form :model="newHospital" label-width="100px">
-        <el-form-item label="医院名称">
-          <el-input v-model="newHospital.hospitalName"></el-input>
-        </el-form-item>
-        <el-form-item label="地址">
-          <el-input v-model="newHospital.address"></el-input>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="addDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="addHospital">确定</el-button>
-        </span>
-      </template>
-    </el-dialog>
+    <el-dialog
+        v-model="addDialogVisible"
+        title="添加医院"
+        width="500px"
+        class="hospital-dialog"
+        destroy-on-close
+    >
+      <div class="dialog-content">
+        <el-form
+            :model="newHospital"
+            label-width="100px"
+            class="hospital-form"
+        >
+          <el-form-item label="医院名称">
+            <el-input
+                v-model="newHospital.hospitalName"
+                placeholder="请输入医院名称"
+            />
+          </el-form-item>
 
-    <!-- 更新医院地址对话框 -->
-    <el-dialog v-model="updateAddressDialogVisible" title="更新医院地址" width="30%">
-      <el-form :model="updateAddressForm" label-width="100px">
-        <el-form-item label="医院名称">
-          <el-input v-model="updateAddressForm.hospitalName" disabled></el-input>
-        </el-form-item>
-        <el-form-item label="新地址">
-          <el-input v-model="updateAddressForm.address"></el-input>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="updateAddressDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="updateHospitalAddress">确定</el-button>
-        </span>
-      </template>
-    </el-dialog>
-
-    <!-- 更新医院管理员对话框 -->
-    <el-dialog v-model="updateAdminDialogVisible" title="更新医院管理员" width="50%">
-      <el-form :model="updateAdminForm" label-width="100px">
-        <el-form-item label="医院名称">
-          <el-input v-model="updateAdminForm.hospitalName" disabled></el-input>
-        </el-form-item>
-      </el-form>
-      <!-- 管理员表格 -->
-      <div style="max-height: 700px; overflow-y: auto;">
-      <el-table
-          :data="allAdmins"
-          style="width: 100%"
-          :header-cell-style="{ background: '#f3f4f6', color: '#374151' }"
-          :row-class-name="tableRowClassName"
-          @row-click="selectAdmin"
-          highlight-current-row
-      >
-        <el-table-column prop="displayId" label="ID" width="80" align="center"></el-table-column>
-        <el-table-column prop="username" label="姓名" width="120"></el-table-column>
-        <el-table-column prop="email" label="邮箱" width="170"></el-table-column>
-        <el-table-column prop="phone" label="电话" width="150"></el-table-column>
-        <el-table-column prop="role" label="角色" width="120">
-          <template #default="scope">
-            <el-tag :type="getTagType(scope.row.adminType)">
-              {{ getTagName(scope.row.adminType) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" label="状态" min-width="100" align="center">
-          <template #default="scope">
-            <el-tag :type="scope.row.status === 'active' ? 'success' : 'danger'" effect="dark">
-              {{ scope.row.status === 'active' ? '活跃' : '停用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-      </el-table>
+          <el-form-item label="医院地址">
+            <el-input
+                v-model="newHospital.address"
+                type="textarea"
+                :rows="3"
+                placeholder="请输入详细地址"
+            />
+          </el-form-item>
+        </el-form>
       </div>
+
       <template #footer>
-        <span class="dialog-footer">
+        <div class="dialog-footer">
+          <el-button @click="addDialogVisible = false">取消</el-button>
+          <el-button
+              type="primary"
+              @click="addHospital"
+          >
+            确认添加
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 更新地址对话框 -->
+    <el-dialog
+        v-model="updateAddressDialogVisible"
+        title="更新医院地址"
+        width="500px"
+        class="hospital-dialog"
+        destroy-on-close
+    >
+      <div class="dialog-content">
+        <el-form
+            :model="updateAddressForm"
+            label-width="100px"
+            class="hospital-form"
+        >
+          <el-form-item label="医院名称">
+            <el-input
+                v-model="updateAddressForm.hospitalName"
+                disabled
+            />
+          </el-form-item>
+
+          <el-form-item label="新地址">
+            <el-input
+                v-model="updateAddressForm.address"
+                type="textarea"
+                :rows="3"
+                placeholder="请输入新地址"
+            />
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="updateAddressDialogVisible = false">取消</el-button>
+          <el-button
+              type="primary"
+              @click="updateHospitalAddress"
+          >
+            确认更新
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 更新管理员对话框 -->
+    <el-dialog
+        v-model="updateAdminDialogVisible"
+        title="更新医院管理员"
+        width="800px"
+        class="hospital-dialog"
+        destroy-on-close
+    >
+      <div class="dialog-content">
+        <div class="dialog-header">
+          <el-alert
+              title="选择新管理员"
+              type="info"
+              description="请在下方列表中选择要指派的管理员"
+              :closable="false"
+              class="dialog-alert"
+          />
+
+          <div class="selected-hospital">
+            <span class="label">当前医院：</span>
+            <el-tag size="large">{{ updateAdminForm.hospitalName }}</el-tag>
+          </div>
+        </div>
+
+        <!-- 管理员表格 -->
+        <div class="admin-table-wrapper">
+          <el-table
+              :data="allAdmins"
+              style="width: 100%"
+              :header-cell-style="tableHeaderStyle"
+              :row-class-name="tableRowClassName"
+              @row-click="selectAdmin"
+              highlight-current-row
+              max-height="400"
+          >
+            <!-- ID列 -->
+            <el-table-column
+                prop="displayId"
+                label="ID"
+                width="80"
+                align="center"
+            >
+              <template #default="scope">
+                <span class="id-badge">{{ scope.row.displayId }}</span>
+              </template>
+            </el-table-column>
+
+            <!-- 姓名列 -->
+            <el-table-column
+                prop="username"
+                label="姓名"
+                width="120"
+            >
+              <template #default="scope">
+                <div class="admin-info">
+                  <el-avatar
+                      :size="32"
+                      class="admin-avatar"
+                  >
+                    {{ scope.row.username.charAt(0).toUpperCase() }}
+                  </el-avatar>
+                  <span>{{ scope.row.username }}</span>
+                </div>
+              </template>
+            </el-table-column>
+
+            <!-- 邮箱列 -->
+            <el-table-column
+                prop="email"
+                label="邮箱"
+                width="200"
+            >
+              <template #default="scope">
+                <div class="email-info">
+                  <el-icon><Message /></el-icon>
+                  <span>{{ scope.row.email }}</span>
+                </div>
+              </template>
+            </el-table-column>
+
+            <!-- 电话列 -->
+            <el-table-column
+                prop="phone"
+                label="电话"
+                width="150"
+            >
+              <template #default="scope">
+                <div class="phone-info">
+                  <el-icon><Phone /></el-icon>
+                  <span>{{ scope.row.phone }}</span>
+                </div>
+              </template>
+            </el-table-column>
+
+            <!-- 角色列 -->
+            <el-table-column
+                prop="role"
+                label="角色"
+                width="120"
+                align="center"
+            >
+              <template #default="scope">
+                <el-tag
+                    :type="getTagType(scope.row.adminType)"
+                    effect="light"
+                    class="role-tag"
+                >
+                  <el-icon>
+                    <component :is="getRoleIcon(scope.row.adminType)" />
+                  </el-icon>
+                  {{ getTagName(scope.row.adminType) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+
+            <!-- 状态列 -->
+            <el-table-column
+                prop="status"
+                label="状态"
+                width="100"
+                align="center"
+            >
+              <template #default="scope">
+                <el-tag
+                    :type="scope.row.status === 'active' ? 'success' : 'danger'"
+                    effect="light"
+                    class="status-tag"
+                >
+                  <el-icon>
+                    <component :is="scope.row.status === 'active' ? CircleCheck : CircleClose" />
+                  </el-icon>
+                  {{ scope.row.status === 'active' ? '活跃' : '停用' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="dialog-footer">
           <el-button @click="updateAdminDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="updateHospitalAdmin">确定</el-button>
-        </span>
+          <el-button
+              type="primary"
+              @click="updateHospitalAdmin"
+              :disabled="!updateAdminForm.adminId"
+          >
+            确认指派
+          </el-button>
+        </div>
       </template>
     </el-dialog>
 
     <!-- 删除确认对话框 -->
     <el-dialog
         v-model="deleteConfirmVisible"
-        title="确认删除"
-        width="30%"
+        title="删除医院"
+        width="400px"
+        class="delete-dialog"
+        destroy-on-close
     >
-      <p>您确定要删除这个医院吗？此操作不可逆。</p>
+      <div class="delete-content">
+        <el-icon class="delete-icon"><Warning /></el-icon>
+        <p class="delete-message">确定要删除该医院吗？</p>
+        <p class="delete-warning">此操作不可逆，请谨慎操作。</p>
+      </div>
+
       <template #footer>
-        <span class="dialog-footer">
+        <div class="dialog-footer">
           <el-button @click="deleteConfirmVisible = false">取消</el-button>
-          <el-button type="danger" @click="confirmDelete">确定删除</el-button>
-        </span>
+          <el-button
+              type="danger"
+              @click="confirmDelete"
+          >
+            确认删除
+          </el-button>
+        </div>
       </template>
     </el-dialog>
-  </el-container>
+  </div>
 </template>
 
 <script setup>
 import {ref, onMounted, computed} from 'vue'
-import {Search} from '@element-plus/icons-vue'
+import {
+  Search,
+  OfficeBuilding,
+  Plus,
+  Location,
+  Edit,
+  User,
+  Delete,
+  Message,
+  Phone,
+  Warning,
+  Remove,
+  School,
+  Star, Avatar, CircleCheck,CircleClose
+} from '@element-plus/icons-vue'
 import {ElMessage} from 'element-plus'
 import axiosInstance from '../../axios/index';
 
@@ -219,6 +529,19 @@ const updateAdminForm = ref({
   hospitalName: '',
   adminId: ''
 })
+
+const getRoleIcon = (adminType) => {
+  switch (adminType) {
+    case 'super':
+      return Star;
+    case 'first':
+      return Avatar;
+    case 'second':
+      return User;
+    default:
+      return '';
+  }
+}
 
 // 获取医院总数
 const fetchHospitalCount = async () => {
@@ -472,82 +795,280 @@ const getTagName = (adminType) => {
 </script>
 
 <style scoped>
-.header-container {
+/* 页面容器 */
+.hospital-management {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+/* 页面头部 */
+.page-header {
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 20px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%;
 }
 
-.search-bar {
+.title-section {
   display: flex;
   align-items: center;
+  gap: 12px;
 }
 
+.header-icon {
+  font-size: 24px;
+  color: var(--el-color-primary);
+}
 
-:deep(.el-table th) {
-  font-weight: bold;
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.hospital-count {
+  padding: 4px 8px;
+  font-size: 14px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.search-section {
+  display: flex;
+  gap: 8px;
+}
+
+.search-input {
+  width: 300px;
+}
+
+/* 主要内容区域 */
+.main-content {
+  max-width: 1400px;
+  margin: 24px auto;
+  padding: 0 24px;
+}
+
+.table-container {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 表格样式 */
+.id-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background-color: var(--el-color-primary-light-8);
+  color: var(--el-color-primary);
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.hospital-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hospital-icon {
+  color: var(--el-color-primary);
+  font-size: 18px;
+}
+
+.hospital-name {
+  font-weight: 500;
+}
+
+.address-info,
+.admin-info,
+.email-info,
+.phone-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #606266;
+}
+
+.admin-avatar {
+  background: var(--el-color-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.role-tag,
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* 分页器 */
+.pagination-wrapper {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 0;
+}
+
+/* 对话框样式 */
+.dialog-content {
+  padding: 0 20px;
+}
+
+.dialog-header {
+  margin-bottom: 24px;
+}
+
+.dialog-alert {
+  margin-bottom: 16px;
+}
+
+.selected-hospital {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.selected-hospital .label {
+  color: #909399;
+}
+
+.hospital-form {
+  margin-top: 20px;
+}
+
+.admin-table-wrapper {
+  margin: 20px 0;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+}
+
+/* 删除对话框 */
+.delete-content {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.delete-icon {
+  font-size: 48px;
+  color: var(--el-color-danger);
+  margin-bottom: 16px;
+}
+
+.delete-message {
   font-size: 16px;
-  color: #111827;
-  background: linear-gradient(to bottom, #f3f4f6, #e5e7eb);
+  color: #303133;
+  margin-bottom: 8px;
 }
 
-:deep(.el-table tbody tr:hover) {
-  background-color: #f9fafb;
-  cursor: pointer;
+.delete-warning {
+  font-size: 14px;
+  color: #909399;
 }
 
-:deep(.el-dialog__footer button) {
-  padding: 10px 20px;
-  transition: all 0.2s ease;
-}
-:deep(.el-dialog__footer button:hover) {
-  transform: scale(1.05);
-}
-
-:deep(.el-input__inner::-webkit-input-placeholder) {
-  color: #a1a1aa;
-}
-:deep(.el-input__inner:focus::-webkit-input-placeholder) {
-  color: transparent;
-}
-:deep(.el-button--primary.create-button) {
-  background-color: #10b981;
-  border-color: #10b981;
-  shape-outside: circle();
-}
-
-/* 自定义 Element Plus 样式 */
-:deep(.el-button--primary) {
-  background-color: #3b82f6;
-  border-color: #3b82f6;
-}
-
-:deep(.el-button--primary:hover) {
-  background-color: #2563eb;
-  border-color: #2563eb;
-}
-
-:deep(.el-input__wrapper) {
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-/* 自定义对话框底部按钮对齐 */
+/* 对话框底部 */
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
-  width: 100%;
+  gap: 12px;
+  padding-top: 20px;
 }
 
-.dialog-footer .el-button + .el-button {
-  margin-left: 10px;
+/* 空状态 */
+.empty-text {
+  font-size: 16px;
+  color: #909399;
+  margin: 8px 0;
 }
 
-/* 分页容器样式 */
-.pagination-container {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
+.empty-hint {
+  font-size: 14px;
+  color: #c0c4cc;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .header-content,
+  .main-content {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .header-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .search-section {
+    width: 100%;
+  }
+
+  .search-input {
+    flex: 1;
+  }
+
+  .add-button {
+    width: 100%;
+  }
+
+  .table-container {
+    padding: 12px;
+  }
+
+  .action-buttons {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header {
+    padding: 16px 0;
+  }
+
+  .header-content {
+    padding: 0 16px;
+  }
+
+  .title-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .page-title {
+    font-size: 20px;
+  }
 }
 </style>
-
