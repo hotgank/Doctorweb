@@ -201,7 +201,7 @@
     <el-dialog v-model="showReport" title="检测报告" width="70%" :before-close="handleCloseReport">
       <div id="report-content" class="report-container">
         <div class="report-header">
-          <img src="/img/logo.png" alt="Logo" class="report-logo">
+          <img src="/img/logo.webp" alt="Logo" class="report-logo">
           <h2>检测报告</h2>
         </div>
         <div class="report-body">
