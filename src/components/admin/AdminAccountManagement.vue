@@ -1,76 +1,212 @@
 <template>
-  <div class="account-management">
-    <h1 class="mb-4">账户管理</h1>
-    <el-tabs v-model="activeTab">
-      <el-tab-pane label="账户信息" name="info">
-        <el-form :model="accountInfo" label-width="120px" :rules="phoneRules">
-          <el-form-item label="用户名">
-            <el-input v-model="accountInfo.username" disabled></el-input>
-          </el-form-item>
-          <el-form-item label="邮箱">
-            <el-input v-model="accountInfo.email" disabled></el-input>
-          </el-form-item>
-          <el-form-item label="手机号" prop="phone">
-            <el-input v-model="accountInfo.phone"></el-input>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="updateAccountInfo">更新信息</el-button>
-          </el-form-item>
-        </el-form>
-      </el-tab-pane>
-      <el-tab-pane label="修改密码" name="password">
-        <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" label-width="120px">
-          <el-form-item label="当前密码" prop="currentPassword">
-            <el-input v-model="passwordForm.currentPassword" type="password"></el-input>
-          </el-form-item>
-          <el-form-item label="新密码" prop="newPassword">
-            <el-input v-model="passwordForm.newPassword" type="password"></el-input>
-          </el-form-item>
-          <el-form-item label="确认新密码" prop="confirmPassword">
-            <el-input v-model="passwordForm.confirmPassword" type="password"></el-input>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="changePassword">修改密码</el-button>
-          </el-form-item>
-        </el-form>
-      </el-tab-pane>
-      <el-tab-pane label="更改邮箱" name="email">
-        <el-form :model="emailForm" :rules="emailRules" ref="emailFormRef" label-width="120px">
-          <el-form-item label="当前邮箱">
-            <el-input :value="profile.email || '未认证'" disabled></el-input>
-          </el-form-item>
-          <el-form-item label="新邮箱" prop="newEmail">
-            <el-input v-model="emailForm.newEmail"></el-input>
-          </el-form-item>
-          <el-form-item label="旧邮箱验证码" prop="oldCode">
-            <el-input v-model="emailForm.oldCode">
-              <template #append>
-                <el-button @click="sendOldEmailCode" :disabled="oldCodeSent">
-                  {{ oldCodeSent ? `重新发送 (${oldCodeCountdown}s)` : '发送验证码' }}
-                </el-button>
-              </template>
-            </el-input>
-          </el-form-item>
-          <el-form-item label="新邮箱验证码" prop="newCode">
-            <el-input v-model="emailForm.newCode">
-              <template #append>
-                <el-button @click="sendNewEmailCode" :disabled="newCodeSent || !emailForm.newEmail">
-                  {{ newCodeSent ? `重新发送 (${newCodeCountdown}s)` : '发送验证码' }}
-                </el-button>
-              </template>
-            </el-input>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="changeEmail">更改邮箱</el-button>
-          </el-form-item>
-        </el-form>
-      </el-tab-pane>
-    </el-tabs>
+  <div class="account-management-container">
+    <div class="account-header">
+      <h1 class="page-title">账户管理</h1>
+      <p class="page-subtitle">管理您的个人账户信息和安全设置</p>
+    </div>
+
+    <el-card class="account-card" shadow="hover">
+      <el-tabs v-model="activeTab" class="custom-tabs">
+        <!-- 账户信息标签页 -->
+        <el-tab-pane label="账户信息" name="info">
+          <div class="tab-header">
+            <div class="tab-icon">
+              <el-icon><User /></el-icon>
+            </div>
+            <div class="tab-info">
+              <h3>基本信息</h3>
+              <p>查看和更新您的个人信息</p>
+            </div>
+          </div>
+
+          <el-form :model="accountInfo" label-width="120px" :rules="phoneRules" class="custom-form">
+            <el-form-item label="用户名">
+              <el-input
+                  v-model="accountInfo.username"
+                  disabled
+                  class="custom-input"
+              >
+                <template #prefix>
+                  <el-icon><UserFilled /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item label="邮箱">
+              <el-input
+                  v-model="accountInfo.email"
+                  disabled
+                  class="custom-input"
+              >
+                <template #prefix>
+                  <el-icon><Message /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item label="手机号" prop="phone">
+              <el-input
+                  v-model="accountInfo.phone"
+                  class="custom-input"
+              >
+                <template #prefix>
+                  <el-icon><Phone /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item class="form-actions">
+              <el-button type="primary" @click="updateAccountInfo" class="submit-button">
+                <el-icon><Check /></el-icon>
+                更新信息
+              </el-button>
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
+
+        <!-- 修改密码标签页 -->
+        <el-tab-pane label="修改密码" name="password">
+          <div class="tab-header">
+            <div class="tab-icon warning">
+              <el-icon><Lock /></el-icon>
+            </div>
+            <div class="tab-info">
+              <h3>密码设置</h3>
+              <p>更改您的账户密码</p>
+            </div>
+          </div>
+
+          <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" label-width="120px" class="custom-form">
+            <el-form-item label="当前密码" prop="currentPassword">
+              <el-input
+                  v-model="passwordForm.currentPassword"
+                  type="password"
+                  class="custom-input"
+                  show-password
+              >
+                <template #prefix>
+                  <el-icon><Lock /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item label="新密码" prop="newPassword">
+              <el-input
+                  v-model="passwordForm.newPassword"
+                  type="password"
+                  class="custom-input"
+                  show-password
+              >
+                <template #prefix>
+                  <el-icon><Key /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item label="确认新密码" prop="confirmPassword">
+              <el-input
+                  v-model="passwordForm.confirmPassword"
+                  type="password"
+                  class="custom-input"
+                  show-password
+              >
+                <template #prefix>
+                  <el-icon><Key /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item class="form-actions">
+              <el-button type="warning" @click="changePassword" class="submit-button">
+                <el-icon><RefreshRight /></el-icon>
+                修改密码
+              </el-button>
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
+
+        <!-- 更改邮箱标签页 -->
+        <el-tab-pane label="更改邮箱" name="email">
+          <div class="tab-header">
+            <div class="tab-icon info">
+              <el-icon><Message /></el-icon>
+            </div>
+            <div class="tab-info">
+              <h3>邮箱设置</h3>
+              <p>更改您的账户关联邮箱</p>
+            </div>
+          </div>
+
+          <el-form :model="emailForm" :rules="emailRules" ref="emailFormRef" label-width="120px" class="custom-form">
+            <el-form-item label="当前邮箱">
+              <el-input
+                  :value="profile.email || '未认证'"
+                  disabled
+                  class="custom-input"
+              >
+                <template #prefix>
+                  <el-icon><Message /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item label="新邮箱" prop="newEmail">
+              <el-input
+                  v-model="emailForm.newEmail"
+                  class="custom-input"
+              >
+                <template #prefix>
+                  <el-icon><EditPen /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item label="旧邮箱验证码" prop="oldCode">
+              <el-input
+                  v-model="emailForm.oldCode"
+                  class="custom-input"
+              >
+                <template #prefix>
+                  <el-icon><Stamp /></el-icon>
+                </template>
+                <template #append>
+                  <el-button
+                      @click="sendOldEmailCode"
+                      :disabled="oldCodeSent"
+                      class="code-button"
+                  >
+                    {{ oldCodeSent ? `重新发送 (${oldCodeCountdown}s)` : '发送验证码' }}
+                  </el-button>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item label="新邮箱验证码" prop="newCode">
+              <el-input
+                  v-model="emailForm.newCode"
+                  class="custom-input"
+              >
+                <template #prefix>
+                  <el-icon><Stamp /></el-icon>
+                </template>
+                <template #append>
+                  <el-button
+                      @click="sendNewEmailCode"
+                      :disabled="newCodeSent || !emailForm.newEmail"
+                      class="code-button"
+                  >
+                    {{ newCodeSent ? `重新发送 (${newCodeCountdown}s)` : '发送验证码' }}
+                  </el-button>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item class="form-actions">
+              <el-button type="primary" @click="changeEmail" class="submit-button">
+                <el-icon><Check /></el-icon>
+                更改邮箱
+              </el-button>
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
+      </el-tabs>
+    </el-card>
   </div>
 </template>
 
 <script setup>
 import {ref, reactive, onMounted, computed} from 'vue'
+import { User, Check, UserFilled, Message, Lock, Key, Phone, RefreshRight, EditPen, Stamp} from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
@@ -288,9 +424,190 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.account-management {
+.account-management-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.account-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+  color: var(--el-text-color-secondary);
+  font-size: 1rem;
+}
+
+.account-card {
+  background: var(--el-bg-color);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.custom-tabs {
+  padding: 1rem;
+}
+
+.tab-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: var(--el-bg-color-page);
+  border-radius: 8px;
+}
+
+.tab-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  margin-right: 1rem;
+}
+
+.tab-icon.warning {
+  background: var(--el-color-warning-light-9);
+  color: var(--el-color-warning);
+}
+
+.tab-icon.info {
+  background: var(--el-color-info-light-9);
+  color: var(--el-color-info);
+}
+
+.tab-info h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--el-text-color-primary);
+}
+
+.tab-info p {
+  margin: 0.25rem 0 0;
+  color: var(--el-text-color-secondary);
+  font-size: 0.875rem;
+}
+
+.custom-form {
   max-width: 600px;
   margin: 0 auto;
 }
 
+.custom-input {
+  --el-input-hover-border-color: var(--el-color-primary);
+  --el-input-focus-border-color: var(--el-color-primary);
+}
+
+.form-actions {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.submit-button {
+  min-width: 120px;
+  padding: 12px 24px;
+  font-size: 1rem;
+}
+
+.submit-button :deep(.el-icon) {
+  margin-right: 4px;
+}
+
+.code-button {
+  min-width: 120px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .account-management-container {
+    margin: 1rem auto;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  .custom-form {
+    padding: 0 1rem;
+  }
+
+  :deep(.el-form-item__label) {
+    float: none;
+    display: block;
+    text-align: left;
+    padding: 0 0 8px;
+  }
+
+  :deep(.el-form-item__content) {
+    margin-left: 0 !important;
+  }
+
+  .tab-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .tab-icon {
+    margin: 0 0 1rem 0;
+  }
+}
+
+/* Element Plus 样式优化 */
+:deep(.el-tabs__nav-wrap::after) {
+  height: 1px;
+  background-color: var(--el-border-color-light);
+}
+
+:deep(.el-tabs__item) {
+  font-size: 1rem;
+  padding: 0 1.5rem;
+}
+
+:deep(.el-tabs__item.is-active) {
+  font-weight: 600;
+}
+
+:deep(.el-input__wrapper) {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+:deep(.el-form-item__label) {
+  font-weight: 500;
+}
+
+/* 动画效果 */
+.account-card {
+  transition: transform 0.3s ease;
+}
+
+.account-card:hover {
+  transform: translateY(-2px);
+}
+
+.tab-header {
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 </style>
