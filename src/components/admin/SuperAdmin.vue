@@ -1,140 +1,314 @@
 <template>
-  <el-container class="min-h-screen bg-gray-100">
-    <el-header class="bg-white shadow-md">
-      <div class="header-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <h3 class="text-2xl font-bold text-gray-900">超级管理员控制台</h3>
-        <!-- 搜索栏 -->
-        <div class="search-bar">
-          <el-input
-            v-model="searchTerm"
-            placeholder="搜索管理员ID或用户名"
-            clearable
-            @clear="clearSearch"
-            class="w-64 sm:w-80"
+  <el-container class="admin-container">
+    <!-- 页面头部 -->
+    <el-header class="admin-header">
+      <div class="header-content">
+        <div class="header-title">
+          <el-icon class="header-icon"><Platform /></el-icon>
+          <h1>超级管理员控制台</h1>
+        </div>
+
+        <div class="header-actions">
+          <div class="search-wrapper">
+            <el-input
+                v-model="searchTerm"
+                placeholder="搜索管理员ID或用户名"
+                clearable
+                @clear="clearSearch"
+                class="search-input"
+            >
+              <template #prefix>
+                <el-icon class="search-icon"><Search /></el-icon>
+              </template>
+            </el-input>
+            <el-button
+                @click="onSearch"
+                type="primary"
+                class="search-button"
+            >
+              搜索
+            </el-button>
+          </div>
+
+          <el-button
+              @click="showCreateAdminForm"
+              type="success"
+              class="create-button"
           >
-            <template #prefix>
-              <el-icon class="el-input__icon"><Search /></el-icon>
-            </template>
-          </el-input>
-          <!-- 搜索按钮 -->
-          <el-button @click="onSearch" type="primary" class="ml-2">
-            搜索
-          </el-button>
-          <el-button @click="showCreateAdminForm" type="primary" class="ml-2">
+            <el-icon><Plus /></el-icon>
             创建新管理员
-            <i class="fas fa-plus" style="margin-left:5px; font-size: 18px;"></i>
           </el-button>
         </div>
       </div>
     </el-header>
-    
-    <el-main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- 管理员表格 -->
-      <el-table 
-        :data="filteredAdmins" 
-        style="width: 100%"
-        :header-cell-style="{ background: '#f3f4f6', color: '#374151' }"
-        :row-class-name="tableRowClassName"
-        v-loading="loading"
-      >
-        <el-table-column prop="displayId" label="ID" width="80" align="center"></el-table-column>
-        <el-table-column prop="username" label="用户名" width="120"></el-table-column>
-        <el-table-column prop="email" label="邮箱" min-width="200"></el-table-column>
-        <el-table-column prop="role" label="角色" width="120">
-          <template #default="scope">
-            <el-tag :type="getTagType(scope.row.adminType)">
-              {{ getTagName(scope.row.adminType) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" label="状态" width="100" align="center">
-          <template #default="scope">
-            <el-tag :type="scope.row.status === 'active' ? 'success' : 'danger'" effect="dark">
-              {{ scope.row.status === 'active' ? '活跃' : '停用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" min-width="250" align="center">
-          <template #default="scope">
-            <el-button
-                type="primary"
-                size="small"
-                @click="editAdmin(scope.row)"
-                :disabled="scope.row.adminId === rootAdmin.adminId"
-            >
-              编辑
-              <i class="fas fa-pencil-alt" style = "margin-left: 5px"></i>
-            </el-button>
-            <el-button
-                :type="scope.row.status === 'active'? 'danger' : 'success'"
-                size="small"
-                @click="toggleAdminStatus(scope.row)"
-                :disabled="scope.row.adminType === 'super' || scope.row.username === rootAdmin.username"
-            >
-              {{ scope.row.status === 'active' ? '停用' : '启用' }}
-              <i class="fas fa-pause" style = "margin-left: 5px"></i>
-            </el-button>
-            <el-button
-                type="danger"
-                size="small"
-                @click="deleteAdmin(scope.row)"
-                :disabled="scope.row.adminType === 'super' || scope.row.username === rootAdmin.username"
-            >
-              删除
-              <i class="fas fa-trash-alt" style = "margin-left: 5px"></i>
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
 
-      <!-- 空数据提示 -->
-      <el-empty v-if="filteredAdmins.length === 0" description="没有管理员数据"></el-empty>
+    <!-- 主要内容区 -->
+    <el-main class="admin-main">
+      <div class="table-container">
+        <el-table
+            :data="filteredAdmins"
+            style="width: 100%"
+            :header-cell-style="{
+            background: 'var(--el-color-primary-light-9)',
+            color: 'var(--el-color-primary)'
+          }"
+            :row-class-name="tableRowClassName"
+            v-loading="loading"
+            border
+        >
+          <!-- ID列 -->
+          <el-table-column
+              prop="displayId"
+              label="ID"
+              width="80"
+              align="center"
+          >
+            <template #default="scope">
+              <span class="id-badge">{{ scope.row.displayId }}</span>
+            </template>
+          </el-table-column>
+
+          <!-- 用户名列 -->
+          <el-table-column
+              prop="username"
+              label="用户名"
+              min-width="120"
+          >
+            <template #default="scope">
+              <div class="username-cell">
+                <span>{{ scope.row.username }}</span>
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- 邮箱列 -->
+          <el-table-column
+              prop="email"
+              label="邮箱"
+              min-width="200"
+          >
+            <template #default="scope">
+              <div class="email-cell">
+                <el-icon><Message /></el-icon>
+                <span>{{ scope.row.email }}</span>
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- 角色列 -->
+          <el-table-column
+              prop="role"
+              label="角色"
+              width="140"
+              align="center"
+          >
+            <template #default="scope">
+              <el-tag
+                  :type="getTagType(scope.row.adminType)"
+                  effect="dark"
+                  class="role-tag"
+              >
+                <el-icon class="role-icon">
+                  <component :is="getRoleIcon(scope.row.adminType)" />
+                </el-icon>
+                {{ getTagName(scope.row.adminType) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+
+          <!-- 状态列 -->
+          <el-table-column
+              prop="status"
+              label="状态"
+              width="100"
+              align="center"
+          >
+            <template #default="scope">
+              <el-tag
+                  :type="scope.row.status === 'active' ? 'success' : 'danger'"
+                  class="status-tag"
+              >
+                <el-icon>
+                  <component :is="scope.row.status === 'active' ? CircleCheck : CircleClose" />
+                </el-icon>
+                {{ scope.row.status === 'active' ? '活跃' : '停用' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+
+          <!-- 操作列 -->
+          <el-table-column
+              label="操作"
+              min-width="170"
+              align="center"
+              fixed="right"
+          >
+            <template #default="scope">
+              <div class="action-buttons">
+                <el-tooltip
+                    content="编辑管理员信息"
+                    placement="top"
+                >
+                  <el-button
+                      type="primary"
+                      :icon="Edit"
+                      circle
+                      @click="editAdmin(scope.row)"
+                      :disabled="scope.row.adminId === rootAdmin.adminId"
+                  />
+                </el-tooltip>
+
+                <el-tooltip
+                    :content="scope.row.status === 'active' ? '停用账号' : '启用账号'"
+                    placement="top"
+                >
+                  <el-button
+                      :type="scope.row.status === 'active' ? 'warning' : 'success'"
+                      circle
+                      @click="toggleAdminStatus(scope.row)"
+                      :disabled="scope.row.adminType === 'super' || scope.row.username === rootAdmin.username"
+                  >
+                    <el-icon>
+                      <component :is="scope.row.status === 'active' ? VideoPause : VideoPlay" />
+                    </el-icon>
+                  </el-button>
+                </el-tooltip>
+
+                <el-tooltip
+                    content="删除管理员"
+                    placement="top"
+                >
+                  <el-button
+                      type="danger"
+                      :icon="Delete"
+                      circle
+                      @click="deleteAdmin(scope.row)"
+                      :disabled="scope.row.adminType === 'super' || scope.row.username === rootAdmin.username"
+                  />
+                </el-tooltip>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <!-- 空状态展示 -->
+        <el-empty
+            v-if="filteredAdmins.length === 0"
+            description="没有找到管理员数据"
+            :image-size="200"
+        >
+          <template #description>
+            <p class="empty-text">没有找到符合条件的管理员数据</p>
+            <p class="empty-hint">您可以尝试清除搜索条件或创建新的管理员</p>
+          </template>
+          <el-button
+              type="primary"
+              @click="showCreateAdminForm"
+          >
+            创建新管理员
+          </el-button>
+        </el-empty>
+      </div>
     </el-main>
 
     <!-- 编辑/创建管理员对话框 -->
     <el-dialog
-      v-model="dialogVisible"
-      :title="isEditing ? '编辑管理员' : '创建新管理员'"
-      width="30%"
+        v-model="dialogVisible"
+        :title="isEditing ? '编辑管理员' : '创建新管理员'"
+        width="500px"
+        class="admin-dialog"
+        destroy-on-close
     >
-      <el-form :model="adminForm" label-width="100px">
+      <el-form
+          :model="adminForm"
+          label-width="100px"
+          class="admin-form"
+      >
         <el-form-item label="用户名">
-          <el-input v-model="adminForm.username" placeholder="请填写用户名"></el-input>
+          <el-input
+              v-model="adminForm.username"
+              placeholder="请填写用户名"
+              :prefix-icon="User"
+          />
         </el-form-item>
+
         <el-form-item label="邮箱">
-          <el-input v-model="adminForm.email" placeholder="请填写邮箱"></el-input>
+          <el-input
+              v-model="adminForm.email"
+              placeholder="请填写邮箱"
+              :prefix-icon="Message"
+          />
         </el-form-item>
+
         <el-form-item label="密码" v-if="!isEditing">
-          <el-input v-model="adminForm.password" type="password" placeholder="请填写10-16位密码"></el-input>
+          <el-input
+              v-model="adminForm.password"
+              type="password"
+              placeholder="请填写10-16位密码"
+              :prefix-icon="Lock"
+              show-password
+          />
         </el-form-item>
+
         <el-form-item label="角色">
-          <el-select v-model="adminForm.adminType" placeholder="请选择管理员类型">
-            <el-option label="管理员" value="first"></el-option>
-            <el-option label="超级管理员" value="super"></el-option>
-            <el-option label="二级管理员" value="second"></el-option>
+          <el-select
+              v-model="adminForm.adminType"
+              placeholder="请选择管理员类型"
+              class="role-select"
+          >
+            <el-option
+                v-for="(label, value) in adminTypes"
+                :key="value"
+                :label="label"
+                :value="value"
+            >
+              <div class="select-option">
+                <el-icon class="option-icon">
+                  <component :is="getRoleIcon(value)" />
+                </el-icon>
+                <span>{{ label }}</span>
+              </div>
+            </el-option>
           </el-select>
         </el-form-item>
       </el-form>
+
       <template #footer>
-        <span class="dialog-footer">
+        <div class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitAdminForm">确定</el-button>
-        </span>
+          <el-button
+              type="primary"
+              @click="submitAdminForm"
+          >
+            确定
+          </el-button>
+        </div>
       </template>
     </el-dialog>
 
     <!-- 删除确认对话框 -->
     <el-dialog
-      v-model="deleteConfirmVisible"
-      title="确认删除"
-      width="30%"
+        v-model="deleteConfirmVisible"
+        title="确认删除"
+        width="400px"
+        class="delete-dialog"
     >
-      <p>您确定要删除这个管理员账号吗？此操作不可逆。</p>
+      <div class="delete-content">
+        <el-icon class="delete-icon"><Warning /></el-icon>
+        <p class="delete-message">您确定要删除这个管理员账号吗？</p>
+        <p class="delete-warning">此操作不可逆，请谨慎操作。</p>
+      </div>
+
       <template #footer>
-        <span class="dialog-footer">
+        <div class="dialog-footer">
           <el-button @click="deleteConfirmVisible = false">取消</el-button>
-          <el-button type="danger" @click="confirmDelete">确定删除</el-button>
-        </span>
+          <el-button
+              type="danger"
+              @click="confirmDelete"
+          >
+            确定删除
+          </el-button>
+        </div>
       </template>
     </el-dialog>
   </el-container>
@@ -142,7 +316,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Search } from '@element-plus/icons-vue'
+import { Search, Platform, Plus, Message, Warning, CircleCheck, CircleClose, User, Edit, Delete, Lock, VideoPause, VideoPlay, Star, UserFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import axiosInstance from '../../axios/index'
 
@@ -161,6 +335,12 @@ const adminForm = ref({
 const deleteConfirmVisible = ref(false)
 const adminToDelete = ref(null)
 const searchTerm = ref('')
+
+const adminTypes = {
+  first: '管理员',
+  super: '超级管理员',
+  second: '二级管理员'
+}
 
 const fetchAdmins = async () => {
   loading.value = true
@@ -329,7 +509,7 @@ const getTagType = (adminType) => {
     case 'second':
       return 'success';
     default:
-      return '';
+      return 'warning';
   }
 }
 
@@ -345,65 +525,273 @@ const getTagName = (adminType) => {
       return '';
   }
 }
+
+const getRoleIcon = (value) => {
+  switch (value) {
+    case 'super':
+      return Star; // 根据实际图标库调整
+    case 'first':
+      return UserFilled; // 根据实际图标库调整
+    case 'second':
+      return User; // 根据实际图标库调整
+    default:
+      return '';
+  }
+}
+
 </script>
 
 <style scoped>
-.header-container {
+/* 容器样式 */
+.admin-container {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+/* 头部样式 */
+.admin-header {
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-icon {
+  font-size: 24px;
+  color: var(--el-color-primary);
+}
+
+.header-title h1 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.search-wrapper {
+  display: flex;
+  gap: 8px;
+}
+
+.search-input {
+  width: 300px;
+}
+
+.search-icon {
+  color: #909399;
+}
+
+.create-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 主要内容区样式 */
+.admin-main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.table-container {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 表格样式 */
+.id-badge {
+  background: var(--el-color-primary-light-8);
+  color: var(--el-color-primary);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.username-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar {
+  background: var(--el-color-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.email-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #606266;
+}
+
+.role-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+}
+
+.role-icon {
+  font-size: 14px;
+}
+
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* 空状态样式 */
+.empty-text {
+  font-size: 16px;
+  color: #909399;
+  margin: 8px 0;
+}
+
+.empty-hint {
+  font-size: 14px;
+  color: #c0c4cc;
+}
+
+/* 对话框样式 */
+.admin-dialog {
+  border-radius: 8px;
+}
+
+.admin-form {
+  padding: 20px 0;
+}
+
+.role-select {
   width: 100%;
 }
 
-.search-bar {
+.select-option {
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 
-:deep(.el-table th) {
-  font-weight: bold;
+.option-icon {
   font-size: 16px;
-  color: #111827;
-  background: linear-gradient(to bottom, #f3f4f6, #e5e7eb);
 }
 
-:deep(.el-table tbody tr:hover) {
-  background-color: #f9fafb;
-  cursor: pointer;
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 20px;
 }
 
-:deep(.el-dialog__footer button) {
-  padding: 10px 20px;
-  transition: all 0.2s ease;
-}
-:deep(.el-dialog__footer button:hover) {
-  transform: scale(1.05);
+/* 删除对话框样式 */
+.delete-content {
+  text-align: center;
+  padding: 20px 0;
 }
 
-:deep(.el-input__inner::-webkit-input-placeholder) {
-  color: #a1a1aa;
-}
-:deep(.el-input__inner:focus::-webkit-input-placeholder) {
-  color: transparent;
-}
-:deep(.el-button--primary.create-button) {
-  background-color: #10b981;
-  border-color: #10b981;
-  shape-outside: circle();
+.delete-icon {
+  font-size: 48px;
+  color: var(--el-color-danger);
+  margin-bottom: 16px;
 }
 
-/* 自定义 Element Plus 样式 */
-:deep(.el-button--primary) {
-  background-color: #3b82f6;
-  border-color: #3b82f6;
+.delete-message {
+  font-size: 16px;
+  color: #303133;
+  margin-bottom: 8px;
 }
 
-:deep(.el-button--primary:hover) {
-  background-color: #2563eb;
-  border-color: #2563eb;
+.delete-warning {
+  font-size: 14px;
+  color: #909399;
 }
 
-:deep(.el-input__wrapper) {
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .header-content,
+  .admin-main {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .header-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .search-wrapper {
+    width: 100%;
+  }
+
+  .search-input {
+    width: 100%;
+  }
+
+  .create-button {
+    width: 100%;
+  }
+
+  .table-container {
+    padding: 12px;
+  }
+
+  .action-buttons {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-header {
+    position: static;
+  }
+
+  .header-content {
+    padding: 12px;
+  }
+
+  .admin-main {
+    padding: 12px;
+  }
 }
 </style>
