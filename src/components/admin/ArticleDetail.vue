@@ -129,19 +129,19 @@
           <div class="action-buttons">
             <el-button
                 type="success"
-                :icon="Check"
                 :disabled="article.status === '已发布'"
                 @click="changeArticleStatus('已发布')"
             >
+              <el-icon><Check /></el-icon>
               通过审核
             </el-button>
 
             <el-button
                 type="danger"
-                :icon="Close"
                 :disabled="article.status === '已打回'"
                 @click="changeArticleStatus('已打回')"
             >
+              <el-icon><Close /></el-icon>
               打回修改
             </el-button>
           </div>
