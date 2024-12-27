@@ -161,11 +161,11 @@
                 <span class="form-text">{{ formatDate2(currentReport.birthdate) }}</span>
               </el-form-item>
 
-              <el-form-item label="身高">
+              <el-form-item label="身高(cm)">
                 <span class="form-text">{{ currentReport.height }}</span>
               </el-form-item>
 
-              <el-form-item label="体重">
+              <el-form-item label="体重(kg)">
                 <span class="form-text">{{ currentReport.weight }}</span>
               </el-form-item>
 
@@ -197,7 +197,7 @@
                 type="textarea"
                 v-model="currentReport.analyse"
                 :rows="4"
-                readonly
+                :disabled
                 class="analysis-input"
             ></el-input>
           </el-form-item>
