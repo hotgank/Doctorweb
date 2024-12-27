@@ -151,11 +151,12 @@
                 >
                   <el-button
                       type="primary"
-                      :icon="Edit"
                       circle
                       @click="editAdmin(scope.row)"
                       :disabled="scope.row.adminId === rootAdmin.adminId"
-                  />
+                  >
+                    <el-icon><Edit /></el-icon>
+                  </el-button>
                 </el-tooltip>
 
                 <el-tooltip
@@ -180,11 +181,12 @@
                 >
                   <el-button
                       type="danger"
-                      :icon="Delete"
                       circle
                       @click="deleteAdmin(scope.row)"
                       :disabled="scope.row.adminType === 'super' || scope.row.username === rootAdmin.username"
-                  />
+                  >
+                    <el-icon><Delete /></el-icon>
+                  </el-button>
                 </el-tooltip>
               </div>
             </template>
@@ -316,7 +318,24 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Search, Platform, Plus, Message, Warning, CircleCheck, CircleClose, User, Edit, Delete, Lock, VideoPause, VideoPlay, Star, UserFilled } from '@element-plus/icons-vue'
+import {
+  Search,
+  Platform,
+  Plus,
+  Message,
+  Warning,
+  CircleCheck,
+  CircleClose,
+  User,
+  Edit,
+  Delete,
+  Lock,
+  VideoPause,
+  VideoPlay,
+  Star,
+  UserFilled,
+  Check
+} from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import axiosInstance from '../../axios/index'
 
